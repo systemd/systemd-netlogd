@@ -103,6 +103,9 @@ int config_parse_many(const char *conf_file,      /* possibly NULL */
                       bool relaxed,
                       void *userdata);
 
+/* Generic parsers */
+int config_parse_string(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+
 #define DEFINE_CONFIG_PARSE_ENUM(function,name,type,msg)                \
         int function(const char *unit,                                  \
                      const char *filename,                              \
