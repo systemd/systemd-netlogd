@@ -80,6 +80,14 @@
         </para>
         </listitem>
       </varlistentry>
+      <varlistentry>
+        <term><varname>StructuredData=</varname></term>
+        <listitem><para>Meta information about the syslog message,
+        which can be used for Cloud Based syslog servers, such as Loggly</para>
+
+        <para>The StructureData is only an optional setting</para>
+        </listitem>
+      </varlistentry>
     </variablelist>
   </refsect1>
 
@@ -99,6 +107,17 @@ Address=239.0.0.1:6000
       <title>/etc/systemd/systemd-netlogd.conf</title>
       <programlisting>[Network]
 Address=192.168.8.101:514
+      </programlisting>
+    </example>
+  </refsect1>
+
+  <refsect1>
+    <title>Example</title>
+    <example>
+      <title>/etc/systemd/systemd-netlogd.conf</title>
+      <programlisting>[Network]
+Address=192.168.8.101:514
+StructuredData=[1ab456b6-90bb-6578-abcd-5b734584aaaa@41058]
       </programlisting>
     </example>
   </refsect1>

@@ -161,7 +161,11 @@ int manager_push_to_network(Manager *m,
         IOVEC_SET_STRING(iov[n++], " ");
 
         /* Eighth: [structured-data] */
-        IOVEC_SET_STRING(iov[n++], RFC_5424_NILVALUE);
+        if (m->structured_data)
+                IOVEC_SET_STRING(iov[n++], m->structured_data);
+        else
+                IOVEC_SET_STRING(iov[n++], RFC_5424_NILVALUE);
+
         IOVEC_SET_STRING(iov[n++], " ");
 
         /* Ninth: message */
