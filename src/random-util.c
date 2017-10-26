@@ -30,6 +30,12 @@
 #include <sys/auxv.h>
 #endif
 
+#if USE_SYS_RANDOM_H
+#  include <sys/random.h>
+#else
+#  include <linux/random.h>
+#endif
+
 #include "fd-util.h"
 #include "io-util.h"
 #include "missing.h"

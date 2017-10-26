@@ -22,15 +22,9 @@
 
 /* Missing glibc definitions to access certain kernel APIs */
 
-#if !HAVE_DECL_PIVOT_ROOT
-static inline int pivot_root(const char *new_root, const char *put_old) {
-        return syscall(SYS_pivot_root, new_root, put_old);
-}
-#endif
-
 /* ======================================================================= */
 
-#if !HAVE_DECL_GETRANDOM
+#if !HAVE_GETRANDOM
 #  ifndef __NR_getrandom
 #    if defined __x86_64__
 #      define __NR_getrandom 318
@@ -75,26 +69,9 @@ static inline int getrandom(void *buffer, size_t count, unsigned flags) {
 
 /* ======================================================================= */
 
-#if !HAVE_DECL_GETTID
+#if !HAVE_GETTID
 static inline pid_t gettid(void) {
         return (pid_t) syscall(SYS_gettid);
 }
 #endif
 
-/* ======================================================================= */
-
-#if !HAVE_DECL_NAME_TO_HANDLE_AT
-#  ifndef __NR_name_to_handle_at
-#    if defined(__x86_64__)
-#      define __NR_name_to_handle_at 303
-#    elif defined(__i386__)
-#      define __NR_name_to_handle_at 341
-#    elif defined(__arm__)
-#      define __NR_name_to_handle_at 370
-#    elif defined(__powerpc__)
-#      define __NR_name_to_handle_at 345
-#    else
-#      error "__NR_name_to_handle_at is not defined"
-#    endif
-#  endif
-#endif
