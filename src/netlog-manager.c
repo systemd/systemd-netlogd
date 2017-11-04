@@ -231,6 +231,7 @@ static int process_journal_input(Manager *m) {
 
                 r = manager_read_journal_input(m);
                 if (r < 0) {
+                        m->current_cursor = mfree(m->current_cursor);
                         /* Can't send the message. Seek one entry back. */
                         r = sd_journal_previous(m->journal);
                         if (r < 0)
