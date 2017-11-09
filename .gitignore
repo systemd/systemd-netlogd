@@ -22,7 +22,6 @@
 /*.tar.xz
 /build-aux
 /libtool
-/Makefile
 /TAGS
 /GPATH
 /GRTAGS
