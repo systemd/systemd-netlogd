@@ -113,9 +113,9 @@ int manager_push_to_network(Manager *m,
                             const char *hostname,
                             const char *pid,
                             const struct timeval *tv) {
-        char header_priority[sizeof("< >1 ") + 1];
+        char header_priority[sizeof("<   >1 ")];
         char header_time[FORMAT_TIMESTAMP_MAX];
-        uint16_t makepri;
+        uint8_t makepri;
         struct iovec iov[13];
         int n = 0;
 
