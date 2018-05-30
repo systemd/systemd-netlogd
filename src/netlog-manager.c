@@ -31,6 +31,12 @@
 #define JOURNAL_FOREACH_DATA_RETVAL(j, data, l, retval)                     \
         for (sd_journal_restart_data(j); ((retval) = sd_journal_enumerate_data((j), &(data), &(l))) > 0; )
 
+
+// fwd decl
+static void close_journal_input(Manager *m);
+static int manager_journal_monitor_listen(Manager *m);
+
+
 static int parse_field(const void *data, size_t length, const char *field, char **target) {
         size_t fl, nl;
         void *buf;
@@ -201,11 +207,13 @@ static int load_cursor_state(Manager *m) {
 
 static int process_journal_input(Manager *m) {
         int r;
+        uint64_t entries_processed;
+        char *current_cursor = NULL;
 
         assert(m);
         assert(m->journal);
 
-        while (true) {
+        for (entries_processed = 0; ; ++entries_processed) {
                 r = sd_journal_next(m->journal);
                 if (r < 0) {
                         log_error_errno(r, "Failed to get next entry: %m");
@@ -217,7 +225,6 @@ static int process_journal_input(Manager *m) {
 
                 r = manager_read_journal_input(m);
                 if (r < 0) {
-                        m->current_cursor = mfree(m->current_cursor);
                         /* Can't send the message. Seek one entry back. */
                         r = sd_journal_previous(m->journal);
                         if (r < 0)
@@ -227,13 +234,27 @@ static int process_journal_input(Manager *m) {
                 }
         }
 
-        r = sd_journal_get_cursor(m->journal, &m->current_cursor);
+        while((r = sd_journal_get_cursor(m->journal, &current_cursor)) == -EADDRNOTAVAIL) {
+                // Workaround for "Cannot assign requested address" in real_journal_next() after journal rotation
+                log_debug("Processed %" PRIu64 " events and encountered end of journal file, re-open journal", entries_processed);
+
+                close_journal_input(m);
+                r = manager_journal_monitor_listen(m);
+                if (r < 0)
+                        return r;
+
+                // skip processed entries
+                r = sd_journal_next_skip(m->journal, entries_processed);
+                if (r < 0) {
+                        log_error_errno(r, "Failed to skip processed entries of re-opened journal: %m");
+                        return r;
+                }
+        }
         if (r < 0)
                 return log_error_errno(r, "Failed to get cursor: %m");
 
         free(m->last_cursor);
-        m->last_cursor = m->current_cursor;
-        m->current_cursor = NULL;
+        m->last_cursor = current_cursor;
 
         return update_cursor_state(m);
 }
@@ -274,6 +295,8 @@ static void close_journal_input(Manager *m) {
                 sd_journal_close(m->journal);
                 m->journal = NULL;
         }
+
+        m->event_journal_input = sd_event_source_unref(m->event_journal_input);
 
         m->timeout = 0;
 }
@@ -362,8 +385,6 @@ void manager_disconnect(Manager *m) {
 
         manager_close_network_socket(m);
 
-        m->event_journal_input = sd_event_source_unref(m->event_journal_input);
-
         sd_notifyf(false, "STATUS=Idle.");
 }
 
@@ -428,7 +449,6 @@ void manager_free(Manager *m) {
         manager_disconnect(m);
 
         free(m->last_cursor);
-        free(m->current_cursor);
 
         free(m->state_file);
 
