@@ -37,7 +37,7 @@ struct Manager {
 
         char *state_file;
 
-        char *last_cursor, *current_cursor;
+        char *last_cursor;
         char *structured_data;
 };
 
