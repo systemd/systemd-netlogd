@@ -5,9 +5,10 @@ Forwards messages from the journal to other hosts over the network using
 the Syslog Protocol (RFC 5424). It can be configured to send messages to
 both unicast and multicast addresses. systemd-netlogd runs with own user
 systemd-journal-netlog.  Starts sending logs when network is up and stops
-sending as soon as network is down (uses sd-network).
+sending as soon as network is down (uses sd-network). It reads from journal
+and forwards to network one by one. It does not use any extra disk space.
 
--------------
+--------------------------------------------------------------------------
 
 
 Installing from source
