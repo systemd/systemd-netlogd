@@ -228,8 +228,10 @@ static int process_journal_input(Manager *m) {
         }
 
         r = sd_journal_get_cursor(m->journal, &m->current_cursor);
-        if (r < 0)
-                return log_error_errno(r, "Failed to get cursor: %m");
+        if (r < 0) {
+                log_error_errno(r, "Failed to get cursor: %m");
+                m->current_cursor = mfree(m->current_cursor);
+        }
 
         free(m->last_cursor);
         m->last_cursor = m->current_cursor;
