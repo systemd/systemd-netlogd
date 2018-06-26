@@ -1,0 +1,6 @@
+extraction:
+  cpp:
+    prepare:
+      packages: 
+        - python-sphinx
+        - python3-sphinx
