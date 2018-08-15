@@ -2,12 +2,6 @@
 
 #pragma once
 
-/***
-  This file is part of systemd.
-
-  Copyright 2010 Lennart Poettering
-***/
-
 #include <stdbool.h>
 #include <sys/types.h>
 #include <unistd.h>

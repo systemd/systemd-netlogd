@@ -1,9 +1,6 @@
 #ifndef IOPRIO_H
 #define IOPRIO_H
 
-/* This is minimal version of Linux' linux/ioprio.h header file, which
- * is licensed GPL2 */
-
 #include <sys/syscall.h>
 #include <unistd.h>
 

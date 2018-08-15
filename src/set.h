@@ -2,12 +2,6 @@
 
 #pragma once
 
-/***
-  This file is part of systemd.
-
-  Copyright 2010 Lennart Poettering
-***/
-
 #include "extract-word.h"
 #include "hashmap.h"
 #include "macro.h"

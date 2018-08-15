@@ -1,10 +1,5 @@
 #pragma once
 /* SPDX-License-Identifier: LGPL-2.1+ */
-/***
-  This file is part of systemd.
-
-  Copyright 2010-2012 Lennart Poettering
-***/
 
 #include <stdbool.h>
 #include <stddef.h>

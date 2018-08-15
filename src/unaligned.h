@@ -2,12 +2,6 @@
 
 #pragma once
 
-/***
-  This file is part of systemd.
-
-  Copyright 2014 Tom Gundersen
-***/
-
 #include <endian.h>
 #include <stdint.h>
 

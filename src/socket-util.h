@@ -2,12 +2,6 @@
 
 #pragma once
 
-/***
-  This file is part of systemd.
-
-  Copyright 2010 Lennart Poettering
-***/
-
 #include <netinet/ether.h>
 #include <netinet/in.h>
 #include <stdbool.h>

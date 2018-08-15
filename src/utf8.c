@@ -1,10 +1,4 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
-/***
-  This file is part of systemd.
-
-  Copyright 2008-2011 Kay Sievers
-  Copyright 2012 Lennart Poettering
-***/
 
 /* Parts of this file are based on the GLIB utf8 validation functions. The
  * original license text follows. */

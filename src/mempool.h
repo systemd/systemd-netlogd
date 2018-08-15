@@ -1,12 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
 
 #pragma once
-/***
-  This file is part of systemd.
-
-  Copyright 2011-2014 Lennart Poettering
-  Copyright 2014 Michal Schmidt
-***/
 
 #include <stddef.h>
 
