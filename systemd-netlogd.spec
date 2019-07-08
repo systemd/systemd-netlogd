@@ -53,5 +53,5 @@ popd
 %{_mandir}/man1/systemd-netlogd.1*
 
 %changelog
-* Mon May 21 2018 Susant Sahani <susant@redhat.com> - 1.1
+* Mon May 21 2018 Susant Sahani <ssahani@gmail.com> - 1.1
 - Initial spec
