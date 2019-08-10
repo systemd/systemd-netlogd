@@ -49,10 +49,3 @@ static inline int getrandom(void *buffer, size_t count, unsigned flags) {
 }
 #endif
 
-/* ======================================================================= */
-
-#if !HAVE_GETTID
-static inline pid_t gettid(void) {
-        return (pid_t) syscall(SYS_gettid);
-}
-#endif

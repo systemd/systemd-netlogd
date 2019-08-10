@@ -4,10 +4,10 @@ project('systemd-netlogd', 'c',
         default_options: [
                 'c_std=gnu99',
                 'prefix=/lib/systemd/',
-                'sysconfdir=/etc/systemd/system',
+                'sysconfdir=/etc/systemd',
                 'localstatedir=/var',
         ],
-        meson_version : '>= 0.40')
+        meson_version : '>= 0.51')
 
 conf = configuration_data()
 conf.set_quoted('PACKAGE_VERSION', meson.project_version())
@@ -132,7 +132,8 @@ config_h = configure_file(
 add_project_arguments('-include', 'config.h', language : 'c')
 
 subdir('src')
-includes = include_directories('src')
+includes = include_directories('src/share',
+                               'src/netlog')
 
 subdir('units')
 subdir('doc')
@@ -147,6 +148,13 @@ if not libcap.found()
         # Compat with Ubuntu 14.04 which ships libcap w/o .pc file
         libcap = cc.find_library('cap')
 endif
+
+systemd_netlogd_conf = configure_file(
+                     input : 'conf/systemd-netlogd.conf.in',
+                     output : 'systemd-netlogd.conf',
+                     configuration : substs)
+                     install_data(systemd_netlogd_conf,
+                     install_dir : get_option('sysconfdir'))
 
 systemd_netlogd = executable(
                   'systemd-netlogd',
