@@ -1,0 +1,17 @@
+os: linux
+dist: bionic
+language: c
+
+services:
+  - docker
+
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install python3.7 python3-pip python3-dev python3-setuptools build-essential python3-sphinx python-sphinx python-configparser
+  - sudo apt-get install -y ninja-build glib-2.0-dev libudev-dev libyaml-dev libsystemd-dev clang gperf libcap-dev
+  - sudo pip3 install -U meson pytest
+
+script:
+  - meson build
+  - ninja -C build
+  - sudo ninja -C build install

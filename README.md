@@ -1,6 +1,8 @@
 systemd-netlogd
 ===================
 
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/systemd/systemd-netlogd.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/systemd/systemd-netlogd/alerts/)
+
 Forwards messages from the journal to other hosts over the network using
 the Syslog Protocol (RFC 5424). It can be configured to send messages to
 both unicast and multicast addresses. systemd-netlogd runs with own user

@@ -13,6 +13,8 @@
 #include "formats-util.h"
 #include "macro.h"
 
+#define gettid() syscall(SYS_gettid)
+
 #define procfs_file_alloca(pid, field)                                  \
         ({                                                              \
                 pid_t _pid_ = (pid);                                    \
