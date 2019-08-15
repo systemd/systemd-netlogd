@@ -1,6 +1,9 @@
 extraction:
   cpp:
     prepare:
-      packages: 
+      packages:
         - python-sphinx
         - python3-sphinx
+    configure:
+      command: meson build
+      command: ninja -C build
