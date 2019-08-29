@@ -8,12 +8,21 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/syscall.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 #include "formats-util.h"
 #include "macro.h"
 
-#define gettid() syscall(SYS_gettid)
+
+#if !HAVE_GETTID
+static inline pid_t missing_gettid(void) {
+        return (pid_t) syscall(__NR_gettid);
+}
+
+#  define gettid missing_gettid
+#endif
 
 #define procfs_file_alloca(pid, field)                                  \
         ({                                                              \

@@ -84,7 +84,8 @@ conf.set('SIZEOF_TIME_T', cc.sizeof('time_t', prefix : '#include <sys/time.h>'))
 conf.set('SIZEOF_RLIM_T', cc.sizeof('rlim_t', prefix : '#include <sys/resource.h>'))
 
 foreach ident : [
-        ['gettid',            '''#include <sys/types.h>'''],
+        ['gettid',            '''#include <sys/types.h>
+                                 #include <unistd.h>'''],
 ]
         have = cc.has_function(ident[0], prefix : ident[1])
         conf.set10('HAVE_' + ident[0].to_upper(), have)

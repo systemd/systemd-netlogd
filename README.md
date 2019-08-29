@@ -1,6 +1,7 @@
 systemd-netlogd
 ===================
 
+[![Build Status](https://travis-ci.org/systemd/systemd-netlogd.svg?branch=master)](https://travis-ci.org/systemd/systemd-netlogd)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/systemd/systemd-netlogd.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/systemd/systemd-netlogd/alerts/)
 
 Forwards messages from the journal to other hosts over the network using
