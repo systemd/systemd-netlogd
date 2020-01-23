@@ -149,7 +149,11 @@ int manager_push_to_network(Manager *m,
 
         IOVEC_SET_STRING(iov[n++], " ");
 
-        /* Ninth: message */
+        /* Ninth: message (truncated to 1000 bytes to fit within MTU) */
+        if (strlen(message) >= 1000) {
+            ((char*)message)[1000] = 0;
+        }
+
         IOVEC_SET_STRING(iov[n++], message);
 
         return network_send(m, iov, n);
