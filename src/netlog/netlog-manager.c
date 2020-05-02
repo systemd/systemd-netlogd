@@ -107,6 +107,11 @@ static int manager_read_journal_input(Manager *m) {
                         return r;
         }
 
+        if (!message) {
+                log_warning_errno(r, "Failed to retrive 'MESSAGE=' from journal, ignoring: %m ");
+                return 0;
+        }
+
         r = sd_journal_get_realtime_usec(m->journal, &realtime);
         if (r < 0)
                 log_warning_errno(r, "Failed to rerieve realtime from journal: %m");
