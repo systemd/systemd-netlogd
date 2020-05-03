@@ -348,11 +348,11 @@ int manager_connect(Manager *m) {
 
         r = manager_open_network_socket(m);
         if (r < 0)
-                return r;
+                return log_error_errno(r, "Failed to open network socket: %m");
 
         r = manager_journal_monitor_listen(m);
         if (r < 0)
-                return r;
+                return log_error_errno(r, "Failed to moniter journal: %m");
 
         return 0;
 }
