@@ -4,6 +4,7 @@
 #include "in-addr-util.h"
 #include "netlog-conf.h"
 #include "conf-parser.h"
+#include "string-util.h"
 
 int config_parse_netlog_remote_address(const char *unit,
                                        const char *filename,
@@ -28,6 +29,36 @@ int config_parse_netlog_remote_address(const char *unit,
                 log_syntax(unit, LOG_ERR, filename, line, -r,
                            "Failed to parse address value, ignoring: %s", rvalue);
                 return 0;
+        }
+
+        return 0;
+}
+
+int config_parse_socket_type(const char *unit,
+                             const char *filename,
+                             unsigned line,
+                             const char *section,
+                             unsigned section_line,
+                             const char *lvalue,
+                             int ltype,
+                             const char *rvalue,
+                             void *data,
+                             void *userdata) {
+        Manager *m = userdata;
+
+        assert(filename);
+        assert(lvalue);
+        assert(rvalue);
+        assert(data);
+
+        if (strcaseeq(rvalue, "tcp"))
+                m->socket_type = SOCK_STREAM;
+        else if (strcaseeq(rvalue, "udp"))
+                m->socket_type = SOCK_DGRAM;
+        else {
+                log_syntax(unit, LOG_ERR, filename, line, EINVAL,
+                           "Unrecognised socket type '%s'; should be either 'tcp' or 'udp'", rvalue);
+                return -EINVAL;
         }
 
         return 0;

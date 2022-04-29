@@ -16,4 +16,5 @@ struct ConfigPerfItem;
 %includes
 %%
 Network.Address,  config_parse_netlog_remote_address, 0, 0
+Network.SocketType,  config_parse_socket_type, 0, offsetof(Manager, socket_type)
 Network.StructuredData,  config_parse_string, 0, offsetof(Manager, structured_data)

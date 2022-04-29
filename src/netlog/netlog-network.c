@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stddef.h>
 #include <poll.h>
+#include <netinet/tcp.h>
 
 #include "netlog-manager.h"
 #include "io-util.h"
@@ -97,7 +98,7 @@ int manager_push_to_network(Manager *m,
         char header_priority[sizeof("<   >1 ")];
         char header_time[FORMAT_TIMESTAMP_MAX];
         uint8_t makepri;
-        struct iovec iov[13];
+        struct iovec iov[14];
         int n = 0;
 
         assert(m);
@@ -152,6 +153,10 @@ int manager_push_to_network(Manager *m,
         /* Ninth: message */
         IOVEC_SET_STRING(iov[n++], message);
 
+        /* Tenth: Newline message separator, if not implicitly terminated by end of UDP frame */
+        if (m->socket_type == SOCK_DGRAM)
+                IOVEC_SET_STRING(iov[n++], "\n");
+
         return network_send(m, iov, n);
 }
 
@@ -170,7 +175,7 @@ int manager_open_network_socket(Manager *m) {
         if (!IN_SET(m->address.sockaddr.sa.sa_family, AF_INET, AF_INET6))
                 return -EAFNOSUPPORT;
 
-        m->socket = socket(m->address.sockaddr.sa.sa_family, SOCK_DGRAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0);
+        m->socket = socket(m->address.sockaddr.sa.sa_family, m->socket_type|SOCK_CLOEXEC, 0);
         if (m->socket < 0)
                 return -errno;
 
@@ -179,6 +184,45 @@ int manager_open_network_socket(Manager *m) {
                 r = -errno;
                 goto fail;
         }
+
+        if (SOCK_STREAM == m->socket_type) {
+                union sockaddr_union sa;
+                socklen_t salen;
+                switch (m->address.sockaddr.sa.sa_family) {
+                        case AF_INET:
+                                sa = (union sockaddr_union) {
+                                        .in.sin_family = m->address.sockaddr.sa.sa_family,
+                                        .in.sin_port = m->address.sockaddr.in.sin_port,
+                                        .in.sin_addr = m->address.sockaddr.in.sin_addr,
+                                };
+                                salen = sizeof(sa.in);
+                                break;
+                        case AF_INET6:
+                                sa = (union sockaddr_union) {
+                                        .in6.sin6_family = m->address.sockaddr.sa.sa_family,
+                                        .in6.sin6_port = m->address.sockaddr.in6.sin6_port,
+                                        .in6.sin6_addr = m->address.sockaddr.in6.sin6_addr,
+                                };
+                                salen = sizeof(sa.in6);
+                                break;
+                        default:
+                                r = -EAFNOSUPPORT;
+                                goto fail;
+                }
+                r = connect(m->socket, &m->address.sockaddr.sa, salen);
+                if (r < 0) {
+                        r = -errno;
+                        goto fail;
+                }
+
+                r = setsockopt(m->socket, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
+                if (r < 0)
+                        return r;
+        }
+
+        r = fd_status_flag(m->socket, O_NONBLOCK, 1);
+        if (r < 0)
+                goto fail;
 
         return m->socket;
 

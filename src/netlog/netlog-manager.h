@@ -33,6 +33,7 @@ struct Manager {
 
         char *last_cursor, *current_cursor;
         char *structured_data;
+        int socket_type;
 };
 
 int manager_new(Manager **ret, const char *state_file, const char *cursor);

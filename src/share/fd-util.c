@@ -121,6 +121,29 @@ int fd_cloexec(int fd, bool cloexec) {
         return 0;
 }
 
+int fd_status_flag(int fd, int flag, bool new_value) {
+        int flags, nflags;
+
+        assert(fd >= 0);
+
+        flags = fcntl(fd, F_GETFL, 0);
+        if (flags < 0)
+                return -errno;
+
+        if (new_value)
+                nflags = flags | flag;
+        else
+                nflags = flags & ~flag;
+
+        if (nflags == flags)
+                return 0;
+
+        if (fcntl(fd, F_SETFL, nflags) < 0)
+                return -errno;
+
+        return 0;
+}
+
 void stdio_unset_cloexec(void) {
         fd_cloexec(STDIN_FILENO, false);
         fd_cloexec(STDOUT_FILENO, false);
