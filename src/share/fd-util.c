@@ -121,7 +121,7 @@ int fd_cloexec(int fd, bool cloexec) {
         return 0;
 }
 
-int fd_status_flag(int fd, int flag, bool new_value) {
+int fd_nonblock(int fd, bool nonblock) {
         int flags, nflags;
 
         assert(fd >= 0);
@@ -130,18 +130,11 @@ int fd_status_flag(int fd, int flag, bool new_value) {
         if (flags < 0)
                 return -errno;
 
-        if (new_value)
-                nflags = flags | flag;
-        else
-                nflags = flags & ~flag;
-
+        nflags = UPDATE_FLAG(flags, O_NONBLOCK, nonblock);
         if (nflags == flags)
                 return 0;
 
-        if (fcntl(fd, F_SETFL, nflags) < 0)
-                return -errno;
-
-        return 0;
+        return RET_NERRNO(fcntl(fd, F_SETFL, nflags));
 }
 
 void stdio_unset_cloexec(void) {

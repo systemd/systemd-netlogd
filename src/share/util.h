@@ -103,6 +103,29 @@ static inline int negative_errno(void) {
         return -errno;
 }
 
+static inline int RET_NERRNO(int ret) {
+
+        /* Helper to wrap system calls in to make them return negative errno errors. This brings system call
+         * error handling in sync with how we usually handle errors in our own code, i.e. with immediate
+         * returning of negative errno. Usage is like this:
+         *
+         *     …
+         *     r = RET_NERRNO(unlink(t));
+         *     …
+         *
+         * or
+         *
+         *     …
+         *     fd = RET_NERRNO(open("/etc/fstab", O_RDONLY|O_CLOEXEC));
+         *     …
+         */
+
+        if (ret < 0)
+                return negative_errno();
+
+        return ret;
+}
+
 static inline unsigned u64log2(uint64_t n) {
 #if __SIZEOF_LONG_LONG__ == 8
         return (n > 1) ? (unsigned) __builtin_clzll(n) ^ 63U : 0;

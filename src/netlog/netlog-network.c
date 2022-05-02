@@ -220,7 +220,7 @@ int manager_open_network_socket(Manager *m) {
                         return r;
         }
 
-        r = fd_status_flag(m->socket, O_NONBLOCK, 1);
+        r = fd_nonblock(m->socket, 1);
         if (r < 0)
                 goto fail;
 
