@@ -34,7 +34,7 @@ int config_parse_netlog_remote_address(const char *unit,
         return 0;
 }
 
-int config_parse_socket_type(const char *unit,
+int config_parse_protocol(const char *unit,
                              const char *filename,
                              unsigned line,
                              const char *section,
@@ -52,12 +52,12 @@ int config_parse_socket_type(const char *unit,
         assert(data);
 
         if (strcaseeq(rvalue, "tcp"))
-                m->socket_type = SOCK_STREAM;
+                m->protocol = SOCK_STREAM;
         else if (strcaseeq(rvalue, "udp"))
-                m->socket_type = SOCK_DGRAM;
+                m->protocol = SOCK_DGRAM;
         else {
                 log_syntax(unit, LOG_ERR, filename, line, EINVAL,
-                           "Unrecognised socket type '%s'; should be either 'tcp' or 'udp'", rvalue);
+                           "Unrecognised protocol '%s'; should be either 'tcp' or 'udp'", rvalue);
                 return -EINVAL;
         }
 

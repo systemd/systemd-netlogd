@@ -154,7 +154,7 @@ int manager_push_to_network(Manager *m,
         IOVEC_SET_STRING(iov[n++], message);
 
         /* Tenth: Newline message separator, if not implicitly terminated by end of UDP frame */
-        if (m->socket_type == SOCK_DGRAM)
+        if (m->protocol == SOCK_DGRAM)
                 IOVEC_SET_STRING(iov[n++], "\n");
 
         return network_send(m, iov, n);
@@ -175,7 +175,7 @@ int manager_open_network_socket(Manager *m) {
         if (!IN_SET(m->address.sockaddr.sa.sa_family, AF_INET, AF_INET6))
                 return -EAFNOSUPPORT;
 
-        m->socket = socket(m->address.sockaddr.sa.sa_family, m->socket_type|SOCK_CLOEXEC, 0);
+        m->socket = socket(m->address.sockaddr.sa.sa_family, m->protocol|SOCK_CLOEXEC, 0);
         if (m->socket < 0)
                 return -errno;
 
@@ -185,7 +185,7 @@ int manager_open_network_socket(Manager *m) {
                 goto fail;
         }
 
-        if (SOCK_STREAM == m->socket_type) {
+        if (SOCK_STREAM == m->protocol) {
                 union sockaddr_union sa;
                 socklen_t salen;
                 switch (m->address.sockaddr.sa.sa_family) {
