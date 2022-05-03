@@ -168,6 +168,21 @@ int manager_push_to_network(Manager *m,
 void manager_close_network_socket(Manager *m) {
         assert(m);
 
+        switch (m->protocol) {
+                case SYSLOG_TRANSMISSION_PROTOCOL_UDP:
+                        /* shutdown not required */
+                        break;
+                case SYSLOG_TRANSMISSION_PROTOCOL_TCP:
+                        {
+                                int r = shutdown(m->socket, SHUT_RDWR);
+                                if (r < 0)
+                                        log_error_errno(r, "Failed to shutdown netlog socket: %m");
+                        }
+                        break;
+                default:
+                        break;
+        }
+
         m->socket = safe_close(m->socket);
 }
 
