@@ -12,6 +12,7 @@
 #include "fd-util.h"
 #include "fileio.h"
 #include "string-util.h"
+#include "string-table.h"
 #include "parse-util.h"
 #include "netlog-manager.h"
 
@@ -25,6 +26,13 @@
 
 #define JOURNAL_FOREACH_DATA_RETVAL(j, data, l, retval)                     \
         for (sd_journal_restart_data(j); ((retval) = sd_journal_enumerate_data((j), &(data), &(l))) > 0; )
+
+static const char *const protocol_table[_SYSLOG_TRANSMISSION_PROTOCOL_MAX] = {
+        [SYSLOG_TRANSMISSION_PROTOCOL_UDP] = "udp",
+        [SYSLOG_TRANSMISSION_PROTOCOL_TCP] = "tcp",
+};
+
+DEFINE_STRING_TABLE_LOOKUP(protocol, int);
 
 static int parse_field(const void *data, size_t length, const char *field, char **target) {
         size_t fl, nl;
