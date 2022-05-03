@@ -45,22 +45,21 @@ int config_parse_protocol(const char *unit,
                              void *data,
                              void *userdata) {
         Manager *m = userdata;
+        int r;
 
         assert(filename);
         assert(lvalue);
         assert(rvalue);
         assert(data);
 
-        if (strcaseeq(rvalue, "tcp"))
-                m->protocol = SOCK_STREAM;
-        else if (strcaseeq(rvalue, "udp"))
-                m->protocol = SOCK_DGRAM;
-        else {
-                log_syntax(unit, LOG_ERR, filename, line, EINVAL,
-                           "Unrecognised protocol '%s'; should be either 'tcp' or 'udp'", rvalue);
-                return -EINVAL;
+        r = protocol_from_string(rvalue);
+        if (r < 0) {
+                log_syntax(unit, LOG_ERR, filename, line, -r,
+                           "Unrecognised Protocol '%s'", rvalue);
+                return -EPROTONOSUPPORT;
         }
 
+        m->protocol = r;
         return 0;
 }
 

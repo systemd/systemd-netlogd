@@ -188,7 +188,7 @@ int manager_open_network_socket(Manager *m) {
                         m->socket = socket(m->address.sockaddr.sa.sa_family, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0);
                         break;
                 default:
-                        return -EINVAL;
+                        return -EPROTONOSUPPORT;
         }
         if (m->socket < 0)
                 return -errno;
