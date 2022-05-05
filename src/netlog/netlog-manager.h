@@ -7,6 +7,13 @@
 #include "sd-network.h"
 #include "socket-util.h"
 
+typedef enum SysLogTransmissionProtocol {
+        SYSLOG_TRANSMISSION_PROTOCOL_UDP      = 1 << 0,
+        SYSLOG_TRANSMISSION_PROTOCOL_TCP      = 1 << 1,
+        _SYSLOG_TRANSMISSION_PROTOCOL_MAX,
+        _SYSLOG_TRANSMISSION_PROTOCOL_INVALID = -EINVAL,
+} SysLogTransmissionProtocol;
+
 typedef struct Manager Manager;
 
 struct Manager {
@@ -33,6 +40,7 @@ struct Manager {
 
         char *last_cursor, *current_cursor;
         char *structured_data;
+        SysLogTransmissionProtocol protocol;
 };
 
 int manager_new(Manager **ret, const char *state_file, const char *cursor);
@@ -50,3 +58,6 @@ int manager_push_to_network(Manager *m, int severity, int facility,
                             const char *identifier, const char *message,
                             const char *hostname, const char *pid,
                             const struct timeval *tv);
+
+const char *protocol_to_string(int v) _const_;
+int protocol_from_string(const char *s) _pure_;

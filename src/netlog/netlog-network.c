@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stddef.h>
 #include <poll.h>
+#include <netinet/tcp.h>
 
 #include "netlog-manager.h"
 #include "io-util.h"
@@ -97,7 +98,7 @@ int manager_push_to_network(Manager *m,
         char header_priority[sizeof("<   >1 ")];
         char header_time[FORMAT_TIMESTAMP_MAX];
         uint8_t makepri;
-        struct iovec iov[13];
+        struct iovec iov[14];
         int n = 0;
 
         assert(m);
@@ -152,11 +153,35 @@ int manager_push_to_network(Manager *m,
         /* Ninth: message */
         IOVEC_SET_STRING(iov[n++], message);
 
+        /* Tenth: Optional newline message separator, if not implicitly terminated by end of UDP frame */
+        if (SYSLOG_TRANSMISSION_PROTOCOL_TCP == m->protocol)
+                /* De facto standard: separate messages by a newline */
+                IOVEC_SET_STRING(iov[n++], "\n");
+        else if (SYSLOG_TRANSMISSION_PROTOCOL_UDP == m->protocol) {
+                /* Message is implicitly terminated by end of UDP packet */
+        } else
+                return -EPROTONOSUPPORT;
+
         return network_send(m, iov, n);
 }
 
 void manager_close_network_socket(Manager *m) {
         assert(m);
+
+        switch (m->protocol) {
+                case SYSLOG_TRANSMISSION_PROTOCOL_UDP:
+                        /* shutdown not required */
+                        break;
+                case SYSLOG_TRANSMISSION_PROTOCOL_TCP:
+                        {
+                                int r = shutdown(m->socket, SHUT_RDWR);
+                                if (r < 0)
+                                        log_error_errno(r, "Failed to shutdown netlog socket: %m");
+                        }
+                        break;
+                default:
+                        break;
+        }
 
         m->socket = safe_close(m->socket);
 }
@@ -170,7 +195,16 @@ int manager_open_network_socket(Manager *m) {
         if (!IN_SET(m->address.sockaddr.sa.sa_family, AF_INET, AF_INET6))
                 return -EAFNOSUPPORT;
 
-        m->socket = socket(m->address.sockaddr.sa.sa_family, SOCK_DGRAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0);
+        switch (m->protocol) {
+                case SYSLOG_TRANSMISSION_PROTOCOL_UDP:
+                        m->socket = socket(m->address.sockaddr.sa.sa_family, SOCK_DGRAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0);
+                        break;
+                case SYSLOG_TRANSMISSION_PROTOCOL_TCP:
+                        m->socket = socket(m->address.sockaddr.sa.sa_family, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0);
+                        break;
+                default:
+                        return -EPROTONOSUPPORT;
+        }
         if (m->socket < 0)
                 return -errno;
 
@@ -179,6 +213,45 @@ int manager_open_network_socket(Manager *m) {
                 r = -errno;
                 goto fail;
         }
+
+        if (SYSLOG_TRANSMISSION_PROTOCOL_TCP == m->protocol) {
+                union sockaddr_union sa;
+                socklen_t salen;
+                switch (m->address.sockaddr.sa.sa_family) {
+                        case AF_INET:
+                                sa = (union sockaddr_union) {
+                                        .in.sin_family = m->address.sockaddr.sa.sa_family,
+                                        .in.sin_port = m->address.sockaddr.in.sin_port,
+                                        .in.sin_addr = m->address.sockaddr.in.sin_addr,
+                                };
+                                salen = sizeof(sa.in);
+                                break;
+                        case AF_INET6:
+                                sa = (union sockaddr_union) {
+                                        .in6.sin6_family = m->address.sockaddr.sa.sa_family,
+                                        .in6.sin6_port = m->address.sockaddr.in6.sin6_port,
+                                        .in6.sin6_addr = m->address.sockaddr.in6.sin6_addr,
+                                };
+                                salen = sizeof(sa.in6);
+                                break;
+                        default:
+                                r = -EAFNOSUPPORT;
+                                goto fail;
+                }
+                r = connect(m->socket, &m->address.sockaddr.sa, salen);
+                if (r < 0) {
+                        r = -errno;
+                        goto fail;
+                }
+
+                r = setsockopt(m->socket, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
+                if (r < 0)
+                        return r;
+        }
+
+        r = fd_nonblock(m->socket, 1);
+        if (r < 0)
+                goto fail;
 
         return m->socket;
 

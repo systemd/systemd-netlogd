@@ -4,6 +4,7 @@
 #include "in-addr-util.h"
 #include "netlog-conf.h"
 #include "conf-parser.h"
+#include "string-util.h"
 
 int config_parse_netlog_remote_address(const char *unit,
                                        const char *filename,
@@ -30,6 +31,35 @@ int config_parse_netlog_remote_address(const char *unit,
                 return 0;
         }
 
+        return 0;
+}
+
+int config_parse_protocol(const char *unit,
+                             const char *filename,
+                             unsigned line,
+                             const char *section,
+                             unsigned section_line,
+                             const char *lvalue,
+                             int ltype,
+                             const char *rvalue,
+                             void *data,
+                             void *userdata) {
+        Manager *m = userdata;
+        int r;
+
+        assert(filename);
+        assert(lvalue);
+        assert(rvalue);
+        assert(data);
+
+        r = protocol_from_string(rvalue);
+        if (r < 0) {
+                log_syntax(unit, LOG_ERR, filename, line, -r,
+                           "Unrecognised Protocol '%s'", rvalue);
+                return -EPROTONOSUPPORT;
+        }
+
+        m->protocol = r;
         return 0;
 }
 

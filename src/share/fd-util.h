@@ -38,6 +38,7 @@ DEFINE_TRIVIAL_CLEANUP_FUNC(DIR*, closedir);
 #define _cleanup_close_pair_ _cleanup_(close_pairp)
 
 int fd_cloexec(int fd, bool cloexec);
+int fd_nonblock(int fd, bool nonblock);
 void stdio_unset_cloexec(void);
 
 
