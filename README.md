@@ -47,6 +47,9 @@ systemd-networkd reads configuration files named `/etc/systemd/systemd-netlogd.c
            to a unicast UDP address or multicast UDP network group in syslog RFC 5424 format.
 
            The the address string format is similar to socket units. See systemd.socket(1)
+           
+       Protocol=
+            Specifies whether to use udp or tcp protocol. Defaults to udp.
 
        Optional settings
 
@@ -60,14 +63,16 @@ systemd-networkd reads configuration files named `/etc/systemd/systemd-netlogd.c
 
     [Network]
     Address=239.0.0.1:6000
-
+    #Protocol=udp
 Example 2. /etc/systemd/systemd-netlogd.conf
 
     [Network]
     Address=192.168.8.101:514
+    #Protocol=udp
 
 Example 3. /etc/systemd/systemd-netlogd.conf
 
     [Network]
     Address=192.168.8.101:514
+    #Protocol=udp
     StructuredData=[1ab456b6-90bb-6578-abcd-5b734584aaaa@41058]
