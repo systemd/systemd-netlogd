@@ -153,14 +153,11 @@ int manager_push_to_network(Manager *m,
         /* Ninth: message */
         IOVEC_SET_STRING(iov[n++], message);
 
-        /* Tenth: Optional newline message separator, if not implicitly terminated by end of UDP frame */
-        if (SYSLOG_TRANSMISSION_PROTOCOL_TCP == m->protocol)
-                /* De facto standard: separate messages by a newline */
+        /* Tenth: Optional newline message separator, if not implicitly terminated by end of UDP frame
+         * De facto standard: separate messages by a newline
+         */
+        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP)
                 IOVEC_SET_STRING(iov[n++], "\n");
-        else if (SYSLOG_TRANSMISSION_PROTOCOL_UDP == m->protocol) {
-                /* Message is implicitly terminated by end of UDP packet */
-        } else
-                return -EPROTONOSUPPORT;
 
         return network_send(m, iov, n);
 }
@@ -168,19 +165,10 @@ int manager_push_to_network(Manager *m,
 void manager_close_network_socket(Manager *m) {
         assert(m);
 
-        switch (m->protocol) {
-                case SYSLOG_TRANSMISSION_PROTOCOL_UDP:
-                        /* shutdown not required */
-                        break;
-                case SYSLOG_TRANSMISSION_PROTOCOL_TCP:
-                        {
-                                int r = shutdown(m->socket, SHUT_RDWR);
-                                if (r < 0)
-                                        log_error_errno(r, "Failed to shutdown netlog socket: %m");
-                        }
-                        break;
-                default:
-                        break;
+        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP) {
+                int r = shutdown(m->socket, SHUT_RDWR);
+                if (r < 0)
+                        log_error_errno(r, "Failed to shutdown netlog socket: %m");
         }
 
         m->socket = safe_close(m->socket);
@@ -208,10 +196,12 @@ int manager_open_network_socket(Manager *m) {
         if (m->socket < 0)
                 return -errno;
 
-        r = setsockopt(m->socket, IPPROTO_IP, IP_MULTICAST_LOOP, &one, sizeof(one));
-        if (r < 0) {
-                r = -errno;
-                goto fail;
+        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_UDP) {
+                r = setsockopt(m->socket, IPPROTO_IP, IP_MULTICAST_LOOP, &one, sizeof(one));
+                if (r < 0) {
+                        r = -errno;
+                        goto fail;
+                }
         }
 
         if (SYSLOG_TRANSMISSION_PROTOCOL_TCP == m->protocol) {
@@ -239,7 +229,7 @@ int manager_open_network_socket(Manager *m) {
                                 goto fail;
                 }
                 r = connect(m->socket, &m->address.sockaddr.sa, salen);
-                if (r < 0) {
+                if (r < 0 && errno != EINPROGRESS) {
                         r = -errno;
                         goto fail;
                 }
@@ -257,6 +247,5 @@ int manager_open_network_socket(Manager *m) {
 
  fail:
         m->socket = safe_close(m->socket);
-
         return r;
 }
