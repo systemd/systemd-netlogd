@@ -399,4 +399,15 @@ static inline unsigned long ALIGN_POWER2(unsigned long u) {
         }                                                       \
         struct __useless_struct_to_allow_trailing_semicolon__
 
+/* Takes inspiration from Rust's Option::take() method: reads and returns a pointer, but at the same time
+ * resets it to NULL. See: https://doc.rust-lang.org/std/option/enum.Option.html#method.take */
+#define TAKE_PTR(ptr)                           \
+        ({                                      \
+                typeof(ptr) *_pptr_ = &(ptr);   \
+                typeof(ptr) _ptr_ = *_pptr_;    \
+                *_pptr_ = NULL;                 \
+                _ptr_;                          \
+        })
+
+
 #include "log.h"

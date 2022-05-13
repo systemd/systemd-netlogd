@@ -484,8 +484,6 @@ int manager_new(Manager **ret, const char *state_file, const char *cursor) {
         if (r < 0)
                 return r;
 
-        *ret = m;
-        m = NULL;
-
+        *ret = TAKE_PTR(m);
         return 0;
 }
