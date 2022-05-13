@@ -239,7 +239,7 @@ int manager_open_network_socket(Manager *m) {
                         return r;
         }
 
-        r = fd_nonblock(m->socket, 1);
+        r = fd_nonblock(m->socket, true);
         if (r < 0)
                 goto fail;
 
