@@ -207,6 +207,7 @@ int manager_open_network_socket(Manager *m) {
         if (SYSLOG_TRANSMISSION_PROTOCOL_TCP == m->protocol) {
                 union sockaddr_union sa;
                 socklen_t salen;
+
                 switch (m->address.sockaddr.sa.sa_family) {
                         case AF_INET:
                                 sa = (union sockaddr_union) {
@@ -228,6 +229,7 @@ int manager_open_network_socket(Manager *m) {
                                 r = -EAFNOSUPPORT;
                                 goto fail;
                 }
+
                 r = connect(m->socket, &m->address.sockaddr.sa, salen);
                 if (r < 0 && errno != EINPROGRESS) {
                         r = -errno;
