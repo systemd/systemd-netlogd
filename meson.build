@@ -16,6 +16,7 @@ conf.set_quoted('PACKAGE_STRING',  meson.project_name() + ' ' + meson.project_ve
 substs = configuration_data()
 substs.set('PACKAGE_URL',          'https://github.com/systemd/systemd-netlogd')
 substs.set('PACKAGE_VERSION',      meson.project_version())
+substs.set('PKGPREFIX',   get_option('prefix'))
 conf.set_quoted('PKGSYSCONFDIR',   get_option('sysconfdir'))
 
 #####################################################################
@@ -166,4 +167,4 @@ systemd_netlogd = executable(
                    libcap,
                    libsystemd],
                    install : true,
-                   install_dir : '/lib/systemd')
+                   install_dir : get_option('prefix'))

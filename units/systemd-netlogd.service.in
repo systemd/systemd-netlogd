@@ -7,7 +7,7 @@ Documentation=man:systemd-netlogd.conf(5)
 After=network.target
 
 [Service]
-ExecStart=/lib/systemd/systemd-netlogd
+ExecStart=@PKGPREFIX@/systemd-netlogd
 PrivateTmp=yes
 PrivateDevices=yes
 WatchdogSec=20min
