@@ -35,7 +35,7 @@ Build and install:
 Configuration
 -------------
 
-systemd-networkd reads configuration files named `/etc/systemd/systemd-netlogd.conf` and `/etc/systemd/systemd-netlogd.conf.d/*.conf`.
+systemd-netlogd reads configuration files named `/etc/systemd/systemd-netlogd.conf` and `/etc/systemd/systemd-netlogd.conf.d/*.conf`.
 
 **[NETWORK]** SECTION OPTIONS
 
