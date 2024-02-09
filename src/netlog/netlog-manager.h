@@ -57,6 +57,7 @@ int manager_open_network_socket(Manager *m);
 int manager_push_to_network(Manager *m, int severity, int facility,
                             const char *identifier, const char *message,
                             const char *hostname, const char *pid,
+                            const char *structured_data, const char *msgid,
                             const struct timeval *tv);
 
 const char *protocol_to_string(int v) _const_;

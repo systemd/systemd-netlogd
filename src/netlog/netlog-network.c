@@ -94,6 +94,8 @@ int manager_push_to_network(Manager *m,
                             const char *message,
                             const char *hostname,
                             const char *pid,
+                            const char *structured_data,
+                            const char *msgid,
                             const struct timeval *tv) {
         char header_priority[sizeof("<   >1 ")];
         char header_time[FORMAT_TIMESTAMP_MAX];
@@ -139,13 +141,19 @@ int manager_push_to_network(Manager *m,
         IOVEC_SET_STRING(iov[n++], " ");
 
         /* Seventh: msgid */
-        IOVEC_SET_STRING(iov[n++], RFC_5424_NILVALUE);
+        if (msgid)
+                IOVEC_SET_STRING(iov[n++], msgid);
+        else
+                IOVEC_SET_STRING(iov[n++], RFC_5424_NILVALUE);
+
         IOVEC_SET_STRING(iov[n++], " ");
 
         /* Eighth: [structured-data] */
         if (m->structured_data)
                 IOVEC_SET_STRING(iov[n++], m->structured_data);
-        else
+        if (structured_data)
+                IOVEC_SET_STRING(iov[n++], structured_data);
+        if (!(m->structured_data || structured_data))
                 IOVEC_SET_STRING(iov[n++], RFC_5424_NILVALUE);
 
         IOVEC_SET_STRING(iov[n++], " ");
