@@ -66,7 +66,8 @@ static int parse_field(const void *data, size_t length, const char *field, char 
 static int manager_read_journal_input(Manager *m) {
         _cleanup_free_ char *facility = NULL, *identifier = NULL,
                 *priority = NULL, *message = NULL, *pid = NULL,
-                *hostname = NULL;
+                *hostname = NULL, *structured_data = NULL,
+                *msgid = NULL;
         unsigned sev = JOURNAL_DEFAULT_SEVERITY;
         unsigned fac = JOURNAL_DEFAULT_FACILITY;
         struct timeval tv;
@@ -113,6 +114,18 @@ static int manager_read_journal_input(Manager *m) {
                 r = parse_field(data, length, "MESSAGE=", &message);
                 if (r < 0)
                         return r;
+                else if (r > 0)
+                        continue;
+
+                r = parse_field(data, length, "SYSLOG_STRUCTURED_DATA=", &structured_data);
+                if (r < 0)
+                        return r;
+                else if (r > 0)
+                        continue;
+
+                r = parse_field(data, length, "SYSLOG_MSGID=", &msgid);
+                if (r < 0)
+                        return r;
         }
 
         r = sd_journal_get_realtime_usec(m->journal, &realtime);
@@ -142,7 +155,9 @@ static int manager_read_journal_input(Manager *m) {
         }
 
         return manager_push_to_network(m, sev, fac, identifier,
-                                       message, hostname, pid, r >= 0 ? &tv : NULL);
+                                       message, hostname, pid,
+                                       structured_data, msgid,
+                                       r >= 0 ? &tv : NULL);
 }
 
 static int update_cursor_state(Manager *m) {
