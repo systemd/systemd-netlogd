@@ -3,7 +3,7 @@ all: build
 .PHONY: all
 
 build:
-	meson build
+	meson setup build
 
 clean:
 	rm -rf build/
