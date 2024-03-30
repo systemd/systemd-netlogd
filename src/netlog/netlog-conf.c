@@ -95,8 +95,8 @@ int config_parse_log_format(const char *unit,
 int manager_parse_config_file(Manager *m) {
         assert(m);
 
-        return config_parse_many(PKGSYSCONFDIR "/systemd-netlogd.conf",
-                                 CONF_PATHS_NULSTR("systemd/systemd-netlogd.conf.d"),
+        return config_parse_many(PKGSYSCONFDIR "/netlogd.conf",
+                                 CONF_PATHS_NULSTR("systemd/netlogd.conf.d"),
                                  "Network\0",
                                  config_item_perf_lookup, netlog_gperf_lookup,
                                  false, m);

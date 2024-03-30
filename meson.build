@@ -1,5 +1,5 @@
 project('systemd-netlogd', 'c',
-        version : '1',
+        version : '1.3',
         license : 'LGPLv2+',
         default_options: [
                 'c_std=gnu99',
@@ -152,8 +152,8 @@ if not libcap.found()
 endif
 
 systemd_netlogd_conf = configure_file(
-                     input : 'conf/systemd-netlogd.conf.in',
-                     output : 'systemd-netlogd.conf',
+                     input : 'conf/netlogd.conf.in',
+                     output : 'netlogd.conf',
                      configuration : substs)
                      install_data(systemd_netlogd_conf,
                      install_dir : get_option('sysconfdir'))
