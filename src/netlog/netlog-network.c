@@ -94,7 +94,9 @@ static int format_rfc5424(Manager *m,
                           const char *message,
                           const char *hostname,
                           const char *pid,
-                          const struct timeval *tv) {
+                          const struct timeval *tv,
+                          const char *syslog_structured_data,
+                          const char *syslog_msgid) {
 
         char header_time[FORMAT_TIMESTAMP_MAX];
         char header_priority[sizeof("<   >1 ")];
@@ -140,12 +142,18 @@ static int format_rfc5424(Manager *m,
         IOVEC_SET_STRING(iov[n++], " ");
 
         /* Seventh: msgid */
-        IOVEC_SET_STRING(iov[n++], RFC_5424_NILVALUE);
+        if (syslog_msgid)
+                IOVEC_SET_STRING(iov[n++], syslog_msgid);
+        else
+                IOVEC_SET_STRING(iov[n++], RFC_5424_NILVALUE);
+
         IOVEC_SET_STRING(iov[n++], " ");
 
         /* Eighth: [structured-data] */
         if (m->structured_data)
                 IOVEC_SET_STRING(iov[n++], m->structured_data);
+        else if (syslog_structured_data)
+                IOVEC_SET_STRING(iov[n++], syslog_structured_data);
         else
                 IOVEC_SET_STRING(iov[n++], RFC_5424_NILVALUE);
 
@@ -238,7 +246,9 @@ int manager_push_to_network(Manager *m,
                             const char *message,
                             const char *hostname,
                             const char *pid,
-                            const struct timeval *tv) {
+                            const struct timeval *tv,
+                            const char *syslog_structured_data,
+                            const char *syslog_msgid) {
 
        int r;
 
@@ -248,7 +258,7 @@ int manager_push_to_network(Manager *m,
                return 0;
 
        if (m->log_format == SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424)
-               r = format_rfc5424(m, severity, facility, identifier, message, hostname, pid, tv);
+               r = format_rfc5424(m, severity, facility, identifier, message, hostname, pid, tv, syslog_structured_data, syslog_msgid);
        else
                r = format_rfc3339(m, severity, facility, identifier, message, hostname, pid, tv);
 
