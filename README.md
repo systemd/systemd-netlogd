@@ -47,11 +47,11 @@ systemd-netlogd reads configuration files named `/etc/systemd/netlogd.conf` and 
            to a unicast UDP address or multicast UDP network group in syslog RFC 5424 format.
 
            The the address string format is similar to socket units. See systemd.socket(1)
-           
+
        Protocol=
             Specifies whether to use udp or tcp protocol. Defaults to udp.
-       
-        LogFormat=
+
+       LogFormat=
               Specifies whether to use RFC 5424 format or RFC 3339 format. Takes one of rfc5424 or rfc3339. Defaults to rfc5424.
        Optional settings
 
@@ -59,25 +59,69 @@ systemd-netlogd reads configuration files named `/etc/systemd/netlogd.conf` and 
            Meta information about the syslog message, which can be used for Cloud Based
            syslog servers, such as Loggly
 
+       UseSysLogStructuredData=
+          A boolean. Specifies whether to extract ```SYSLOG_STRUCTURED_DATA=``` from journal. Defaults to false.
+
+       UseSysLogMsgId=
+          A boolean. Specifies whether to extract ```SYSLOG_MSGID=``` from journal. Defaults to false.
+
+
 **EXAMPLE**
 
  Example 1. /etc/systemd/netlogd.conf
 
+``` sh
     [Network]
     Address=239.0.0.1:6000
     #Protocol=udp
     #LogFormat=rfc5424
+
+```
+
 Example 2. /etc/systemd/netlogd.conf
 
+``` sh
     [Network]
     Address=192.168.8.101:514
     #Protocol=udp
     LogFormat=rfc3339
 
+```
+
 Example 3. /etc/systemd/netlogd.conf
+
+``` sh
 
     [Network]
     Address=192.168.8.101:514
     #Protocol=udp
     LogFormat=rfc5424
     StructuredData=[1ab456b6-90bb-6578-abcd-5b734584aaaa@41058]
+
+```
+
+Example 4. /etc/systemd/netlogd.conf
+
+``` sh
+
+    [Network]
+    Address=192.168.8.101:514
+    #Protocol=udp
+    LogFormat=rfc5424
+    UseSysLogStructuredData=yes
+    UseSysLogMsgId=yes
+
+```
+
+Use case of ```UseSysLogStructuredData=``` and ```UseSysLogMsgId=```
+
+```
+  sd_journal_send(
+    "MESSAGE=%s", "Message to process",
+    "PRIORITY=%s", "4",
+    "SYSLOG_FACILITY=%s", "1",
+    "SYSLOG_MSGID=%s", "1011",
+    "SYSLOG_STRUCTURED_DATA=%s", R"([exampleSDID@32473 iut="3" eventSource="Application"])",
+    NULL
+  );
+```

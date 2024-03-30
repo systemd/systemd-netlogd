@@ -479,3 +479,35 @@ int config_parse_string(
 
         return 0;
 }
+
+int config_parse_bool(
+                const char* unit,
+                const char *filename,
+                unsigned line,
+                const char *section,
+                unsigned section_line,
+                const char *lvalue,
+                int ltype,
+                const char *rvalue,
+                void *data,
+                void *userdata) {
+
+        bool fatal = ltype;
+        bool *b = data;
+        int k;
+
+        assert(filename);
+        assert(lvalue);
+        assert(rvalue);
+
+        k = parse_boolean(rvalue);
+        if (k < 0) {
+                log_syntax(unit, fatal ? LOG_ERR : LOG_WARNING, filename, line, k,
+                           "Failed to parse boolean value%s: %s",
+                           fatal ? "" : ", ignoring", rvalue);
+                return fatal ? -ENOEXEC : 0;
+        }
+
+        *b = k;
+        return 0;
+}

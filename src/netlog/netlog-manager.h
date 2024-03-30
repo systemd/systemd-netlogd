@@ -44,11 +44,14 @@ struct Manager {
         sd_journal *journal;
 
         char *state_file;
-
         char *last_cursor, *current_cursor;
         char *structured_data;
+
         SysLogTransmissionProtocol protocol;
         SysLogTransmissionLogFormat log_format;
+
+        bool syslog_structured_data;
+        bool syslog_msgid;
 };
 
 int manager_new(const char *state_file, const char *cursor, Manager **ret);
@@ -62,10 +65,16 @@ void manager_disconnect(Manager *m);
 void manager_close_network_socket(Manager *m);
 int manager_open_network_socket(Manager *m);
 
-int manager_push_to_network(Manager *m, int severity, int facility,
-                            const char *identifier, const char *message,
-                            const char *hostname, const char *pid,
-                            const struct timeval *tv);
+int manager_push_to_network(Manager *m,
+                            int severity,
+                            int facility,
+                            const char *identifier,
+                            const char *message,
+                            const char *hostname,
+                            const char *pid,
+                            const struct timeval *tv,
+                            const char *syslog_structured_data,
+                            const char *syslog_msgid);
 
 const char *protocol_to_string(int v) _const_;
 int protocol_from_string(const char *s) _pure_;

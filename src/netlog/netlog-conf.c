@@ -26,8 +26,7 @@ int config_parse_netlog_remote_address(const char *unit,
 
         r = socket_address_parse(&m->address, rvalue);
         if (r < 0) {
-                log_syntax(unit, LOG_ERR, filename, line, -r,
-                           "Failed to parse address value, ignoring: %s", rvalue);
+                log_syntax(unit, LOG_WARNING, filename, line, -r, "Failed to parse '%s=%s', ignoring.", lvalue, rvalue);
                 return 0;
         }
 
@@ -54,9 +53,8 @@ int config_parse_protocol(const char *unit,
 
         r = protocol_from_string(rvalue);
         if (r < 0) {
-                log_syntax(unit, LOG_ERR, filename, line, -r,
-                           "Unrecognised Protocol '%s'", rvalue);
-                return -EPROTONOSUPPORT;
+                log_syntax(unit, LOG_WARNING, filename, line, -r, "Failed to parse '%s=%s', ignoring.", lvalue, rvalue);
+                return 0;
         }
 
         m->protocol = r;
@@ -83,9 +81,8 @@ int config_parse_log_format(const char *unit,
 
         r = log_format_from_string(rvalue);
         if (r < 0) {
-                log_syntax(unit, LOG_ERR, filename, line, -r,
-                           "Unrecognised log format '%s'", rvalue);
-                return -EPROTONOSUPPORT;
+                log_syntax(unit, LOG_WARNING, filename, line, -r, "Failed to parse '%s=%s', ignoring.", lvalue, rvalue);
+                return 0;
         }
 
         m->log_format = r;
