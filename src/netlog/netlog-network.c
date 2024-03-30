@@ -87,18 +87,19 @@ static void format_rfc3339_timestamp(const struct timeval *tv, char *header_time
 /* The Syslog Protocol RFC5424 format :
  * <pri>version sp timestamp sp hostname sp app-name sp procid sp msgid sp [sd-id]s sp msg
  */
-int manager_push_to_network(Manager *m,
-                            int severity,
-                            int facility,
-                            const char *identifier,
-                            const char *message,
-                            const char *hostname,
-                            const char *pid,
-                            const struct timeval *tv) {
-        char header_priority[sizeof("<   >1 ")];
+static int format_rfc5424(Manager *m,
+                          int severity,
+                          int facility,
+                          const char *identifier,
+                          const char *message,
+                          const char *hostname,
+                          const char *pid,
+                          const struct timeval *tv) {
+
         char header_time[FORMAT_TIMESTAMP_MAX];
-        uint8_t makepri;
+        char header_priority[sizeof("<   >1 ")];
         struct iovec iov[14];
+        uint8_t makepri;
         int n = 0;
 
         assert(m);
@@ -153,7 +154,7 @@ int manager_push_to_network(Manager *m,
         /* Ninth: message */
         IOVEC_SET_STRING(iov[n++], message);
 
-        /* Tenth: Optional newline message separator, if not implicitly terminated by end of UDP frame
+        /* Last Optional newline message separator, if not implicitly terminated by end of UDP frame
          * De facto standard: separate messages by a newline
          */
         if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP)
@@ -162,8 +163,101 @@ int manager_push_to_network(Manager *m,
         return network_send(m, iov, n);
 }
 
-void manager_close_network_socket(Manager *m) {
+static int format_rfc3339(Manager *m,
+                          int severity,
+                          int facility,
+                          const char *identifier,
+                          const char *message,
+                          const char *hostname,
+                          const char *pid,
+                          const struct timeval *tv) {
+
+        char header_priority[sizeof("<   >1 ")];
+        char header_time[FORMAT_TIMESTAMP_MAX];
+        struct iovec iov[14];
+        uint8_t makepri;
+        int n = 0;
+
         assert(m);
+        assert(message);
+
+        makepri = (facility << 3) + severity;
+
+        /* rfc3339
+         * <35>Oct 12 22:14:15 client_machine su: 'su root' failed for joe on /dev/pts/2
+         */
+
+        /* First: priority field '<pri>' */
+        snprintf(header_priority, sizeof(header_priority), "<%i>", makepri);
+        IOVEC_SET_STRING(iov[n++], header_priority);
+
+        /* Third: timestamp */
+        format_rfc3339_timestamp(tv, header_time, sizeof(header_time));
+        IOVEC_SET_STRING(iov[n++], header_time);
+
+        /* Fourth: hostname */
+        if (hostname)
+                IOVEC_SET_STRING(iov[n++], hostname);
+        else
+                IOVEC_SET_STRING(iov[n++], RFC_5424_NILVALUE);
+
+        IOVEC_SET_STRING(iov[n++], " ");
+
+        /* Fifth: identifier */
+        if (identifier)
+                IOVEC_SET_STRING(iov[n++], identifier);
+        else
+                IOVEC_SET_STRING(iov[n++], RFC_5424_NILVALUE);
+
+        IOVEC_SET_STRING(iov[n++], "[");
+
+        /* Sixth: procid */
+        if (pid)
+                IOVEC_SET_STRING(iov[n++], pid);
+        else
+                IOVEC_SET_STRING(iov[n++], RFC_5424_NILVALUE);
+
+        IOVEC_SET_STRING(iov[n++], "]: ");
+
+        /* Ninth: message */
+        IOVEC_SET_STRING(iov[n++], message);
+
+        /* Last Optional newline message separator, if not implicitly terminated by end of UDP frame
+         * De facto standard: separate messages by a newline
+         */
+        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP)
+                IOVEC_SET_STRING(iov[n++], "\n");
+
+        return network_send(m, iov, n);
+}
+
+int manager_push_to_network(Manager *m,
+                            int severity,
+                            int facility,
+                            const char *identifier,
+                            const char *message,
+                            const char *hostname,
+                            const char *pid,
+                            const struct timeval *tv) {
+
+       int r;
+
+       assert(m);
+       assert(message);
+
+       if (m->log_format == SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424)
+               r = format_rfc5424(m, severity, facility, identifier, message, hostname, pid, tv);
+       else
+               r = format_rfc3339(m, severity, facility, identifier, message, hostname, pid, tv);
+
+       if (r < 0)
+               return 0;
+
+       return 0;
+}
+
+void manager_close_network_socket(Manager *m) {
+       assert(m);
 
         if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP) {
                 int r = shutdown(m->socket, SHUT_RDWR);

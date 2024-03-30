@@ -34,6 +34,13 @@ static const char *const protocol_table[_SYSLOG_TRANSMISSION_PROTOCOL_MAX] = {
 
 DEFINE_STRING_TABLE_LOOKUP(protocol, int);
 
+static const char *const log_format_table[_SYSLOG_TRANSMISSION_LOG_FORMAT_MAX] = {
+        [SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424] = "rfc5424",
+        [SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_3339] = "rfc3339",
+};
+
+DEFINE_STRING_TABLE_LOOKUP(log_format, int);
+
 static int parse_field(const void *data, size_t length, const char *field, char **target) {
         size_t fl, nl;
         void *buf;
@@ -351,11 +358,11 @@ int manager_connect(Manager *m) {
 
         r = manager_open_network_socket(m);
         if (r < 0)
-                return r;
+                return log_error_errno(r, "Failed to create network socket: %m");
 
         r = manager_journal_monitor_listen(m);
         if (r < 0)
-                return r;
+                return log_error_errno(r, "Failed to monitor journal: %m");
 
         return 0;
 }
@@ -448,21 +455,23 @@ void manager_free(Manager *m) {
         free(m);
 }
 
-int manager_new(Manager **ret, const char *state_file, const char *cursor) {
+int manager_new(const char *state_file, const char *cursor, Manager **ret) {
         _cleanup_(manager_freep) Manager *m = NULL;
         int r;
 
         assert(ret);
 
-        m = new0(Manager, 1);
+        m = new(Manager, 1);
         if (!m)
                 return -ENOMEM;
 
-        m->socket = m->journal_watch_fd = -1;
-
-        m->state_file = strdup(state_file);
-        if (!m->state_file)
-                return -ENOMEM;
+        *m = (Manager) {
+                .socket = -1,
+                .journal_watch_fd = -1,
+                .state_file = strdup(state_file),
+                .protocol = SYSLOG_TRANSMISSION_PROTOCOL_UDP,
+                .log_format  = SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424,
+            };
 
         if (cursor) {
                 m->last_cursor = strdup(cursor);
@@ -470,7 +479,7 @@ int manager_new(Manager **ret, const char *state_file, const char *cursor) {
                         return -ENOMEM;
         }
 
-         r = sd_event_default(&m->event);
+        r = sd_event_default(&m->event);
         if (r < 0)
                 return log_error_errno(r, "Failed to allocate event loop: %m");
 

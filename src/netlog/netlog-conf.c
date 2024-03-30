@@ -63,6 +63,35 @@ int config_parse_protocol(const char *unit,
         return 0;
 }
 
+int config_parse_log_format(const char *unit,
+                            const char *filename,
+                            unsigned line,
+                            const char *section,
+                            unsigned section_line,
+                            const char *lvalue,
+                            int ltype,
+                            const char *rvalue,
+                            void *data,
+                            void *userdata) {
+        Manager *m = userdata;
+        int r;
+
+        assert(filename);
+        assert(lvalue);
+        assert(rvalue);
+        assert(data);
+
+        r = log_format_from_string(rvalue);
+        if (r < 0) {
+                log_syntax(unit, LOG_ERR, filename, line, -r,
+                           "Unrecognised log format '%s'", rvalue);
+                return -EPROTONOSUPPORT;
+        }
+
+        m->log_format = r;
+        return 0;
+}
+
 int manager_parse_config_file(Manager *m) {
         assert(m);
 

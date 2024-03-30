@@ -14,6 +14,13 @@ typedef enum SysLogTransmissionProtocol {
         _SYSLOG_TRANSMISSION_PROTOCOL_INVALID = -EINVAL,
 } SysLogTransmissionProtocol;
 
+typedef enum SysLogTransmissionLogFormat {
+        SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424      = 1 << 0,
+        SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_3339      = 1 << 1,
+        _SYSLOG_TRANSMISSION_LOG_FORMAT_MAX,
+        _SYSLOG_TRANSMISSION_LOG_FORMAT_INVALID = -EINVAL,
+} SysLogTransmissionLogFormat;
+
 typedef struct Manager Manager;
 
 struct Manager {
@@ -41,9 +48,10 @@ struct Manager {
         char *last_cursor, *current_cursor;
         char *structured_data;
         SysLogTransmissionProtocol protocol;
+        SysLogTransmissionLogFormat log_format;
 };
 
-int manager_new(Manager **ret, const char *state_file, const char *cursor);
+int manager_new(const char *state_file, const char *cursor, Manager **ret);
 void manager_free(Manager *m);
 
 DEFINE_TRIVIAL_CLEANUP_FUNC(Manager*, manager_free);
@@ -61,3 +69,6 @@ int manager_push_to_network(Manager *m, int severity, int facility,
 
 const char *protocol_to_string(int v) _const_;
 int protocol_from_string(const char *s) _pure_;
+
+const char *log_format_to_string(int v) _const_;
+int log_format_from_string(const char *s) _pure_;

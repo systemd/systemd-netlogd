@@ -17,6 +17,7 @@ int config_parse_netlog_remote_address(const char *unit,
                                        const char *rvalue,
                                        void *data,
                                        void *userdata);
+
 int config_parse_protocol(const char *unit,
                           const char *filename,
                           unsigned line,
@@ -27,4 +28,16 @@ int config_parse_protocol(const char *unit,
                           const char *rvalue,
                           void *data,
                           void *userdata);
+
+int config_parse_log_format(const char *unit,
+                            const char *filename,
+                            unsigned line,
+                            const char *section,
+                            unsigned section_line,
+                            const char *lvalue,
+                            int ltype,
+                            const char *rvalue,
+                            void *data,
+                            void *userdata);
+
 int manager_parse_config_file(Manager *m);
