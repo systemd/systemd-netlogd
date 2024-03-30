@@ -61,20 +61,20 @@ systemd-netlogd reads configuration files named `/etc/systemd/netlogd.conf` and 
 
 **EXAMPLE**
 
- Example 1. /etc/systemd/systemd-netlogd.conf
+ Example 1. /etc/systemd/netlogd.conf
 
     [Network]
     Address=239.0.0.1:6000
     #Protocol=udp
     #LogFormat=rfc5424
-Example 2. /etc/systemd/systemd-netlogd.conf
+Example 2. /etc/systemd/netlogd.conf
 
     [Network]
     Address=192.168.8.101:514
     #Protocol=udp
     LogFormat=rfc3339
 
-Example 3. /etc/systemd/systemd-netlogd.conf
+Example 3. /etc/systemd/netlogd.conf
 
     [Network]
     Address=192.168.8.101:514
