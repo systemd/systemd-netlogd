@@ -215,7 +215,7 @@ static int process_journal_input(Manager *m) {
         assert(m);
         assert(m->journal);
 
-        while (true) {
+        for (;;) {
                 r = sd_journal_next(m->journal);
                 if (r < 0) {
                         log_error_errno(r, "Failed to get next entry: %m");
@@ -342,8 +342,7 @@ static int manager_journal_monitor_listen(Manager *m) {
         if (m->last_cursor) {
                 r = sd_journal_seek_cursor(m->journal, m->last_cursor);
                 if (r < 0)
-                        return log_error_errno(r, "Failed to seek to cursor %s: %m",
-                                               m->last_cursor);
+                        return log_error_errno(r, "Failed to seek to cursor %s: %m", m->last_cursor);
         }
 
         return 0;
@@ -473,10 +472,15 @@ int manager_new(const char *state_file, const char *cursor, Manager **ret) {
                 .log_format  = SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424,
             };
 
+        socket_address_parse(&m->address, "239.0.0.1:6000");
+
+        if (!m->state_file)
+                return log_oom();
+
         if (cursor) {
                 m->last_cursor = strdup(cursor);
                 if (!m->last_cursor)
-                        return -ENOMEM;
+                        return log_oom();
         }
 
         r = sd_event_default(&m->event);
