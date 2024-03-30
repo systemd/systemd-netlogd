@@ -8,7 +8,7 @@
 
 #include "macro.h"
 
-#define new(t, n) ((t*) malloc_multiply(sizeof(t), (n)))
+#define new(t, n) ((t*) malloc_multiply(n, sizeof(t)))
 
 #define new0(t, n) ((t*) calloc((n), sizeof(t)))
 

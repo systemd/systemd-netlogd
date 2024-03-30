@@ -60,7 +60,7 @@ static int setup_cursor_state_file(Manager *m, uid_t uid, gid_t gid) {
 static void help(void) {
         printf("%s ..\n\n"
                "Forwards messages from the journal to other hosts over the network using the syslog\n"
-               "RFC 5424 format in both unicast and multicast addresses.\n\n"
+               "RFC 5424 or RFC3339 format in both unicast and multicast addresses.\n\n"
                "  -h --help                 Show this help\n"
                "     --version              Show package version\n"
                "     --cursor=CURSOR        Start at the specified cursor\n"
@@ -159,7 +159,7 @@ int main(int argc, char **argv) {
                 goto finish;
         }
 
-        r = manager_new(&m, arg_save_state, arg_cursor);
+        r = manager_new(arg_save_state, arg_cursor, &m);
         if (r < 0) {
                 log_error_errno(r, "Failed to allocate manager: %m");
                 goto finish;
@@ -191,7 +191,7 @@ int main(int argc, char **argv) {
 
         if (network_is_online()) {
                 r = manager_connect(m);
-                if (r < 0)
+               if (r < 0)
                         goto finish;
         }
 

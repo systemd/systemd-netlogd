@@ -15,6 +15,7 @@ struct ConfigPerfItem;
 %struct-type
 %includes
 %%
-Network.Address,  config_parse_netlog_remote_address, 0, 0
-Network.Protocol,  config_parse_protocol, 0, offsetof(Manager, protocol)
-Network.StructuredData,  config_parse_string, 0, offsetof(Manager, structured_data)
+Network.Address,         config_parse_netlog_remote_address, 0, 0
+Network.Protocol,        config_parse_protocol,              0, offsetof(Manager, protocol)
+Network.LogFormat,       config_parse_log_format,            0, offsetof(Manager, log_format)
+Network.StructuredData,  config_parse_string,                0, offsetof(Manager, structured_data)
