@@ -243,7 +243,9 @@ int manager_push_to_network(Manager *m,
        int r;
 
        assert(m);
-       assert(message);
+
+       if (!message)
+               return 0;
 
        if (m->log_format == SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424)
                r = format_rfc5424(m, severity, facility, identifier, message, hostname, pid, tv);
