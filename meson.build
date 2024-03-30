@@ -152,8 +152,8 @@ if not libcap.found()
 endif
 
 systemd_netlogd_conf = configure_file(
-                     input : 'conf/systemd-netlogd.conf.in',
-                     output : 'systemd-netlogd.conf',
+                     input : 'conf/netlogd.conf.in',
+                     output : 'netlogd.conf',
                      configuration : substs)
                      install_data(systemd_netlogd_conf,
                      install_dir : get_option('sysconfdir'))
