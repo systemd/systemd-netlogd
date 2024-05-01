@@ -19,3 +19,11 @@ jobs:
       run: sudo apt-get install -y python3-sphinx ninja-build meson glib-2.0-dev libudev-dev libsystemd-dev clang gperf libcap-dev build-essential
     - name: build
       run: make
+    - name: install
+      run: sudo make install
+    - name: add systemd-journal-netlog user
+      run: sudo useradd -r -d / -s /usr/sbin/nologin -g systemd-journal systemd-journal-netlog
+    - name: start systemd-netlogd
+      run: sudo systemctl daemon-reload; sudo systemctl start systemd-netlogd
+    - name: show status systemd-netlogd
+      run: sudo systemctl status systemd-netlogd
