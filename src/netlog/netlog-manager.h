@@ -46,6 +46,7 @@ struct Manager {
         char *state_file;
         char *last_cursor, *current_cursor;
         char *structured_data;
+        char *dir;
 
         SysLogTransmissionProtocol protocol;
         SysLogTransmissionLogFormat log_format;
