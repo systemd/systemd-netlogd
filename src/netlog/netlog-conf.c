@@ -89,6 +89,39 @@ int config_parse_log_format(const char *unit,
         return 0;
 }
 
+int config_parse_namespace(const char *unit,
+                           const char *filename,
+                           unsigned line,
+                           const char *section,
+                           unsigned section_line,
+                           const char *lvalue,
+                           int ltype,
+                           const char *rvalue,
+                           void *data,
+                           void *userdata) {
+        Manager *m = userdata;
+
+        assert(filename);
+        assert(lvalue);
+        assert(rvalue);
+        assert(data);
+
+         if (streq(rvalue, "*"))
+                 m->namespace_flags = SD_JOURNAL_ALL_NAMESPACES;
+         else if (startswith(rvalue, "+")) {
+                 m->namespace_flags = SD_JOURNAL_INCLUDE_DEFAULT_NAMESPACE;
+                 m->namespace = strdup(rvalue);
+                 if (!m->namespace)
+                         return log_oom();
+         } else {
+                 m->namespace = strdup(rvalue);
+                 if (!m->namespace)
+                         return log_oom();
+         }
+
+        return 0;
+}
+
 int manager_parse_config_file(Manager *m) {
         assert(m);
 

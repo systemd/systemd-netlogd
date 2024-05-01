@@ -41,12 +41,16 @@ struct Manager {
 
         /* journal  */
         int journal_watch_fd;
+        int namespace_flags;
+
         sd_journal *journal;
 
         char *state_file;
-        char *last_cursor, *current_cursor;
+        char *last_cursor;
+        char *current_cursor;
         char *structured_data;
         char *dir;
+        char *namespace;
 
         SysLogTransmissionProtocol protocol;
         SysLogTransmissionLogFormat log_format;
