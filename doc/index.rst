@@ -6,10 +6,12 @@ systend-netlogd manual page
 Description
 -----------
 
-Forwards messages from the journal to other hosts over the network using the Syslog
-Protocol (RFC 5424). It can be configured to send messages to both unicast and multicast
-addresses. systemd-netlogd runs with own user systemd-journal-netlog. Starts sending logs
-when network is up and stops sending as soon as network is down (uses sd-network).
+Forwards messages from the journal to other hosts over the network using the
+Syslog Protocol (RFC 5424 and RFC 3339). It can be configured to send messages
+to both unicast and multicast addresses. systemd-netlogd runs with own user
+systemd-journal-netlog. Starts sending logs when network is up and stops sending
+as soon as network is down (uses sd-network). It reads from journal and forwards
+to network one by one. It does not use any extra disk space.
 
 Configuration
 -------------
@@ -31,12 +33,24 @@ This will create a user systemd-journal-netlog
 
        The the address string format is similar to socket units. See systemd.socket(1)
 
+|   Protocol=
+        Specifies whether to use udp or tcp protocol. Defaults to udp.
+
+|   LogFormat=
+          Specifies whether to use RFC 5424 format or RFC 3339 format. Takes one of rfc5424 or rfc3339. Defaults to rfc5424.
+
 |  Optional settings
 
 |  StructuredData=
        Meta information about the syslog message, which can be used for Cloud Based
        syslog servers, such as Loggly
-|
+
+|  UseSysLogStructuredData=
+      A boolean. Specifies whether to extract SYSLOG_STRUCTURED_DATA= from journal. Defaults to false.
+
+|   UseSysLogMsgId=
+      A boolean. Specifies whether to extract SYSLOG_MSGID= from journal. Defaults to false.
+
 |
 
 EXAMPLES
@@ -58,3 +72,23 @@ EXAMPLES
        [Network]
        Address=192.168.8.101:514
        StructuredData=[1ab456b6-90bb-6578-abcd-5b734584aaaa@41058]
+
+- Example 4. /etc/systemd/netlogd.conf
+
+    [Network]
+    Address=192.168.8.101:514
+    #Protocol=udp
+    LogFormat=rfc5424
+    UseSysLogStructuredData=yes
+    UseSysLogMsgId=yes
+
+- Use case of UseSysLogStructuredData= and UseSysLogMsgId=
+
+  sd_journal_send(
+    "MESSAGE=%s", "Message to process",
+    "PRIORITY=%s", "4",
+    "SYSLOG_FACILITY=%s", "1",
+    "SYSLOG_MSGID=%s", "1011",
+    "SYSLOG_STRUCTURED_DATA=%s", R"([exampleSDID@32473 iut="3" eventSource="Application"])",
+    NULL
+  );
