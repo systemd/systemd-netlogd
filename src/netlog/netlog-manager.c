@@ -327,6 +327,8 @@ static int open_journal(Manager *m) {
 
         if (m->dir)
                 r = sd_journal_open_directory(&m->journal, m->dir, 0);
+        else if (m->namespace)
+                r = sd_journal_open_namespace(&m->journal, m->namespace, SD_JOURNAL_LOCAL_ONLY | m->namespace_flags);
         else
                 r = sd_journal_open(&m->journal, SD_JOURNAL_LOCAL_ONLY);
 
@@ -472,6 +474,8 @@ void manager_free(Manager *m) {
         free(m->current_cursor);
 
         free(m->state_file);
+        free(m->dir);
+        free(m->namespace);
 
         sd_event_source_unref(m->network_event_source);
         sd_network_monitor_unref(m->network_monitor);
@@ -480,7 +484,6 @@ void manager_free(Manager *m) {
         sd_event_source_unref(m->sigint_event);
 
         sd_event_unref(m->event);
-
         free(m);
 }
 

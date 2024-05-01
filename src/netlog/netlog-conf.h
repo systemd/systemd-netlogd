@@ -40,4 +40,15 @@ int config_parse_log_format(const char *unit,
                             void *data,
                             void *userdata);
 
+int config_parse_namespace(const char *unit,
+                           const char *filename,
+                           unsigned line,
+                           const char *section,
+                           unsigned section_line,
+                           const char *lvalue,
+                           int ltype,
+                           const char *rvalue,
+                           void *data,
+                           void *userdata);
+
 int manager_parse_config_file(Manager *m);
