@@ -325,11 +325,13 @@ static int open_journal(Manager *m) {
 
         assert(m);
 
-        r = sd_journal_open(&m->journal, SD_JOURNAL_LOCAL_ONLY);
-        if (r < 0) {
-                log_error_errno(r, "Failed to open journal: %m");
-                return r;
-        }
+        if (m->dir)
+                r = sd_journal_open_directory(&m->journal, m->dir, 0);
+        else
+                r = sd_journal_open(&m->journal, SD_JOURNAL_LOCAL_ONLY);
+
+        if (r < 0)
+                log_error_errno(r, "Failed to open %s: %m", m->dir ?: "journal");
 
         return 0;
 }

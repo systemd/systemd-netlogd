@@ -18,6 +18,7 @@ struct ConfigPerfItem;
 Network.Address,                  config_parse_netlog_remote_address, 0, 0
 Network.Protocol,                 config_parse_protocol,              0, offsetof(Manager, protocol)
 Network.LogFormat,                config_parse_log_format,            0, offsetof(Manager, log_format)
+Network.Directory,                config_parse_string,                0, offsetof(Manager, dir)
 Network.StructuredData,           config_parse_string,                0, offsetof(Manager, structured_data)
 Network.UseSysLogStructuredData,  config_parse_bool,                  0, offsetof(Manager, syslog_structured_data)
 Network.UseSysLogMsgId,           config_parse_bool,                  0, offsetof(Manager, syslog_msgid)
