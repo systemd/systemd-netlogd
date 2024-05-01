@@ -39,6 +39,9 @@ This will create a user systemd-journal-netlog
 |   LogFormat=
           Specifies whether to use RFC 5424 format or RFC 3339 format. Takes one of rfc5424 or rfc3339. Defaults to rfc5424.
 
+|   Directory=
+          Takes a directory path. Specifies whether to operate on the specified journal directory DIR instead of the default runtime and system journal paths.
+
 |  Optional settings
 
 |  StructuredData=
