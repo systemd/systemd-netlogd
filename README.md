@@ -1,8 +1,7 @@
 systemd-netlogd
 ===================
 
-[![Build Status](https://travis-ci.org/systemd/systemd-netlogd.svg?branch=master)](https://travis-ci.org/systemd/systemd-netlogd)
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/systemd/systemd-netlogd.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/systemd/systemd-netlogd/alerts/)
+![build](https://github.com/systemd/systemd-netlogd/actions/workflows/ci.yml/badge.svg)
 
 Forwards messages from the journal to other hosts over the network using
 the Syslog Protocol (RFC 5424 and RFC 3339). It can be configured to send messages to
@@ -60,10 +59,10 @@ systemd-netlogd reads configuration files named `/etc/systemd/netlogd.conf` and 
            syslog servers, such as Loggly
 
        UseSysLogStructuredData=
-          A boolean. Specifies whether to extract ```SYSLOG_STRUCTURED_DATA=``` from journal. Defaults to false.
+          A boolean. Specifies whether to extract SYSLOG_STRUCTURED_DATA= from journal. Defaults to false.
 
        UseSysLogMsgId=
-          A boolean. Specifies whether to extract ```SYSLOG_MSGID=``` from journal. Defaults to false.
+          A boolean. Specifies whether to extract SYSLOG_MSGID= from journal. Defaults to false.
 
 
 **EXAMPLE**
