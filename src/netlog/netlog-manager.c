@@ -320,8 +320,8 @@ static int manager_signal_event_handler(sd_event_source *event, const struct sig
         return 0;
 }
 
-static int manager_journal_monitor_listen(Manager *m) {
-        int r, events;
+static int open_journal(Manager *m) {
+        int r;
 
         assert(m);
 
@@ -331,9 +331,21 @@ static int manager_journal_monitor_listen(Manager *m) {
                 return r;
         }
 
+        return 0;
+}
+
+static int manager_journal_monitor_listen(Manager *m) {
+        int r, events;
+
+        assert(m);
+
+        r = open_journal(m);
+        if (r < 0)
+                return r;
+
         sd_journal_set_data_threshold(m->journal, 0);
 
-        m->journal_watch_fd  = sd_journal_get_fd(m->journal);
+        m->journal_watch_fd = sd_journal_get_fd(m->journal);
         if (m->journal_watch_fd  < 0)
                 return log_error_errno(m->journal_watch_fd, "Failed to get journal fd: %m");
 
