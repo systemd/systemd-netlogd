@@ -32,16 +32,14 @@ Build and install:
 Creating user:
 
 ``` bash
-
-    sudo useradd -r -d / -s /usr/sbin/nologin -g systemd-journal systemd-journal-netlog
+sudo useradd -r -d / -s /usr/sbin/nologin -g systemd-journal systemd-journal-netlog
 ```
-    or via sysusers
-
+or via sysusers
+    
 ``` /usr/lib/sysusers.d/systemd-netlogd.conf```
 ```bash
-    #Type   Name                    ID                      GECOS   Home directory  Shell
-    u       systemd-journal-netlog  -:systemd-journal       -       /               /bin/nologin
-
+#Type   Name                    ID                      GECOS   Home directory  Shell
+u       systemd-journal-netlog  -:systemd-journal       -       /               /bin/nologin
 ```
 
 Configuration
