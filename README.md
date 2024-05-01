@@ -35,7 +35,7 @@ Creating user:
 sudo useradd -r -d / -s /usr/sbin/nologin -g systemd-journal systemd-journal-netlog
 ```
 or via sysusers
-    
+
 ``` /usr/lib/sysusers.d/systemd-netlogd.conf```
 ```bash
 #Type   Name                    ID                      GECOS   Home directory  Shell
@@ -63,7 +63,11 @@ systemd-netlogd reads configuration files named `/etc/systemd/netlogd.conf` and 
 
        LogFormat=
               Specifies whether to use RFC 5424 format or RFC 3339 format. Takes one of rfc5424 or rfc3339. Defaults to rfc5424.
-       Optional settings
+
+       Directory=
+              Takes a directory path. Specifies whether to operate on the specified journal directory DIR instead of the default runtime and system journal paths.
+
+    Optional settings
 
        StructuredData=
            Meta information about the syslog message, which can be used for Cloud Based
