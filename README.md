@@ -67,7 +67,7 @@ systemd-netlogd reads configuration files named `/etc/systemd/netlogd.conf` and 
        Directory=
               Takes a directory path. Specifies whether to operate on the specified journal directory DIR instead of the default runtime and system journal paths.
 
-       NameSpace=
+       Namespace=
               Takes a journal namespace identifier string as argument. If not specified the data collected by the default namespace is shown. If specified
               shows the log data of the specified namespace instead. If the namespace is specified as "*" data from all namespaces is shown, interleaved.
               If the namespace identifier is prefixed with "+" data from the specified namespace and the default namespace is shown, interleaved, but no other
