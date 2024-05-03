@@ -69,6 +69,7 @@ void manager_disconnect(Manager *m);
 
 void manager_close_network_socket(Manager *m);
 int manager_open_network_socket(Manager *m);
+int manager_network_connect_tcp_socket(Manager *m);
 
 int manager_push_to_network(Manager *m,
                             int severity,

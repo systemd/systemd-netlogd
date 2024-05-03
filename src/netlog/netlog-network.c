@@ -280,6 +280,46 @@ void manager_close_network_socket(Manager *m) {
         m->socket = safe_close(m->socket);
 }
 
+int manager_network_connect_tcp_socket(Manager *m) {
+        union sockaddr_union sa;
+        const int one = 1;
+        socklen_t salen;
+        int r;
+
+        assert(m);
+
+        switch (m->address.sockaddr.sa.sa_family) {
+                case AF_INET:
+                        sa = (union sockaddr_union) {
+                        .in.sin_family = m->address.sockaddr.sa.sa_family,
+                        .in.sin_port = m->address.sockaddr.in.sin_port,
+                        .in.sin_addr = m->address.sockaddr.in.sin_addr,
+                };
+                        salen = sizeof(sa.in);
+                        break;
+                case AF_INET6:
+                        sa = (union sockaddr_union) {
+                        .in6.sin6_family = m->address.sockaddr.sa.sa_family,
+                        .in6.sin6_port = m->address.sockaddr.in6.sin6_port,
+                        .in6.sin6_addr = m->address.sockaddr.in6.sin6_addr,
+                };
+                        salen = sizeof(sa.in6);
+                        break;
+                default:
+                        return EAFNOSUPPORT;
+        }
+
+        r = connect(m->socket, &m->address.sockaddr.sa, salen);
+        if (r < 0 && errno != EINPROGRESS)
+                return -errno;
+
+        r = setsockopt(m->socket, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
+        if (r < 0)
+                return r;
+
+        return 0;
+}
+
 int manager_open_network_socket(Manager *m) {
         const int one = 1;
         int r;
@@ -311,40 +351,9 @@ int manager_open_network_socket(Manager *m) {
         }
 
         if (SYSLOG_TRANSMISSION_PROTOCOL_TCP == m->protocol) {
-                union sockaddr_union sa;
-                socklen_t salen;
-
-                switch (m->address.sockaddr.sa.sa_family) {
-                        case AF_INET:
-                                sa = (union sockaddr_union) {
-                                        .in.sin_family = m->address.sockaddr.sa.sa_family,
-                                        .in.sin_port = m->address.sockaddr.in.sin_port,
-                                        .in.sin_addr = m->address.sockaddr.in.sin_addr,
-                                };
-                                salen = sizeof(sa.in);
-                                break;
-                        case AF_INET6:
-                                sa = (union sockaddr_union) {
-                                        .in6.sin6_family = m->address.sockaddr.sa.sa_family,
-                                        .in6.sin6_port = m->address.sockaddr.in6.sin6_port,
-                                        .in6.sin6_addr = m->address.sockaddr.in6.sin6_addr,
-                                };
-                                salen = sizeof(sa.in6);
-                                break;
-                        default:
-                                r = -EAFNOSUPPORT;
-                                goto fail;
-                }
-
-                r = connect(m->socket, &m->address.sockaddr.sa, salen);
-                if (r < 0 && errno != EINPROGRESS) {
-                        r = -errno;
-                        goto fail;
-                }
-
-                r = setsockopt(m->socket, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
+                r = manager_network_connect_tcp_socket(m);
                 if (r < 0)
-                        return r;
+                        goto fail;
         }
 
         r = fd_nonblock(m->socket, true);
