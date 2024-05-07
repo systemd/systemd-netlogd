@@ -27,6 +27,16 @@ typedef enum LogTarget{
         _LOG_TARGET_INVALID = -1
 }  LogTarget;
 
+
+/* This log level disables logging completely. It can only be passed to log_set_max_level() and cannot be
+ * used as a regular log level. */
+#define LOG_NULL (LOG_EMERG - 1)
+
+/* Note to readers: << and >> have lower precedence (are evaluated earlier) than & and | */
+#define SYNTHETIC_ERRNO(num)                (1 << 30 | (num))
+#define IS_SYNTHETIC_ERRNO(val)             ((val) >> 30 & 1)
+#define ERRNO_VALUE(val)                    (abs(val) & ~(1 << 30))
+
 void log_set_target(LogTarget target);
 void log_set_max_level(int level);
 void log_set_facility(int facility);
