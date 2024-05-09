@@ -9,6 +9,7 @@ both unicast and multicast addresses. systemd-netlogd runs with own user
 systemd-journal-netlog.  Starts sending logs when network is up and stops
 sending as soon as network is down (uses sd-network). It reads from journal
 and forwards to network one by one. It does not use any extra disk space.
+systemd-netlogd supports UDP, TCP and DTLS (Datagram Transport Layer Security RFC 6012).
 
 --------------------------------------------------------------------------
 
