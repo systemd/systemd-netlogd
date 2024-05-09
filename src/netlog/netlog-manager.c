@@ -478,6 +478,8 @@ void manager_free(Manager *m) {
 
         manager_disconnect(m);
 
+        free(m->dtls);
+
         free(m->last_cursor);
         free(m->current_cursor);
 

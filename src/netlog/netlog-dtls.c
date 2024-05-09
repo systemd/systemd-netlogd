@@ -175,11 +175,6 @@ void dtls_disconnect(DTLSManager *m) {
                 m->ssl = NULL;
         }
 
-        if (m->bio) {
-                BIO_free(m->bio);
-                m->bio = NULL;
-        }
-
         m->fd = safe_close(m->fd);
 }
 
