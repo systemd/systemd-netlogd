@@ -5,9 +5,9 @@
 #include <poll.h>
 #include <netinet/tcp.h>
 
-#include "netlog-manager.h"
 #include "io-util.h"
 #include "fd-util.h"
+#include "netlog-manager.h"
 
 #define RFC_5424_NILVALUE "-"
 #define RFC_5424_PROTOCOL 1
@@ -280,9 +280,8 @@ void manager_close_network_socket(Manager *m) {
         m->socket = safe_close(m->socket);
 }
 
-int manager_network_connect_tcp_socket(Manager *m) {
+int manager_network_connect_socket(Manager *m) {
         union sockaddr_union sa;
-        const int one = 1;
         socklen_t salen;
         int r;
 
@@ -313,10 +312,6 @@ int manager_network_connect_tcp_socket(Manager *m) {
         if (r < 0 && errno != EINPROGRESS)
                 return -errno;
 
-        r = setsockopt(m->socket, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
-        if (r < 0)
-                return r;
-
         return 0;
 }
 
@@ -339,26 +334,39 @@ int manager_open_network_socket(Manager *m) {
                 default:
                         return -EPROTONOSUPPORT;
         }
+
         if (m->socket < 0)
-                return -errno;
+                return log_error_errno(errno, "Failed to allocate socket: %m");;
 
         if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_UDP) {
                 r = setsockopt(m->socket, IPPROTO_IP, IP_MULTICAST_LOOP, &one, sizeof(one));
                 if (r < 0) {
                         r = -errno;
+                        log_error_errno(errno, "Failed to set socket IP_MULTICAST_LOOP: %m");
                         goto fail;
                 }
         }
 
-        if (SYSLOG_TRANSMISSION_PROTOCOL_TCP == m->protocol) {
-                r = manager_network_connect_tcp_socket(m);
-                if (r < 0)
+        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP) {
+                r = setsockopt(m->socket, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
+                if (r < 0) {
+                        r = -errno;
+                        log_error_errno(errno, "Failed to set socket TCP_NODELAY: %m");
                         goto fail;
+                }
         }
 
         r = fd_nonblock(m->socket, true);
-        if (r < 0)
+        if (r < 0) {
+                log_error_errno(errno, "Failed to set socket nonblock: %m");
                 goto fail;
+        }
+
+        r = manager_network_connect_socket(m);
+        if (r < 0) {
+                log_error_errno(errno, "Failed to connect: %m");
+                goto fail;
+        }
 
         return m->socket;
 
