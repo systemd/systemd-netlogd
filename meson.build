@@ -128,6 +128,12 @@ conf.set('GPERF_LEN_TYPE', gperf_len_type,
 
 ############################################################
 
+libopenssl = dependency('openssl',
+                        version : '>= 1.1.0',
+                        required : get_option('openssl'))
+conf.set10('HAVE_OPENSSL', libopenssl.found())
+
+############################################################
 config_h = configure_file(
         output : 'config.h',
         configuration : conf)
@@ -165,6 +171,7 @@ systemd_netlogd = executable(
                    link_with : libshared,
                    dependencies : [
                    libcap,
+                   libopenssl,
                    libsystemd],
                    install : true,
                    install_dir : get_option('prefix'))

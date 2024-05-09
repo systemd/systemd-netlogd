@@ -41,6 +41,8 @@ libshared_sources = files('''
                   share/ioprio.h
                   share/io-util.c
                   share/io-util.h
+                  share/iovec-util.c
+                  share/iovec-util.h
                   share/escape.c
                   share/escape.h
                   share/user-util.c
@@ -103,6 +105,9 @@ systemd_netlogd_sources = files('''
                         netlog/netlog-manager.c
                         netlog/netlog-manager.h
                         netlog/netlog-network.c
+                        netlog/netlog-network.h
+                        netlog/netlog-dtls.c
+                        netlog/netlog-dtls.h
                         '''.split())
 
 netlogd_gperf_c = custom_target(

@@ -168,7 +168,11 @@ static int format_rfc5424(Manager *m,
         if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP)
                 IOVEC_SET_STRING(iov[n++], "\n");
 
-        return network_send(m, iov, n);
+
+        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_DTLS)
+                return dtls_stream_writev(m->dtls, iov, n);
+        else
+                return network_send(m, iov, n);
 }
 
 static int format_rfc3339(Manager *m,
@@ -236,7 +240,10 @@ static int format_rfc3339(Manager *m,
         if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP)
                 IOVEC_SET_STRING(iov[n++], "\n");
 
-        return network_send(m, iov, n);
+        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_DTLS)
+                return dtls_stream_writev(m->dtls, iov, n);
+        else
+                return network_send(m, iov, n);
 }
 
 int manager_push_to_network(Manager *m,
@@ -305,7 +312,7 @@ int manager_network_connect_socket(Manager *m) {
                         salen = sizeof(sa.in6);
                         break;
                 default:
-                        return EAFNOSUPPORT;
+                        return -EAFNOSUPPORT;
         }
 
         r = connect(m->socket, &m->address.sockaddr.sa, salen);

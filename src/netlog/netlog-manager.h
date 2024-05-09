@@ -6,7 +6,7 @@
 
 #include "sd-network.h"
 #include "socket-util.h"
-#include "netlog-tls.h"
+#include "netlog-dtls.h"
 
 typedef enum SysLogTransmissionProtocol {
         SYSLOG_TRANSMISSION_PROTOCOL_UDP      = 1 << 0,
@@ -61,7 +61,7 @@ struct Manager {
         bool syslog_msgid;
         bool encrypt;
 
-        TLSManager *tls;
+        DTLSManager *dtls;
 };
 
 int manager_new(const char *state_file, const char *cursor, Manager **ret);
