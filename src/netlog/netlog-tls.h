@@ -8,9 +8,9 @@
 #include "socket-util.h"
 #include "openssl-util.h"
 
-typedef struct DTLSManager DTLSManager;
+typedef struct TLSManager TLSManager;
 
-struct DTLSManager {
+struct TLSManager {
         SSL_SESSION *session;
         SSL_CTX *ctx;
         BIO *bio;
@@ -26,12 +26,12 @@ struct DTLSManager {
         size_t buffer_offset;
 };
 
-void dtls_manager_free(DTLSManager *m);
-int dtls_manager_init(DTLSManager **m);
+void tls_manager_free(TLSManager *m);
+int tls_manager_init(TLSManager **m);
 
-int dtls_connect(DTLSManager *m, SocketAddress *addr);
-void dtls_disconnect(DTLSManager *m);
+int tls_connect(TLSManager *m, SocketAddress *addr);
+void tls_disconnect(TLSManager *m);
 
-ssize_t dtls_stream_writev(DTLSManager *m, const struct iovec *iov, size_t iovcnt);
+ssize_t tls_stream_writev(TLSManager *m, const struct iovec *iov, size_t iovcnt);
 
-DEFINE_TRIVIAL_CLEANUP_FUNC(DTLSManager*, dtls_manager_free);
+DEFINE_TRIVIAL_CLEANUP_FUNC(TLSManager*, tls_manager_free);

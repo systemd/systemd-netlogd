@@ -77,6 +77,7 @@ libshared_sources = files('''
                   share/random-util.c
                   share/random-util.h
                   share/stdio-util.h
+                  share/openssl-util.h
                   share/string-table.c
                   share/string-table.h
                   share/string-util.c
@@ -108,6 +109,8 @@ systemd_netlogd_sources = files('''
                         netlog/netlog-network.h
                         netlog/netlog-dtls.c
                         netlog/netlog-dtls.h
+                        netlog/netlog-tls.c
+                        netlog/netlog-tls.h
                         '''.split())
 
 netlogd_gperf_c = custom_target(
