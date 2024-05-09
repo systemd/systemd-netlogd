@@ -9,7 +9,7 @@ both unicast and multicast addresses. systemd-netlogd runs with own user
 systemd-journal-netlog.  Starts sending logs when network is up and stops
 sending as soon as network is down (uses sd-network). It reads from journal
 and forwards to network one by one. It does not use any extra disk space.
-systemd-netlogd supports UDP, TCP and DTLS (Datagram Transport Layer Security RFC 6012).
+systemd-netlogd supports UDP, TCP, TLS and DTLS (Datagram Transport Layer Security RFC 6012).
 
 --------------------------------------------------------------------------
 
@@ -60,7 +60,7 @@ systemd-netlogd reads configuration files named `/etc/systemd/netlogd.conf` and 
            The the address string format is similar to socket units. See systemd.socket(1)
 
        Protocol=
-            Specifies whether to use udp, tcp or dtls (Datagram Transport Layer Security)  protocol. Defaults to udp.
+            Specifies whether to use udp, tcp, tls or dtls (Datagram Transport Layer Security)  protocol. Defaults to udp.
 
        LogFormat=
               Specifies whether to use RFC 5424 format or RFC 3339 format. Takes one of rfc5424 or rfc3339. Defaults to rfc5424.
