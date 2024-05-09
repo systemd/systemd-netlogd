@@ -6,10 +6,12 @@
 
 #include "sd-network.h"
 #include "socket-util.h"
+#include "netlog-dtls.h"
 
 typedef enum SysLogTransmissionProtocol {
         SYSLOG_TRANSMISSION_PROTOCOL_UDP      = 1 << 0,
         SYSLOG_TRANSMISSION_PROTOCOL_TCP      = 1 << 1,
+        SYSLOG_TRANSMISSION_PROTOCOL_DTLS     = 1 << 2,
         _SYSLOG_TRANSMISSION_PROTOCOL_MAX,
         _SYSLOG_TRANSMISSION_PROTOCOL_INVALID = -EINVAL,
 } SysLogTransmissionProtocol;
@@ -57,6 +59,9 @@ struct Manager {
 
         bool syslog_structured_data;
         bool syslog_msgid;
+        bool encrypt;
+
+        DTLSManager *dtls;
 };
 
 int manager_new(const char *state_file, const char *cursor, Manager **ret);
@@ -67,8 +72,10 @@ DEFINE_TRIVIAL_CLEANUP_FUNC(Manager*, manager_free);
 int manager_connect(Manager *m);
 void manager_disconnect(Manager *m);
 
+
 void manager_close_network_socket(Manager *m);
 int manager_open_network_socket(Manager *m);
+int manager_network_connect_socket(Manager *m);
 
 int manager_push_to_network(Manager *m,
                             int severity,

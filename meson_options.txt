@@ -1,0 +1,5 @@
+option('version-tag', type : 'string',
+       description : 'override the git version string')
+
+option('openssl', type : 'boolean', value : true,
+       description : 'enable openssl support')

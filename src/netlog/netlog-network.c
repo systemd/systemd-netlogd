@@ -5,9 +5,9 @@
 #include <poll.h>
 #include <netinet/tcp.h>
 
-#include "netlog-manager.h"
 #include "io-util.h"
 #include "fd-util.h"
+#include "netlog-manager.h"
 
 #define RFC_5424_NILVALUE "-"
 #define RFC_5424_PROTOCOL 1
@@ -168,7 +168,11 @@ static int format_rfc5424(Manager *m,
         if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP)
                 IOVEC_SET_STRING(iov[n++], "\n");
 
-        return network_send(m, iov, n);
+
+        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_DTLS)
+                return dtls_stream_writev(m->dtls, iov, n);
+        else
+                return network_send(m, iov, n);
 }
 
 static int format_rfc3339(Manager *m,
@@ -236,7 +240,10 @@ static int format_rfc3339(Manager *m,
         if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP)
                 IOVEC_SET_STRING(iov[n++], "\n");
 
-        return network_send(m, iov, n);
+        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_DTLS)
+                return dtls_stream_writev(m->dtls, iov, n);
+        else
+                return network_send(m, iov, n);
 }
 
 int manager_push_to_network(Manager *m,
@@ -280,6 +287,41 @@ void manager_close_network_socket(Manager *m) {
         m->socket = safe_close(m->socket);
 }
 
+int manager_network_connect_socket(Manager *m) {
+        union sockaddr_union sa;
+        socklen_t salen;
+        int r;
+
+        assert(m);
+
+        switch (m->address.sockaddr.sa.sa_family) {
+                case AF_INET:
+                        sa = (union sockaddr_union) {
+                        .in.sin_family = m->address.sockaddr.sa.sa_family,
+                        .in.sin_port = m->address.sockaddr.in.sin_port,
+                        .in.sin_addr = m->address.sockaddr.in.sin_addr,
+                };
+                        salen = sizeof(sa.in);
+                        break;
+                case AF_INET6:
+                        sa = (union sockaddr_union) {
+                        .in6.sin6_family = m->address.sockaddr.sa.sa_family,
+                        .in6.sin6_port = m->address.sockaddr.in6.sin6_port,
+                        .in6.sin6_addr = m->address.sockaddr.in6.sin6_addr,
+                };
+                        salen = sizeof(sa.in6);
+                        break;
+                default:
+                        return -EAFNOSUPPORT;
+        }
+
+        r = connect(m->socket, &m->address.sockaddr.sa, salen);
+        if (r < 0 && errno != EINPROGRESS)
+                return -errno;
+
+        return 0;
+}
+
 int manager_open_network_socket(Manager *m) {
         const int one = 1;
         int r;
@@ -299,57 +341,39 @@ int manager_open_network_socket(Manager *m) {
                 default:
                         return -EPROTONOSUPPORT;
         }
+
         if (m->socket < 0)
-                return -errno;
+                return log_error_errno(errno, "Failed to allocate socket: %m");;
 
         if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_UDP) {
                 r = setsockopt(m->socket, IPPROTO_IP, IP_MULTICAST_LOOP, &one, sizeof(one));
                 if (r < 0) {
                         r = -errno;
+                        log_error_errno(errno, "Failed to set socket IP_MULTICAST_LOOP: %m");
                         goto fail;
                 }
         }
 
-        if (SYSLOG_TRANSMISSION_PROTOCOL_TCP == m->protocol) {
-                union sockaddr_union sa;
-                socklen_t salen;
-
-                switch (m->address.sockaddr.sa.sa_family) {
-                        case AF_INET:
-                                sa = (union sockaddr_union) {
-                                        .in.sin_family = m->address.sockaddr.sa.sa_family,
-                                        .in.sin_port = m->address.sockaddr.in.sin_port,
-                                        .in.sin_addr = m->address.sockaddr.in.sin_addr,
-                                };
-                                salen = sizeof(sa.in);
-                                break;
-                        case AF_INET6:
-                                sa = (union sockaddr_union) {
-                                        .in6.sin6_family = m->address.sockaddr.sa.sa_family,
-                                        .in6.sin6_port = m->address.sockaddr.in6.sin6_port,
-                                        .in6.sin6_addr = m->address.sockaddr.in6.sin6_addr,
-                                };
-                                salen = sizeof(sa.in6);
-                                break;
-                        default:
-                                r = -EAFNOSUPPORT;
-                                goto fail;
-                }
-
-                r = connect(m->socket, &m->address.sockaddr.sa, salen);
-                if (r < 0 && errno != EINPROGRESS) {
+        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP) {
+                r = setsockopt(m->socket, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
+                if (r < 0) {
                         r = -errno;
+                        log_error_errno(errno, "Failed to set socket TCP_NODELAY: %m");
                         goto fail;
                 }
-
-                r = setsockopt(m->socket, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
-                if (r < 0)
-                        return r;
         }
 
         r = fd_nonblock(m->socket, true);
-        if (r < 0)
+        if (r < 0) {
+                log_error_errno(errno, "Failed to set socket nonblock: %m");
                 goto fail;
+        }
+
+        r = manager_network_connect_socket(m);
+        if (r < 0) {
+                log_error_errno(errno, "Failed to connect: %m");
+                goto fail;
+        }
 
         return m->socket;
 

@@ -31,6 +31,7 @@
 #define _weakref_(x) __attribute__((weakref(#x)))
 #define _alignas_(x) __attribute__((aligned(__alignof(x))))
 #define _cleanup_(x) __attribute__((cleanup(x)))
+#define _noreturn_ _Noreturn
 
 /* Temporarily disable some warnings */
 #define DISABLE_WARNING_DECLARATION_AFTER_STATEMENT                     \
@@ -56,6 +57,10 @@
 #define DISABLE_WARNING_INCOMPATIBLE_POINTER_TYPES                      \
         _Pragma("GCC diagnostic push");                                 \
         _Pragma("GCC diagnostic ignored \"-Wincompatible-pointer-types\"")
+
+#define DISABLE_WARNING_ADDRESS                                         \
+        _Pragma("GCC diagnostic push");                                 \
+        _Pragma("GCC diagnostic ignored \"-Waddress\"")
 
 #define REENABLE_WARNING                                                \
         _Pragma("GCC diagnostic pop")
@@ -382,15 +387,17 @@ static inline unsigned long ALIGN_POWER2(unsigned long u) {
 #endif
 #endif
 
-/* Define C11 noreturn without <stdnoreturn.h> and even on older gcc
- * compiler versions */
-#ifndef noreturn
-#if __STDC_VERSION__ >= 201112L
-#define noreturn _Noreturn
-#else
-#define noreturn __attribute__((noreturn))
-#endif
-#endif
+#define _FOREACH_ARRAY(i, array, num, m, end)                           \
+        for (typeof(array[0]) *i = (array), *end = ({                   \
+                                typeof(num) m = (num);                  \
+                                (i && m > 0) ? i + m : NULL;            \
+                        }); end && i < end; i++)
+
+#define FOREACH_ARRAY(i, array, num)                                    \
+        _FOREACH_ARRAY(i, array, num, UNIQ_T(m, UNIQ), UNIQ_T(end, UNIQ))
+
+#define FOREACH_ELEMENT(i, array)                                 \
+        FOREACH_ARRAY(i, array, ELEMENTSOF(array))
 
 #define DEFINE_TRIVIAL_CLEANUP_FUNC(type, func)                 \
         static inline void func##p(type *p) {                   \
@@ -398,6 +405,20 @@ static inline unsigned long ALIGN_POWER2(unsigned long u) {
                         func(*p);                               \
         }                                                       \
         struct __useless_struct_to_allow_trailing_semicolon__
+
+
+/* When func() doesn't return the appropriate type, set variable to empty afterwards.
+ * The func() may be provided by a dynamically loaded shared library, hence add an assertion. */
+#define DEFINE_TRIVIAL_CLEANUP_FUNC_FULL(type, func, empty)     \
+        static inline void func##p(type *p) {                   \
+                if (*p != (empty)) {                            \
+                        DISABLE_WARNING_ADDRESS;                \
+                        assert(func);                           \
+                        REENABLE_WARNING;                       \
+                        func(*p);                               \
+                        *p = (empty);                           \
+                }                                               \
+        }
 
 /* Takes inspiration from Rust's Option::take() method: reads and returns a pointer, but at the same time
  * resets it to NULL. See: https://doc.rust-lang.org/std/option/enum.Option.html#method.take */
