@@ -10,10 +10,10 @@
 #include "alloc-util.h"
 #include "io-util.h"
 #include "iovec-util.h"
-#include "netlog-dtls.h"
+#include "netlog-tls.h"
 #include "fd-util.h"
 
-static ssize_t dtls_write(DTLSManager *m, const char *buf, size_t count) {
+static ssize_t tls_write(TLSManager *m, const char *buf, size_t count) {
         int error, r;
         ssize_t ss;
 
@@ -40,7 +40,7 @@ static ssize_t dtls_write(DTLSManager *m, const char *buf, size_t count) {
         return ss;
 }
 
-ssize_t dtls_stream_writev(DTLSManager *m, const struct iovec *iov, size_t iovcnt) {
+ssize_t tls_stream_writev(TLSManager *m, const struct iovec *iov, size_t iovcnt) {
         _cleanup_free_ char *buf = NULL;
         size_t count;
 
@@ -55,20 +55,16 @@ ssize_t dtls_stream_writev(DTLSManager *m, const struct iovec *iov, size_t iovcn
         for (size_t i = 0, pos = 0; i < iovcnt; pos += iov[i].iov_len, i++)
                 memcpy(buf + pos, iov[i].iov_base, iov[i].iov_len);
 
-        return dtls_write(m, buf, count);
+        return tls_write(m, buf, count);
 }
 
-int dtls_connect(DTLSManager *m, SocketAddress *address) {
+int tls_connect(TLSManager *m, SocketAddress *address) {
         _cleanup_(BIO_freep) BIO *bio = NULL;
         _cleanup_(SSL_freep) SSL *ssl = NULL;
         const SSL_CIPHER *cipher;
         union sockaddr_union sa;
         socklen_t salen;
         SSL_CTX *ctx;
-        struct timeval timeout = {
-                .tv_sec = 3,
-                .tv_usec = 0,
-        };
         int fd, r;
 
         assert(m);
@@ -94,7 +90,7 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
                         return -EAFNOSUPPORT;
         }
 
-        fd = socket(AF_INET, SOCK_DGRAM, 0);
+        fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
         if (fd < 0)
                 return log_error_errno(errno, "Failed to allocate socket: %m");;
 
@@ -102,7 +98,7 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
         if (r < 0 && errno != EINPROGRESS)
                 return log_error_errno(errno, "Failed to connect dtls socket: %m");;
 
-        ctx = SSL_CTX_new(DTLS_method());
+        ctx = SSL_CTX_new(SSLv23_client_method());
         if (!ctx)
                 return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
                                        "Failed to allocate memory for SSL CTX: %m");
@@ -115,15 +111,11 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
                 return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
                                        "Failed to allocate memory for ssl: %s",
                                        ERR_error_string(ERR_get_error(), NULL));
-
-        /* Create BIO from socket array! */
-        bio = BIO_new_dgram(fd, BIO_NOCLOSE);
-        if (!bio)
-                return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
-                                       "Failed to allocate memory for bio: %m");
-
-        BIO_ctrl(bio, BIO_CTRL_DGRAM_SET_CONNECTED, 0, &address);
-        SSL_set_bio(ssl , bio, bio);
+        r = SSL_set_fd(ssl, fd);
+        if (r <= 0)
+                return log_error_errno(SYNTHETIC_ERRNO(EIO),
+                                       "Failed to SSL_set_fd: %s",
+                                       ERR_error_string(ERR_get_error(), NULL));
 
         r = SSL_connect(ssl);
         if (r <= 0)
@@ -132,14 +124,7 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
                                        ERR_error_string(ERR_get_error(), NULL));
 
         cipher = SSL_get_current_cipher(ssl);
-        log_debug("dtls_connect: Cipher Version: %s Name: %s", SSL_CIPHER_get_version(cipher), SSL_CIPHER_get_name(cipher));
-
-        /* Set reference in SSL obj */
-        SSL_set_ex_data(ssl, 0, NULL);
-        SSL_set_ex_data(ssl, 1, NULL);
-
-        /* Set and activate timeouts */
-        BIO_ctrl(bio, BIO_CTRL_DGRAM_SET_RECV_TIMEOUT, 0, &timeout);
+        log_debug("tls_connect: Cipher Version: %s Name: %s", SSL_CIPHER_get_version(cipher), SSL_CIPHER_get_name(cipher));
 
         m->bio = TAKE_PTR(bio);
         m->ssl = TAKE_PTR(ssl);
@@ -150,7 +135,7 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
         return 0;
 }
 
-void dtls_disconnect(DTLSManager *m) {
+void tls_disconnect(TLSManager *m) {
         if (!m)
                 return;
 
@@ -166,7 +151,7 @@ void dtls_disconnect(DTLSManager *m) {
         m->connected = false;;
 }
 
-void dtls_manager_free(DTLSManager *m) {
+void tls_manager_free(TLSManager *m) {
         if (!m)
                 return;
 
@@ -176,10 +161,10 @@ void dtls_manager_free(DTLSManager *m) {
         free(m);
 }
 
-int dtls_manager_init(DTLSManager **ret) {
-        _cleanup_(dtls_manager_freep) DTLSManager *m = NULL;
+int tls_manager_init(TLSManager **ret) {
+        _cleanup_(tls_manager_freep) TLSManager *m = NULL;
 
-        m = new0(DTLSManager, 1);
+        m = new0(TLSManager, 1);
         if (!m)
                 return log_oom();
 

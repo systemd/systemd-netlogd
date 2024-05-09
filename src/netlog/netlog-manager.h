@@ -7,11 +7,13 @@
 #include "sd-network.h"
 #include "socket-util.h"
 #include "netlog-dtls.h"
+#include "netlog-tls.h"
 
 typedef enum SysLogTransmissionProtocol {
         SYSLOG_TRANSMISSION_PROTOCOL_UDP      = 1 << 0,
         SYSLOG_TRANSMISSION_PROTOCOL_TCP      = 1 << 1,
         SYSLOG_TRANSMISSION_PROTOCOL_DTLS     = 1 << 2,
+        SYSLOG_TRANSMISSION_PROTOCOL_TLS      = 1 << 3,
         _SYSLOG_TRANSMISSION_PROTOCOL_MAX,
         _SYSLOG_TRANSMISSION_PROTOCOL_INVALID = -EINVAL,
 } SysLogTransmissionProtocol;
@@ -62,6 +64,7 @@ struct Manager {
         bool encrypt;
 
         DTLSManager *dtls;
+        TLSManager *tls;
 };
 
 int manager_new(const char *state_file, const char *cursor, Manager **ret);

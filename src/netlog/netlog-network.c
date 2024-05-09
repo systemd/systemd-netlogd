@@ -62,6 +62,31 @@ static int network_send(Manager *m, struct iovec *iovec, unsigned n_iovec) {
         return sendmsg_loop(m, &mh);
 }
 
+static int protocol_send(Manager *m, struct iovec *iovec, unsigned n_iovec) {
+        int r;
+
+        switch (m->protocol) {
+                case SYSLOG_TRANSMISSION_PROTOCOL_DTLS:
+                        r = dtls_stream_writev(m->dtls, iovec, n_iovec);
+                        if (r < 0 && r != -EAGAIN) {
+                                dtls_disconnect(m->dtls);
+                                return r;
+                        }
+                        break;
+                case SYSLOG_TRANSMISSION_PROTOCOL_TLS:
+                        r = tls_stream_writev(m->tls, iovec, n_iovec);
+                        if (r < 0 && r != -EAGAIN) {
+                                tls_disconnect(m->tls);
+                                return r;
+                        }
+                        break;
+                default:
+                        return network_send(m, iovec, n_iovec);
+        }
+
+        return 0;
+}
+
 /* rfc3339 timestamp format: yyyy-mm-ddthh:mm:ss[.frac]<+/->zz:zz */
 static void format_rfc3339_timestamp(const struct timeval *tv, char *header_time, size_t header_size) {
         char gm_buf[sizeof("+0530") + 1];
@@ -168,11 +193,7 @@ static int format_rfc5424(Manager *m,
         if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP)
                 IOVEC_SET_STRING(iov[n++], "\n");
 
-
-        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_DTLS)
-                return dtls_stream_writev(m->dtls, iov, n);
-        else
-                return network_send(m, iov, n);
+        return protocol_send(m, iov, n);
 }
 
 static int format_rfc3339(Manager *m,
@@ -240,10 +261,7 @@ static int format_rfc3339(Manager *m,
         if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP)
                 IOVEC_SET_STRING(iov[n++], "\n");
 
-        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_DTLS)
-                return dtls_stream_writev(m->dtls, iov, n);
-        else
-                return network_send(m, iov, n);
+        return protocol_send(m, iov, n);
 }
 
 int manager_push_to_network(Manager *m,
@@ -263,6 +281,26 @@ int manager_push_to_network(Manager *m,
 
        if (!message)
                return 0;
+
+        switch (m->protocol) {
+                case SYSLOG_TRANSMISSION_PROTOCOL_DTLS:
+                        if (!m->dtls->connected) {
+                                r = dtls_connect(m->dtls, &m->address);
+                                if (r < 0)
+                                        return r;
+                        }
+
+                        break;
+                case SYSLOG_TRANSMISSION_PROTOCOL_TLS:
+                        if (!m->tls->connected) {
+                                r = tls_connect(m->tls, &m->address);
+                                if (r < 0)
+                                        return r;
+                        }
+                        break;
+                default:
+                        break;
+        }
 
        if (m->log_format == SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424)
                r = format_rfc5424(m, severity, facility, identifier, message, hostname, pid, tv, syslog_structured_data, syslog_msgid);

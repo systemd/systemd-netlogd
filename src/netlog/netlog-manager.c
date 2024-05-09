@@ -31,6 +31,7 @@ static const char *const protocol_table[_SYSLOG_TRANSMISSION_PROTOCOL_MAX] = {
         [SYSLOG_TRANSMISSION_PROTOCOL_UDP]  = "udp",
         [SYSLOG_TRANSMISSION_PROTOCOL_TCP]  = "tcp",
         [SYSLOG_TRANSMISSION_PROTOCOL_DTLS] = "dtls",
+        [SYSLOG_TRANSMISSION_PROTOCOL_TLS]  = "tls",
 };
 
 DEFINE_STRING_TABLE_LOOKUP(protocol, int);
@@ -388,15 +389,19 @@ int manager_connect(Manager *m) {
 
         manager_disconnect(m);
 
-        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_DTLS) {
-                r = dtls_connect(m->dtls, &m->address);
-                if (r < 0)
-                        return r;
-        } else {
-                r = manager_open_network_socket(m);
-                if (r < 0)
-                        return log_error_errno(r, "Failed to create network socket: %m");
+        switch (m->protocol) {
+                case SYSLOG_TRANSMISSION_PROTOCOL_DTLS:
+                        r = dtls_connect(m->dtls, &m->address);
+                        break;
+                case SYSLOG_TRANSMISSION_PROTOCOL_TLS:
+                        r = tls_connect(m->tls, &m->address);
+                        break;
+                default:
+                        r = manager_open_network_socket(m);
+                        break;
         }
+        if (r < 0)
+                return log_error_errno(r, "Failed to create network socket: %m");
 
         r = manager_journal_monitor_listen(m);
         if (r < 0)
@@ -411,7 +416,9 @@ void manager_disconnect(Manager *m) {
         close_journal_input(m);
 
         manager_close_network_socket(m);
+
         dtls_disconnect(m->dtls);
+        tls_disconnect(m->tls);
 
         m->event_journal_input = sd_event_source_unref(m->event_journal_input);
 

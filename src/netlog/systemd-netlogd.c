@@ -171,11 +171,19 @@ int main(int argc, char **argv) {
                 goto finish;
         }
 
-        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_DTLS) {
-                r = dtls_manager_init(&m->dtls);
-                if (r < 0)
-                        return r;
+        switch (m->protocol) {
+                case SYSLOG_TRANSMISSION_PROTOCOL_DTLS:
+                        r = dtls_manager_init(&m->dtls);
+                        break;
+                case SYSLOG_TRANSMISSION_PROTOCOL_TLS:
+                        r = tls_manager_init(&m->tls);
+                        break;
+                default:
+                        break;
         }
+
+        if (r < 0)
+                return r;
 
         r = setup_cursor_state_file(m, uid, gid);
         if (r < 0)
