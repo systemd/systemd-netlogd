@@ -59,7 +59,7 @@ systemd-netlogd reads configuration files named `/etc/systemd/netlogd.conf` and 
            The the address string format is similar to socket units. See systemd.socket(1)
 
        Protocol=
-            Specifies whether to use udp or tcp protocol. Defaults to udp.
+            Specifies whether to use udp, tcp or dtls (Datagram Transport Layer Security)  protocol. Defaults to udp.
 
        LogFormat=
               Specifies whether to use RFC 5424 format or RFC 3339 format. Takes one of rfc5424 or rfc3339. Defaults to rfc5424.
