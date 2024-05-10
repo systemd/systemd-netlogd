@@ -72,7 +72,7 @@ static int protocol_send(Manager *m, struct iovec *iovec, unsigned n_iovec) {
 
         switch (m->protocol) {
                 case SYSLOG_TRANSMISSION_PROTOCOL_DTLS:
-                        r = dtls_stream_writev(m->dtls, iovec, n_iovec);
+                        r = dtls_datagram_writev(m->dtls, iovec, n_iovec);
                         if (r < 0 && r != -EAGAIN) {
                                 dtls_disconnect(m->dtls);
                                 return r;

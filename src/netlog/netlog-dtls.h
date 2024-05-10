@@ -25,6 +25,6 @@ int dtls_manager_init(DTLSManager **m);
 int dtls_connect(DTLSManager *m, SocketAddress *addr);
 void dtls_disconnect(DTLSManager *m);
 
-ssize_t dtls_stream_writev(DTLSManager *m, const struct iovec *iov, size_t iovcnt);
+ssize_t dtls_datagram_writev(DTLSManager *m, const struct iovec *iov, size_t iovcnt);
 
 DEFINE_TRIVIAL_CLEANUP_FUNC(DTLSManager*, dtls_manager_free);

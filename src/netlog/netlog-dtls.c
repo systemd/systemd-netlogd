@@ -29,7 +29,7 @@ static ssize_t dtls_write(DTLSManager *m, const char *buf, size_t count) {
         return 0;
 }
 
-ssize_t dtls_stream_writev(DTLSManager *m, const struct iovec *iov, size_t iovcnt) {
+ssize_t dtls_datagram_writev(DTLSManager *m, const struct iovec *iov, size_t iovcnt) {
         _cleanup_free_ char *buf = NULL;
         size_t count;
 
