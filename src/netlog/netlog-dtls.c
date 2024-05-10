@@ -1,17 +1,17 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 
+#include <arpa/inet.h>
+#include <netinet/in.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 
 #include "alloc-util.h"
+#include "fd-util.h"
 #include "io-util.h"
 #include "iovec-util.h"
 #include "netlog-dtls.h"
-#include "fd-util.h"
 
 static ssize_t dtls_write(DTLSManager *m, const char *buf, size_t count) {
         int r;

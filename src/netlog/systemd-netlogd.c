@@ -1,23 +1,23 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
 
-#include <stdio.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <stdio.h>
+#include <sys/stat.h>
 #include <systemd/sd-daemon.h>
 
-#include "util.h"
 #include "build.h"
-#include "mkdir.h"
-#include "path-util.h"
-#include "fd-util.h"
-#include "fs-util.h"
-#include "user-util.h"
-#include "fileio.h"
 #include "capability-util.h"
-#include "network-util.h"
+#include "fd-util.h"
+#include "fileio.h"
+#include "fs-util.h"
+#include "mkdir.h"
 #include "netlog-conf.h"
 #include "netlog-manager.h"
+#include "network-util.h"
+#include "path-util.h"
+#include "user-util.h"
+#include "util.h"
 
 #define STATE_FILE "/var/lib/systemd/journal-netlogd/state"
 
