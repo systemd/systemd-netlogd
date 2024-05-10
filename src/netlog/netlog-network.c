@@ -16,14 +16,18 @@
 #define SEND_TIMEOUT_USEC (200 * USEC_PER_MSEC)
 
 static int sendmsg_loop(Manager *m, struct msghdr *mh) {
+        size_t n;
         int r;
 
         assert(m);
         assert(mh);
 
         for (;;) {
-                if (sendmsg(m->socket, mh, MSG_NOSIGNAL) >= 0)
+                n = sendmsg(m->socket, mh, MSG_NOSIGNAL);
+                if (r >= 0) {
+                        log_debug("Successful sendmsg: %ld bytes", n);
                         return 0;
+                }
 
                 if (errno == EINTR)
                         continue;
@@ -420,6 +424,8 @@ int manager_open_network_socket(Manager *m) {
                 log_error_errno(errno, "Failed to connect: %m");
                 goto fail;
         }
+
+        log_debug("Succesfully created socket with fd='%d'", m->socket);
 
         return m->socket;
 
