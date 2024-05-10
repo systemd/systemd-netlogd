@@ -88,13 +88,13 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
         if (fd < 0)
                 return log_error_errno(errno, "Failed to allocate socket: %m");;
 
-        r = connect(fd, &address->sockaddr.sa, salen);
-        if (r < 0 && errno != EINPROGRESS)
-                return log_error_errno(errno, "Failed to connect DTLS socket: %m");;
-
         r = sockaddr_pretty(&address->sockaddr.sa, salen, true, true, &pretty);
         if (r < 0)
                 return r;
+
+        r = connect(fd, &address->sockaddr.sa, salen);
+        if (r < 0 && errno != EINPROGRESS)
+                return log_error_errno(errno, "Failed to connect to remote server='%s': %m", pretty);;
 
         log_debug("Connected to remote server: '%s'", pretty);
 
