@@ -14,30 +14,16 @@
 #include "fd-util.h"
 
 static ssize_t tls_write(TLSManager *m, const char *buf, size_t count) {
-        int error, r;
-        ssize_t ss;
+        int r;
 
         assert(m);
 
         ERR_clear_error();
-        ss = r = SSL_write(m->ssl, buf, count);
-        if (r <= 0) {
-                error = SSL_get_error(m->ssl, r);
-                if (IN_SET(error, SSL_ERROR_WANT_READ, SSL_ERROR_WANT_WRITE)) {
-                        m->events = error == SSL_ERROR_WANT_READ ? EPOLLIN : EPOLLOUT;
-                        ss = -EAGAIN;
-                } else if (error == SSL_ERROR_ZERO_RETURN) {
-                        m->events = 0;
-                        ss = 0;
-                } else {
-                        log_debug("Failed to invoke SSL_write: %s", TLS_ERROR_STRING(error));
-                        m->events = 0;
-                        ss = -EPIPE;
-                }
-        } else
-                m->events = 0;
+        r = SSL_write(m->ssl, buf, count);
+        if (r <= 0)
+                return log_error_errno(r, "Failed to invoke SSL_write: %s", TLS_ERROR_STRING(SSL_get_error(m->ssl, r)));
 
-        return ss;
+        return 0;
 }
 
 ssize_t tls_stream_writev(TLSManager *m, const struct iovec *iov, size_t iovcnt) {
