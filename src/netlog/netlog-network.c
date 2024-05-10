@@ -359,13 +359,13 @@ int manager_network_connect_socket(Manager *m) {
                         return -EAFNOSUPPORT;
         }
 
-        r = connect(m->socket, &m->address.sockaddr.sa, salen);
-        if (r < 0 && errno != EINPROGRESS)
-                return -errno;
-
         r = sockaddr_pretty(&m->address.sockaddr.sa, salen, true, true, &pretty);
         if (r < 0)
                 return r;
+
+        r = connect(m->socket, &m->address.sockaddr.sa, salen);
+        if (r < 0 && errno != EINPROGRESS)
+                return log_error_errno(errno, "Failed to connect to remote server='%s'", pretty);
 
         log_debug("Connected to remote server: '%s'", pretty);
 
@@ -420,10 +420,8 @@ int manager_open_network_socket(Manager *m) {
         }
 
         r = manager_network_connect_socket(m);
-        if (r < 0) {
-                log_error_errno(errno, "Failed to connect: %m");
+        if (r < 0)
                 goto fail;
-        }
 
         log_debug("Succesfully created socket with fd='%d'", m->socket);
 
