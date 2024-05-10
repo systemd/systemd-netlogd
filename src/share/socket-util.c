@@ -18,6 +18,7 @@
 #include "fd-util.h"
 #include "fileio.h"
 #include "formats-util.h"
+#include "in-addr-util.h"
 #include "log.h"
 #include "macro.h"
 #include "missing.h"
@@ -202,4 +203,87 @@ int fd_inc_rcvbuf(int fd, size_t n) {
                 if (setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &value, sizeof(value)) < 0)
                         return -errno;
         return 1;
+}
+
+int sockaddr_pretty(
+                const struct sockaddr *_sa,
+                socklen_t salen,
+                bool translate_ipv6,
+                bool include_port,
+                char **ret) {
+
+        union sockaddr_union *sa = (union sockaddr_union*) _sa;
+        char *p;
+        int r;
+
+        assert(sa);
+        assert(salen >= sizeof(sa->sa.sa_family));
+
+        switch (sa->sa.sa_family) {
+
+        case AF_INET: {
+                uint32_t a;
+
+                a = be32toh(sa->in.sin_addr.s_addr);
+
+                if (include_port)
+                        r = asprintf(&p,
+                                     "%u.%u.%u.%u:%u",
+                                     a >> 24, (a >> 16) & 0xFF, (a >> 8) & 0xFF, a & 0xFF,
+                                     be16toh(sa->in.sin_port));
+                else
+                        r = asprintf(&p,
+                                     "%u.%u.%u.%u",
+                                     a >> 24, (a >> 16) & 0xFF, (a >> 8) & 0xFF, a & 0xFF);
+                if (r < 0)
+                        return -ENOMEM;
+                break;
+        }
+
+        case AF_INET6: {
+                static const unsigned char ipv4_prefix[] = {
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF
+                };
+
+                if (translate_ipv6 &&
+                    memcmp(&sa->in6.sin6_addr, ipv4_prefix, sizeof(ipv4_prefix)) == 0) {
+                        const uint8_t *a = sa->in6.sin6_addr.s6_addr+12;
+                        if (include_port)
+                                r = asprintf(&p,
+                                             "%u.%u.%u.%u:%u",
+                                             a[0], a[1], a[2], a[3],
+                                             be16toh(sa->in6.sin6_port));
+                        else
+                                r = asprintf(&p,
+                                             "%u.%u.%u.%u",
+                                             a[0], a[1], a[2], a[3]);
+                        if (r < 0)
+                                return -ENOMEM;
+                } else {
+                        char a[INET6_ADDRSTRLEN];
+
+                        inet_ntop(AF_INET6, &sa->in6.sin6_addr, a, sizeof(a));
+
+                        if (include_port) {
+                                r = asprintf(&p,
+                                             "[%s]:%u",
+                                             a,
+                                             be16toh(sa->in6.sin6_port));
+                                if (r < 0)
+                                        return -ENOMEM;
+                        } else {
+                                p = strdup(a);
+                                if (!p)
+                                        return -ENOMEM;
+                        }
+                }
+
+                break;
+        }
+                default:
+                        return -EOPNOTSUPP;
+        }
+
+        *ret = p;
+        return 0;
 }
