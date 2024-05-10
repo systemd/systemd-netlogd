@@ -6,13 +6,10 @@ systend-netlogd manual page
 Description
 -----------
 
-Forwards messages from the journal to other hosts over the network using
-the Syslog Protocol (RFC 5424 and RFC 3339). It can be configured to send messages to
-both unicast and multicast addresses. systemd-netlogd runs with own user
-systemd-journal-netlog.  Starts sending logs when network is up and stops
-sending as soon as network is down (uses sd-network). It reads from journal
-and forwards to network one by one. It does not use any extra disk space.
-systemd-netlogd supports UDP, TCP, TLS and DTLS (Datagram Transport Layer Security RFC 6012).
+Forwards messages from the journal to other hosts over the network using the Syslog Protocol (RFC 5424 and RFC 3339). It can be configured to send
+messages to both unicast and multicast addresses. systemd-netlogd runs with own user systemd-journal-netlog. Starts sending logs when network is up and stops
+sending as soon as network is down (uses sd-network). It reads from journal and forwards to network one by one. It does not use any extra disk space.
+systemd-netlogd supports ``UDP``, ``TCP``, ``TLS`` and ``DTLS`` (Datagram Transport Layer Security RFC 6012).
 
 Configuration
 -------------
@@ -28,62 +25,70 @@ This will create a user systemd-journal-netlog
 |
    The "[Network]" section only applies for UDP multicast address and Port:
 
-|   Address=
-       Controls whether log messages received by the systemd daemon shall be forwarded
-       to a unicast UDP address or multicast UDP network group in syslog RFC 5424 format.
+|   ``Address=``
+        Controls whether log messages received by the systemd daemon shall be forwarded
+        to a unicast UDP address or multicast UDP network group in syslog RFC 5424 format.
+        The address string format is similar to socket units. See systemd.socket(1)
 
-       The address string format is similar to socket units. See systemd.socket(1)
+|   ``Protocol=``
+        Specifies whether to use udp, tcp, tls or dtls (Datagram Transport Layer Security) protocol. Defaults to udp.
 
-|   Protocol=
-       Specifies whether to use udp, tcp, tls or dtls (Datagram Transport Layer Security) protocol. Defaults to udp.
+|   ``LogFormat=``
+        Specifies whether to use RFC 5424 format or RFC 3339 format. Takes one of rfc5424 or rfc3339. Defaults to rfc5424.
 
-|   LogFormat=
-          Specifies whether to use RFC 5424 format or RFC 3339 format. Takes one of rfc5424 or rfc3339. Defaults to rfc5424.
+|   ``Directory=``
+        Takes a directory path. Specifies whether to operate on the specified journal directory DIR instead of the default runtime and system journal paths.
 
-|   Directory=
-          Takes a directory path. Specifies whether to operate on the specified journal directory DIR instead of the default runtime and system journal paths.
-
-|   Namespace=
-         Takes a journal namespace identifier string as argument. If not specified the data collected by the default namespace is shown.
-         If specified shows the log data of the specified namespace instead. If the namespace is specified as "*" data from all namespaces
-         is shown, interleaved. If the namespace identifier is prefixed with "+" data from the specified namespace and the default namespace is shown,
-         interleaved, but no other.
+|   ``Namespace=``
+        Takes a journal namespace identifier string as argument. If not specified the data collected by the default namespace is shown.
+        If specified shows the log data of the specified namespace instead. If the namespace is specified as "*" data from all namespaces
+        is shown, interleaved. If the namespace identifier is prefixed with "+" data from the specified namespace and the default namespace is shown,
+        interleaved, but no other.
 
 |  Optional settings
 
-|  StructuredData=
-       Meta information about the syslog message, which can be used for Cloud Based
-       syslog servers, such as Loggly
+|  ``StructuredData=``
+        Specifes the meta information about the syslog message, which can be used for Cloud Based syslog servers, such as Loggly.
 
-|  UseSysLogStructuredData=
-      A boolean. Specifies whether to extract SYSLOG_STRUCTURED_DATA= from journal. Defaults to false.
+|  ``UseSysLogStructuredData=``
+        A boolean. Specifies whether to extract SYSLOG_STRUCTURED_DATA= from journal. Defaults to false.
 
-|   UseSysLogMsgId=
-      A boolean. Specifies whether to extract SYSLOG_MSGID= from journal. Defaults to false.
-
-|
+|  ``UseSysLogMsgId=``
+       A boolean. Specifies whether to extract SYSLOG_MSGID= from journal. Defaults to false.
 
 EXAMPLES
 --------
 
 - Example 1. /etc/systemd/systemd-netlogd.conf::
 
+.. code-block:: bash
+       :linenos:
+
        [Network]
        Address=239.0.0.1:6000
-       Example 2. /etc/systemd/systemd-netlogd.conf
+
 
 - Example 2. /etc/systemd/systemd-netlogd.conf::
+
+ .. code-block:: bash
+       :linenos:
 
        [Network]
        Address=192.168.8.101:514
 
 - Example 3. /etc/systemd/systemd-netlogd.conf::
 
-       [Network]
-       Address=192.168.8.101:514
-       StructuredData=[1ab456b6-90bb-6578-abcd-5b734584aaaa@41058]
+ .. code-block:: bash
+    :linenos:
+
+    [Network]
+    Address=192.168.8.101:514
+    StructuredData=[1ab456b6-90bb-6578-abcd-5b734584aaaa@41058]
 
 - Example 4. /etc/systemd/netlogd.conf
+
+ .. code-block:: bash
+    :linenos:
 
     [Network]
     Address=192.168.8.101:514
@@ -92,9 +97,32 @@ EXAMPLES
     UseSysLogStructuredData=yes
     UseSysLogMsgId=yes
 
+ Example 5. /etc/systemd/netlogd.conf
+
+ .. code-block:: bash
+    :linenos:
+
+    [Network]
+    Address=192.168.8.101:514
+    Protocol=dtls
+    LogFormat=rfc5424
+
+ Example 5. /etc/systemd/netlogd.conf
+
+ .. code-block:: bash
+    :linenos:
+
+    [Network]
+    Address=192.168.8.101:514
+    Protocol=tls
+    LogFormat=rfc5424
+
 - Use case of UseSysLogStructuredData= and UseSysLogMsgId=
 
-  sd_journal_send(
+ .. code-block::
+    :linenos:
+
+    sd_journal_send(
     "MESSAGE=%s", "Message to process",
     "PRIORITY=%s", "4",
     "SYSLOG_FACILITY=%s", "1",
