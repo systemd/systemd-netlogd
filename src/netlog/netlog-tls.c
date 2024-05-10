@@ -126,6 +126,10 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
         cipher = SSL_get_current_cipher(ssl);
         log_debug("tls_connect: Cipher Version: %s Name: %s", SSL_CIPHER_get_version(cipher), SSL_CIPHER_get_name(cipher));
 
+        r = fd_nonblock(fd, true);
+        if (r < 0)
+                return log_error_errno(errno, "Failed to set socket nonblock: %m");
+
         m->bio = TAKE_PTR(bio);
         m->ssl = TAKE_PTR(ssl);
         m->ctx = ctx;
