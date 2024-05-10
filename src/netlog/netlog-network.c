@@ -317,10 +317,10 @@ int manager_push_to_network(Manager *m,
 void manager_close_network_socket(Manager *m) {
        assert(m);
 
-        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP) {
+        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP && m->socket >= 0) {
                 int r = shutdown(m->socket, SHUT_RDWR);
                 if (r < 0)
-                        log_error_errno(r, "Failed to shutdown netlog socket: %m");
+                        log_error_errno(errno, "Failed to shutdown netlog socket: %m");
         }
 
         m->socket = safe_close(m->socket);
