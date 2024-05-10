@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <unistd.h>
 
+#include "alloc-util.h"
 #include "fd-util.h"
 #include "io-util.h"
 #include "netlog-manager.h"
@@ -326,6 +327,7 @@ void manager_close_network_socket(Manager *m) {
 }
 
 int manager_network_connect_socket(Manager *m) {
+        _cleanup_free_ char *pretty = NULL;
         union sockaddr_union sa;
         socklen_t salen;
         int r;
@@ -356,6 +358,12 @@ int manager_network_connect_socket(Manager *m) {
         r = connect(m->socket, &m->address.sockaddr.sa, salen);
         if (r < 0 && errno != EINPROGRESS)
                 return -errno;
+
+        r = sockaddr_pretty(&m->address.sockaddr.sa, salen, true, true, &pretty);
+        if (r < 0)
+                return r;
+
+        log_debug("Connected to remote server: '%s'", pretty);
 
         return 0;
 }
