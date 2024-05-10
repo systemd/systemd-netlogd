@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <unistd.h>
 
+#include "alloc-util.h"
 #include "fd-util.h"
 #include "io-util.h"
 #include "netlog-manager.h"
@@ -316,16 +317,17 @@ int manager_push_to_network(Manager *m,
 void manager_close_network_socket(Manager *m) {
        assert(m);
 
-        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP) {
+        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP && m->socket >= 0) {
                 int r = shutdown(m->socket, SHUT_RDWR);
                 if (r < 0)
-                        log_error_errno(r, "Failed to shutdown netlog socket: %m");
+                        log_error_errno(errno, "Failed to shutdown netlog socket: %m");
         }
 
         m->socket = safe_close(m->socket);
 }
 
 int manager_network_connect_socket(Manager *m) {
+        _cleanup_free_ char *pretty = NULL;
         union sockaddr_union sa;
         socklen_t salen;
         int r;
@@ -356,6 +358,12 @@ int manager_network_connect_socket(Manager *m) {
         r = connect(m->socket, &m->address.sockaddr.sa, salen);
         if (r < 0 && errno != EINPROGRESS)
                 return -errno;
+
+        r = sockaddr_pretty(&m->address.sockaddr.sa, salen, true, true, &pretty);
+        if (r < 0)
+                return r;
+
+        log_debug("Connected to remote server: '%s'", pretty);
 
         return 0;
 }

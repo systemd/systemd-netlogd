@@ -89,7 +89,7 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
         if (r < 0)
                 return r;
 
-        log_debug("Connected to remote server'%s'", pretty);
+        log_debug("Connected to remote server: '%s'", pretty);
 
         ctx = SSL_CTX_new(SSLv23_client_method());
         if (!ctx)

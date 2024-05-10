@@ -93,7 +93,7 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
         if (r < 0)
                 return r;
 
-        log_debug("Connected to remote server'%s'", pretty);
+        log_debug("Connected to remote server: '%s'", pretty);
 
         ctx = SSL_CTX_new(DTLS_method());
         if (!ctx)
