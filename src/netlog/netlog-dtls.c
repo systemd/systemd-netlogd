@@ -17,6 +17,7 @@ static ssize_t dtls_write(DTLSManager *m, const char *buf, size_t count) {
         int r;
 
         assert(m);
+        assert(buf);
 
         ERR_clear_error();
         r = SSL_write(m->ssl, buf, count);
@@ -62,6 +63,7 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
         int fd, r;
 
         assert(m);
+        assert(address);
 
         switch (address->sockaddr.sa.sa_family) {
                 case AF_INET:
@@ -131,7 +133,7 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
 
         log_debug("SSL: Cipher Version: %s Name: %s", SSL_CIPHER_get_version(cipher), SSL_CIPHER_get_name(cipher));
         if (DEBUG_LOGGING) {
-                _cleanup_(X509_freep) X509  *cert = NULL;
+                _cleanup_(X509_freep) X509* cert = NULL;
 
                 cert = SSL_get_peer_certificate(ssl);
                 if (cert) {
