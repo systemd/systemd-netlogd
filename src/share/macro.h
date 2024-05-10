@@ -420,6 +420,15 @@ static inline unsigned long ALIGN_POWER2(unsigned long u) {
                 }                                               \
         }
 
+/* When func() doesn't return the appropriate type, and is also a macro, set variable to empty afterwards. */
+#define DEFINE_TRIVIAL_CLEANUP_FUNC_FULL_MACRO(type, func, empty)       \
+        static inline void func##p(type *p) {                           \
+                if (*p != (empty)) {                                    \
+                        func(*p);                                       \
+                        *p = (empty);                                   \
+                }                                                       \
+        }
+
 /* Takes inspiration from Rust's Option::take() method: reads and returns a pointer, but at the same time
  * resets it to NULL. See: https://doc.rust-lang.org/std/option/enum.Option.html#method.take */
 #define TAKE_PTR(ptr)                           \
