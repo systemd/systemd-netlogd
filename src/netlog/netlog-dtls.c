@@ -47,6 +47,7 @@ ssize_t dtls_stream_writev(DTLSManager *m, const struct iovec *iov, size_t iovcn
 int dtls_connect(DTLSManager *m, SocketAddress *address) {
         _cleanup_(BIO_freep) BIO *bio = NULL;
         _cleanup_(SSL_freep) SSL *ssl = NULL;
+        _cleanup_free_ char *pretty = NULL;
         const SSL_CIPHER *cipher;
         union sockaddr_union sa;
         socklen_t salen;
@@ -86,7 +87,13 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
 
         r = connect(fd, &address->sockaddr.sa, salen);
         if (r < 0 && errno != EINPROGRESS)
-                return log_error_errno(errno, "Failed to connect dtls socket: %m");;
+                return log_error_errno(errno, "Failed to connect DTLS socket: %m");;
+
+        r = sockaddr_pretty(&address->sockaddr.sa, salen, true, true, &pretty);
+        if (r < 0)
+                return r;
+
+        log_debug("Connected to remote server'%s'", pretty);
 
         ctx = SSL_CTX_new(DTLS_method());
         if (!ctx)
@@ -118,7 +125,23 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
                                        ERR_error_string(ERR_get_error(), NULL));
 
         cipher = SSL_get_current_cipher(ssl);
-        log_debug("dtls_connect: Cipher Version: %s Name: %s", SSL_CIPHER_get_version(cipher), SSL_CIPHER_get_name(cipher));
+
+        log_debug("SSL: Cipher Version: %s Name: %s", SSL_CIPHER_get_version(cipher), SSL_CIPHER_get_name(cipher));
+        if (DEBUG_LOGGING) {
+                _cleanup_(X509_freep) X509  *cert = NULL;
+
+                cert = SSL_get_peer_certificate(ssl);
+                if (cert) {
+                        _cleanup_(OPENSSL_freep) void *subject = NULL, *issuer = NULL;
+
+                        subject = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
+                        log_debug("DTLS: Subject: %s", (char *) subject);
+
+                        issuer = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
+                        log_debug("DTLS: Issuer: %s", (char *) issuer);
+                } else
+                        log_debug("DTLS: No certificates.");
+        }
 
         /* Set reference in SSL obj */
         SSL_set_ex_data(ssl, 0, NULL);

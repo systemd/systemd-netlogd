@@ -81,3 +81,5 @@ int fd_inc_rcvbuf(int fd, size_t n);
                          1 + strnlen(_sa->sun_path+1, sizeof(_sa->sun_path)-1) : \
                          strnlen(_sa->sun_path, sizeof(_sa->sun_path))); \
         })
+
+int sockaddr_pretty(const struct sockaddr *_sa, socklen_t salen, bool translate_ipv6, bool include_port, char **ret);
