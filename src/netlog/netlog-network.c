@@ -1,12 +1,12 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
 
-#include <unistd.h>
-#include <stddef.h>
-#include <poll.h>
 #include <netinet/tcp.h>
+#include <poll.h>
+#include <stddef.h>
+#include <unistd.h>
 
-#include "io-util.h"
 #include "fd-util.h"
+#include "io-util.h"
 #include "netlog-manager.h"
 
 #define RFC_5424_NILVALUE "-"

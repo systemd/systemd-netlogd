@@ -2,19 +2,19 @@
 
 #include <systemd/sd-daemon.h>
 
-#include "util.h"
-#include "socket-util.h"
-#include "conf-parser.h"
-#include "network-util.h"
 #include "capability-util.h"
-#include "signal-util.h"
-#include "mkdir.h"
+#include "conf-parser.h"
 #include "fd-util.h"
 #include "fileio.h"
-#include "string-util.h"
-#include "string-table.h"
-#include "parse-util.h"
+#include "mkdir.h"
 #include "netlog-manager.h"
+#include "network-util.h"
+#include "parse-util.h"
+#include "signal-util.h"
+#include "socket-util.h"
+#include "string-table.h"
+#include "string-util.h"
+#include "util.h"
 
 #define JOURNAL_SEND_POLL_TIMEOUT (10 * USEC_PER_SEC)
 
