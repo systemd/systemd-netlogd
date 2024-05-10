@@ -23,6 +23,9 @@ static ssize_t dtls_write(DTLSManager *m, const char *buf, size_t count) {
         if (r <= 0)
                 return log_error_errno(r, "Failed to invoke SSL_write: %s", TLS_ERROR_STRING(SSL_get_error(m->ssl, r)));
 
+        if (r > 0)
+                return log_debug("Successful DTLS SSL_write: %d bytes", r);
+
         return 0;
 }
 

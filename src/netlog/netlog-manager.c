@@ -86,6 +86,8 @@ static int manager_read_journal_input(Manager *m) {
         assert(m);
         assert(m->journal);
 
+        log_debug("Reading from journal ...");
+
         JOURNAL_FOREACH_DATA_RETVAL(m->journal, data, length, r) {
 
                 r = parse_field(data, length, "PRIORITY=", &priority);
@@ -389,6 +391,8 @@ int manager_connect(Manager *m) {
 
         manager_disconnect(m);
 
+        log_debug("Connecting network ...");
+
         switch (m->protocol) {
                 case SYSLOG_TRANSMISSION_PROTOCOL_DTLS:
                         r = dtls_connect(m->dtls, &m->address);
@@ -412,6 +416,8 @@ int manager_connect(Manager *m) {
 
 void manager_disconnect(Manager *m) {
         assert(m);
+
+        log_debug("Disconnecting network ...");
 
         close_journal_input(m);
 
