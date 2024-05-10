@@ -1,11 +1,12 @@
 project('systemd-netlogd', 'c',
-        version : '1.3',
+        version : '1.4',
         license : 'LGPLv2+',
         default_options: [
-                'c_std=gnu99',
+                'c_std=gnu11',
                 'prefix=/lib/systemd/',
                 'sysconfdir=/etc/systemd',
                 'localstatedir=/var',
+                'warning_level=2',
         ],
         meson_version : '>= 0.51')
 
