@@ -11,19 +11,13 @@
 typedef struct TLSManager TLSManager;
 
 struct TLSManager {
-        SSL_SESSION *session;
         SSL_CTX *ctx;
         BIO *bio;
         SSL *ssl;
 
-        uint32_t events;
         int fd;
 
-        bool shutdown;
         bool connected;
-
-        BUF_MEM *write_buffer;
-        size_t buffer_offset;
 };
 
 void tls_manager_free(TLSManager *m);
