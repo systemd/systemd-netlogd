@@ -423,7 +423,7 @@ int manager_open_network_socket(Manager *m) {
         if (r < 0)
                 goto fail;
 
-        log_debug("Succesfully created socket with fd='%d'", m->socket);
+        log_debug("Successfully created socket with fd='%d'", m->socket);
 
         return m->socket;
 
