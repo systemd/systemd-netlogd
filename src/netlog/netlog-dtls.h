@@ -20,7 +20,7 @@ struct DTLSManager {
 };
 
 void dtls_manager_free(DTLSManager *m);
-int dtls_manager_init(DTLSManager **m);
+int dtls_manager_init(DTLSManager **ret);
 
 int dtls_connect(DTLSManager *m, SocketAddress *addr);
 void dtls_disconnect(DTLSManager *m);
