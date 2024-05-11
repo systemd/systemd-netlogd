@@ -107,5 +107,5 @@ htmlhelp_basename = 'systemd-netlogddoc'
 # (source start file, name, description, authors, manual section).
 man_pages = [
     (master_doc, 'systemd-netlogd', u'systemd-netlogd Documentation',
-     [author], 1)
+     [author], 8)
 ]

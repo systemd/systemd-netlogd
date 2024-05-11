@@ -3,7 +3,7 @@ sphinx_sources = [
         'index.rst']
 
 man_pages = [
-        'systemd-netlogd.1']
+        'systemd-netlogd.8']
 
 mandir1 = join_paths(get_option('mandir'), 'man1')
 
@@ -18,4 +18,4 @@ custom_target(
               input : sphinx_sources,
               output : man_pages,
               install : true,
-              install_dir : '/usr/share/man/man1')
+              install_dir : '/usr/share/man/man8')
