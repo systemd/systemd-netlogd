@@ -13,7 +13,7 @@
 #include "iovec-util.h"
 #include "netlog-tls.h"
 
-static ssize_t tls_write(TLSManager *m, const char *buf, size_t count) {
+static int tls_write(TLSManager *m, const char *buf, size_t count) {
         int r;
 
         assert(m);
@@ -27,7 +27,7 @@ static ssize_t tls_write(TLSManager *m, const char *buf, size_t count) {
         return log_debug("Successful TLS SSL_write: %d bytes", r);
 }
 
-ssize_t tls_stream_writev(TLSManager *m, const struct iovec *iov, size_t iovcnt) {
+int tls_stream_writev(TLSManager *m, const struct iovec *iov, size_t iovcnt) {
         _cleanup_free_ char *buf = NULL;
         size_t count;
 

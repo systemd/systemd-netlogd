@@ -13,7 +13,7 @@
 #include "iovec-util.h"
 #include "netlog-dtls.h"
 
-static ssize_t dtls_write(DTLSManager *m, const char *buf, size_t count) {
+static int dtls_write(DTLSManager *m, const char *buf, size_t count) {
         int r;
 
         assert(m);
@@ -27,7 +27,7 @@ static ssize_t dtls_write(DTLSManager *m, const char *buf, size_t count) {
         return log_debug("Successful DTLS SSL_write: %d bytes", r);
 }
 
-ssize_t dtls_datagram_writev(DTLSManager *m, const struct iovec *iov, size_t iovcnt) {
+int dtls_datagram_writev(DTLSManager *m, const struct iovec *iov, size_t iovcnt) {
         _cleanup_free_ char *buf = NULL;
         size_t count;
 
