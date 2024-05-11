@@ -411,6 +411,7 @@ int config_parse_many(const char *conf_file,
         return 0;
 }
 
+#if 0
 #define DEFINE_PARSER(type, vartype, conv_func)                         \
         int config_parse_##type(                                        \
                         const char *unit,                               \
@@ -442,6 +443,7 @@ int config_parse_many(const char *conf_file,
         }                                                               \
         struct __useless_struct_to_allow_trailing_semicolon__
 
+#endif
 int config_parse_string(
                 const char *unit,
                 const char *filename,
@@ -511,3 +513,8 @@ int config_parse_bool(
         *b = k;
         return 0;
 }
+
+#define DEFINE_PARSER(type, vartype, conv_func)                         \
+        DEFINE_CONFIG_PARSE_PTR(config_parse_##type, conv_func, vartype, "Failed to parse " #type " value")
+
+DEFINE_PARSER(sec, usec_t, parse_sec);

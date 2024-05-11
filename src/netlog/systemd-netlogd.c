@@ -203,11 +203,8 @@ int main(int argc, char **argv) {
                   "READY=1\n"
                   "STATUS=Processing input...");
 
-        if (network_is_online()) {
-                r = manager_connect(m);
-               if (r < 0)
-                        goto finish;
-        }
+        if (network_is_online())
+               manager_connect(m);
 
         r = sd_event_loop(m->event);
         if (r < 0) {

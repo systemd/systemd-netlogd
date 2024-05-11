@@ -123,11 +123,23 @@ int config_parse_namespace(const char *unit,
 }
 
 int manager_parse_config_file(Manager *m) {
+        int r;
+
         assert(m);
 
-        return config_parse_many(PKGSYSCONFDIR "/netlogd.conf",
-                                 CONF_PATHS_NULSTR("systemd/netlogd.conf.d"),
-                                 "Network\0",
-                                 config_item_perf_lookup, netlog_gperf_lookup,
-                                 false, m);
+        r = config_parse_many(PKGSYSCONFDIR "/netlogd.conf",
+                             CONF_PATHS_NULSTR("systemd/netlogd.conf.d"),
+                             "Network\0",
+                             config_item_perf_lookup, netlog_gperf_lookup,
+                             false, m);
+
+        if (r < 0)
+                return r;
+
+        if (m->connection_retry_usec < 1 * USEC_PER_SEC) {
+                log_warning("Invalid ConnectionRetrySec=. Using default value.");
+                m->connection_retry_usec = DEFAULT_CONNECTION_RETRY_USEC;
+        }
+
+        return 0;
 }

@@ -4,10 +4,13 @@
 #include <systemd/sd-event.h>
 #include <systemd/sd-journal.h>
 
-#include "sd-network.h"
-#include "socket-util.h"
 #include "netlog-dtls.h"
 #include "netlog-tls.h"
+#include "sd-network.h"
+#include "socket-util.h"
+#include "ratelimit.h"
+
+#define DEFAULT_CONNECTION_RETRY_USEC   (30 * USEC_PER_SEC)
 
 typedef enum SysLogTransmissionProtocol {
         SYSLOG_TRANSMISSION_PROTOCOL_UDP      = 1 << 0,
@@ -31,12 +34,19 @@ struct Manager {
         sd_event *event;
         sd_event_source *event_journal_input;
         uint64_t timeout;
+        usec_t retry_interval;
+        usec_t connection_retry_usec;
 
         sd_event_source *sigint_event, *sigterm_event;
 
         /* network */
         sd_event_source *network_event_source;
         sd_network_monitor *network_monitor;
+
+        /* Retry connections */
+        sd_event_source *event_retry;
+
+        RateLimit ratelimit;
 
         int socket;
 
@@ -74,7 +84,6 @@ DEFINE_TRIVIAL_CLEANUP_FUNC(Manager*, manager_free);
 
 int manager_connect(Manager *m);
 void manager_disconnect(Manager *m);
-
 
 void manager_close_network_socket(Manager *m);
 int manager_open_network_socket(Manager *m);

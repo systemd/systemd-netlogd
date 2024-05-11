@@ -76,6 +76,8 @@ libshared_sources = files('''
                   share/path-util.h
                   share/random-util.c
                   share/random-util.h
+                  share/ratelimit.c
+                  share/ratelimit.h
                   share/stdio-util.h
                   share/openssl-util.h
                   share/string-table.c

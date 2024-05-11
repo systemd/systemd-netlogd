@@ -15,6 +15,27 @@
 /* An abstract parser for simple, line based, shallow configuration
  * files consisting of variable assignments only. */
 
+/* Argument list for parsers of specific configuration settings. */
+#define CONFIG_PARSER_ARGUMENTS                 \
+        const char *unit,                       \
+        const char *filename,                   \
+        unsigned line,                          \
+        const char *section,                    \
+        unsigned section_line,                  \
+        const char *lvalue,                     \
+        int ltype,                              \
+        const char *rvalue,                     \
+        void *data,                             \
+        void *userdata
+
+/* Prototype for a parser for a specific configuration setting */
+typedef int (*ConfigParserCallback)(CONFIG_PARSER_ARGUMENTS);
+
+/* A macro declaring a function prototype, following the typedef above, simply because it's so cumbersomely long
+ * otherwise. (And current emacs gets irritatingly slow when editing files that contain lots of very long function
+ * prototypes on the same screen…) */
+#define CONFIG_PARSER_PROTOTYPE(name) int name(CONFIG_PARSER_ARGUMENTS)
+
 /* Prototype for a parser for a specific configuration setting */
 typedef int (*ConfigParserCallback)(const char *unit,
                                     const char *filename,
@@ -85,10 +106,6 @@ int config_parse_many(const char *conf_file,      /* possibly NULL */
                       const void *table,
                       bool relaxed,
                       void *userdata);
-
-/* Generic parsers */
-int config_parse_string(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
-int config_parse_bool(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
 
 #define DEFINE_CONFIG_PARSE_ENUM(function,name,type,msg)                \
         int function(const char *unit,                                  \
@@ -190,3 +207,46 @@ int config_parse_bool(const char *unit, const char *filename, unsigned line, con
                                                                                \
                 return 0;                                                      \
         }
+
+#define DEFINE_CONFIG_PARSE(function, parser, msg)                      \
+        CONFIG_PARSER_PROTOTYPE(function) {                             \
+                int *i = data, r;                                       \
+                                                                        \
+                assert(filename);                                       \
+                assert(lvalue);                                         \
+                assert(rvalue);                                         \
+                assert(data);                                           \
+                                                                        \
+                r = parser(rvalue);                                     \
+                if (r < 0) {                                            \
+                        log_syntax(unit, LOG_WARNING, filename, line, r, \
+                                   msg ", ignoring: %s", rvalue);       \
+                        return 0;                                       \
+                }                                                       \
+                                                                        \
+                *i = r;                                                 \
+                return 0;                                               \
+        }
+
+#define DEFINE_CONFIG_PARSE_PTR(function, parser, type, msg)            \
+        CONFIG_PARSER_PROTOTYPE(function) {                             \
+                type *i = ASSERT_PTR(data);                             \
+                int r;                                                  \
+                                                                        \
+                assert(filename);                                       \
+                assert(lvalue);                                         \
+                assert(rvalue);                                         \
+                                                                        \
+                r = parser(rvalue, i);                                  \
+                if (r < 0)                                              \
+                        log_syntax(unit, LOG_WARNING, filename, line, r, \
+                                   msg ", ignoring: %s", rvalue);       \
+                                                                        \
+                return 0;                                               \
+        }
+
+
+/* Generic parsers */
+CONFIG_PARSER_PROTOTYPE(config_parse_string);
+CONFIG_PARSER_PROTOTYPE(config_parse_bool);
+CONFIG_PARSER_PROTOTYPE(config_parse_sec);

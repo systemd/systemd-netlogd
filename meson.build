@@ -3,7 +3,7 @@ project('systemd-netlogd', 'c',
         license : 'LGPLv2+',
         default_options: [
                 'c_std=gnu11',
-                'prefix=/lib/systemd/',
+                'prefix=/lib/systemd',
                 'sysconfdir=/etc/systemd',
                 'localstatedir=/var',
                 'warning_level=2',
