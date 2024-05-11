@@ -240,10 +240,8 @@ static int process_journal_input(Manager *m) {
 
         for (;;) {
                 r = sd_journal_next(m->journal);
-                if (r < 0) {
-                        log_error_errno(r, "Failed to get next entry: %m");
-                        return r;
-                }
+                if (r < 0)
+                        return log_error_errno(r, "Failed to get next entry: %m");
 
                 if (r == 0)
                         break;
