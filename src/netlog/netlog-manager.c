@@ -340,9 +340,9 @@ static int open_journal(Manager *m) {
                 r = sd_journal_open(&m->journal, SD_JOURNAL_LOCAL_ONLY);
 
         if (r < 0)
-                log_error_errno(r, "Failed to open %s: %m", m->dir ?: "journal");
+                log_error_errno(r, "Failed to open %s: %m", m->dir ?: m->namespace ? "namespace journal" : "journal");
 
-        return 0;
+        return r;
 }
 
 static int manager_journal_monitor_listen(Manager *m) {
