@@ -293,12 +293,12 @@ int manager_push_to_network(Manager *m,
                             const char *syslog_structured_data,
                             const char *syslog_msgid) {
 
-       int r;
+        int r;
 
-       assert(m);
+        assert(m);
 
-       if (!message)
-               return 0;
+        if (!message)
+                return 0;
 
         switch (m->protocol) {
                 case SYSLOG_TRANSMISSION_PROTOCOL_DTLS:
@@ -320,15 +320,15 @@ int manager_push_to_network(Manager *m,
                         break;
         }
 
-       if (m->log_format == SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424)
+        if (m->log_format == SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424)
                r = format_rfc5424(m, severity, facility, identifier, message, hostname, pid, tv, syslog_structured_data, syslog_msgid);
-       else
+        else
                r = format_rfc3339(m, severity, facility, identifier, message, hostname, pid, tv);
 
-       if (r < 0)
+        if (r < 0)
                return r;
 
-       return 0;
+        return 0;
 }
 
 void manager_close_network_socket(Manager *m) {

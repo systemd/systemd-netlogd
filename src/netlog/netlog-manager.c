@@ -426,7 +426,7 @@ int manager_connect(Manager *m) {
         if (r < 0) {
                 log_error_errno(r, "Failed to create network socket: %m");
                 return manager_connect(m);
-         }
+        }
         r = manager_journal_monitor_listen(m);
         if (r < 0)
                 return log_error_errno(r, "Failed to monitor journal: %m");
