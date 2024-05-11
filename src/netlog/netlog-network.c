@@ -350,6 +350,7 @@ int manager_network_connect_socket(Manager *m) {
         int r;
 
         assert(m);
+        assert(m->socket >= 0);
 
         switch (m->address.sockaddr.sa.sa_family) {
                 case AF_INET:

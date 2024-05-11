@@ -17,7 +17,10 @@ static int tls_write(TLSManager *m, const char *buf, size_t count) {
         int r;
 
         assert(m);
+        assert(m->ssl);
         assert(buf);
+        assert(count > 0);
+        assert(count < INT_MAX);
 
         ERR_clear_error();
         r = SSL_write(m->ssl, buf, count);
@@ -32,7 +35,6 @@ int tls_stream_writev(TLSManager *m, const struct iovec *iov, size_t iovcnt) {
         size_t count;
 
         assert(m);
-        assert(m->ssl);
         assert(iov);
 
         /* single buffer. Suboptimal, but better than multiple SSL_write calls. */
