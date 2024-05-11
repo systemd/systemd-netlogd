@@ -34,11 +34,14 @@ int tls_stream_writev(TLSManager *m, const struct iovec *iov, size_t iovcnt) {
         assert(m);
         assert(m->ssl);
         assert(iov);
-        assert(iovec_total_size(iov, iovcnt) > 0);
 
         /* single buffer. Suboptimal, but better than multiple SSL_write calls. */
         count = iovec_total_size(iov, iovcnt);
+        assert(count > 0);
         buf = new(char, count);
+        if (!buf)
+                return log_oom();
+
         for (size_t i = 0, pos = 0; i < iovcnt; pos += iov[i].iov_len, i++)
                 memcpy(buf + pos, iov[i].iov_base, iov[i].iov_len);
 
