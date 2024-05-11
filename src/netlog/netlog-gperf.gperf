@@ -23,3 +23,4 @@ Network.Namespace,                config_parse_namespace,             0, offseto
 Network.StructuredData,           config_parse_string,                0, offsetof(Manager, structured_data)
 Network.UseSysLogStructuredData,  config_parse_bool,                  0, offsetof(Manager, syslog_structured_data)
 Network.UseSysLogMsgId,           config_parse_bool,                  0, offsetof(Manager, syslog_msgid)
+Network.ConnectionRetrySec,       config_parse_sec,                   0, offsetof(Manager, connection_retry_usec)

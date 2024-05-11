@@ -24,6 +24,9 @@
 /* Default facility LOG_USER */
 #define JOURNAL_DEFAULT_FACILITY LOG_FAC(LOG_USER)
 
+#define RATELIMIT_INTERVAL_USEC (10*USEC_PER_SEC)
+#define RATELIMIT_BURST 10
+
 #define JOURNAL_FOREACH_DATA_RETVAL(j, data, l, retval)                     \
         for (sd_journal_restart_data(j); ((retval) = sd_journal_enumerate_data((j), &(data), &(l))) > 0; )
 
@@ -86,7 +89,7 @@ static int manager_read_journal_input(Manager *m) {
         assert(m);
         assert(m->journal);
 
-        log_debug("Reading from journal ...");
+        log_debug("Reading from journal cursor=%s", m->last_cursor);
 
         JOURNAL_FOREACH_DATA_RETVAL(m->journal, data, length, r) {
 
@@ -384,6 +387,12 @@ static int manager_journal_monitor_listen(Manager *m) {
         return 0;
 }
 
+static int manager_retry_connect(sd_event_source *source, usec_t usec, void *userdata) {
+        Manager *m = ASSERT_PTR(userdata);
+
+        return manager_connect(m);
+}
+
 int manager_connect(Manager *m) {
         int r;
 
@@ -392,6 +401,18 @@ int manager_connect(Manager *m) {
         manager_disconnect(m);
 
         log_debug("Connecting network ...");
+
+        m->event_retry = sd_event_source_unref(m->event_retry);
+        if (!ratelimit_below(&m->ratelimit)) {
+                log_debug("Delaying attempts to contact servers.");
+
+                r = sd_event_add_time_relative(m->event, &m->event_retry, CLOCK_BOOTTIME, m->connection_retry_usec,
+                                               0, manager_retry_connect, m);
+                if (r < 0)
+                        return log_error_errno(r, "Failed to create retry timer: %m");
+
+                return 0;
+        }
 
         switch (m->protocol) {
                 case SYSLOG_TRANSMISSION_PROTOCOL_DTLS:
@@ -404,9 +425,10 @@ int manager_connect(Manager *m) {
                         r = manager_open_network_socket(m);
                         break;
         }
-        if (r < 0)
-                return log_error_errno(r, "Failed to create network socket: %m");
-
+        if (r < 0) {
+                log_error_errno(r, "Failed to create network socket: %m");
+                return manager_connect(m);
+         }
         r = manager_journal_monitor_listen(m);
         if (r < 0)
                 return log_error_errno(r, "Failed to monitor journal: %m");
@@ -527,6 +549,11 @@ int manager_new(const char *state_file, const char *cursor, Manager **ret) {
                 .state_file = strdup(state_file),
                 .protocol = SYSLOG_TRANSMISSION_PROTOCOL_UDP,
                 .log_format  = SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424,
+                .connection_retry_usec = DEFAULT_CONNECTION_RETRY_USEC,
+                .ratelimit = (const RateLimit) {
+                        RATELIMIT_INTERVAL_USEC,
+                        RATELIMIT_BURST
+                },
             };
 
         socket_address_parse(&m->address, "239.0.0.1:6000");
