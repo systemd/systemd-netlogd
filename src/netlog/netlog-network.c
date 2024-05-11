@@ -98,21 +98,31 @@ static void format_rfc3339_timestamp(const struct timeval *tv, char *header_time
         char gm_buf[sizeof("+0530") + 1];
         struct tm tm;
         time_t t;
+        size_t written;
+        int r;
 
         assert(header_time);
 
         t = tv ? tv->tv_sec : ((time_t) (now(CLOCK_REALTIME) / USEC_PER_SEC));
         localtime_r(&t, &tm);
 
-        strftime(header_time, header_size, "%Y-%m-%dT%T", &tm);
+        written = strftime(header_time, header_size, "%Y-%m-%dT%T", &tm);
+        assert(written != 0);
+        header_time += written;
+        header_size -= written;
 
         /* add fractional part */
-        if (tv)
-                snprintf(header_time + strlen(header_time), header_size, ".%06ld", tv->tv_usec);
+        if (tv) {
+                r = snprintf(header_time, header_size, ".%06ld", tv->tv_usec);
+                assert(r > 0 && (size_t)r < header_size);
+                header_time += r;
+                header_size -= r;
+        }
 
         /* format the timezone according to RFC */
         xstrftime(gm_buf, "%z", &tm);
-        snprintf(header_time + strlen(header_time), header_size, "%.3s:%.2s ", gm_buf, gm_buf + 3);
+        r = snprintf(header_time, header_size, "%.3s:%.2s ", gm_buf, gm_buf + 3);
+        assert(r > 0 && (size_t)r < header_size);
 }
 
 /* The Syslog Protocol RFC5424 format :
@@ -133,7 +143,7 @@ static int format_rfc5424(Manager *m,
         char header_priority[sizeof("<   >1 ")];
         struct iovec iov[14];
         uint8_t makepri;
-        int n = 0;
+        int n = 0, r;
 
         assert(m);
         assert(message);
@@ -141,7 +151,8 @@ static int format_rfc5424(Manager *m,
         makepri = (facility << 3) + severity;
 
         /* First: priority field Second: Version  '<pri>version' */
-        snprintf(header_priority, sizeof(header_priority), "<%i>%i ", makepri, RFC_5424_PROTOCOL);
+        r = snprintf(header_priority, sizeof(header_priority), "<%i>%i ", makepri, RFC_5424_PROTOCOL);
+        assert(r > 0 && (size_t)r < sizeof(header_priority));
         IOVEC_SET_STRING(iov[n++], header_priority);
 
         /* Third: timestamp */
@@ -215,7 +226,7 @@ static int format_rfc3339(Manager *m,
         char header_time[FORMAT_TIMESTAMP_MAX];
         struct iovec iov[14];
         uint8_t makepri;
-        int n = 0;
+        int n = 0, r;
 
         assert(m);
         assert(message);
@@ -227,7 +238,8 @@ static int format_rfc3339(Manager *m,
          */
 
         /* First: priority field '<pri>' */
-        snprintf(header_priority, sizeof(header_priority), "<%i>", makepri);
+        r = snprintf(header_priority, sizeof(header_priority), "<%i>", makepri);
+        assert(r > 0 && (size_t)r < sizeof(header_priority));
         IOVEC_SET_STRING(iov[n++], header_priority);
 
         /* Third: timestamp */
