@@ -71,3 +71,37 @@ struct timeval *timeval_store(struct timeval *tv, usec_t u);
 #define xstrftime(buf, fmt, tm) \
         assert_message_se(strftime(buf, ELEMENTSOF(buf), fmt, tm) > 0, \
                           "xstrftime: " #buf "[] must be big enough")
+
+static inline usec_t usec_add(usec_t a, usec_t b) {
+        /* Adds two time values, and makes sure USEC_INFINITY as input results as USEC_INFINITY in output,
+         * and doesn't overflow. */
+
+        if (a > USEC_INFINITY - b) /* overflow check */
+                return USEC_INFINITY;
+
+        return a + b;
+}
+
+static inline usec_t usec_sub_unsigned(usec_t timestamp, usec_t delta) {
+        if (timestamp == USEC_INFINITY) /* Make sure infinity doesn't degrade */
+                return USEC_INFINITY;
+        if (timestamp < delta)
+                return 0;
+
+        return timestamp - delta;
+}
+
+static inline usec_t usec_sub_signed(usec_t timestamp, int64_t delta) {
+        if (delta == INT64_MIN) { /* prevent overflow */
+                assert_cc(-(INT64_MIN + 1) == INT64_MAX);
+                assert_cc(USEC_INFINITY > INT64_MAX);
+                return usec_add(timestamp, (usec_t) INT64_MAX + 1);
+        }
+        if (delta < 0)
+                return usec_add(timestamp, (usec_t) (-delta));
+
+        return usec_sub_unsigned(timestamp, (usec_t) delta);
+}
+
+int parse_sec(const char *t, usec_t *ret);
+int parse_time(const char *t, usec_t *ret, usec_t default_unit);
