@@ -8,9 +8,24 @@ After=network.target
 
 [Service]
 ExecStart=@PKGPREFIX@/systemd-netlogd
+WatchdogSec=20min
+
+# hardening
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
 PrivateTmp=yes
 PrivateDevices=yes
-WatchdogSec=20min
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectProc=invisible
+ProtectSystem=strict
+StateDirectory=systemd/journal-netlogd
+SystemCallArchitectures=native
 
 [Install]
 WantedBy=multi-user.target
