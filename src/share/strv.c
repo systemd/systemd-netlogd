@@ -201,7 +201,7 @@ int strv_push(char ***l, char *value) {
         if (m < n)
                 return -ENOMEM;
 
-        c = realloc_multiply(*l, sizeof(char*), m);
+        c = realloc_multiply(*l, m, sizeof(char*));
         if (!c)
                 return -ENOMEM;
 
