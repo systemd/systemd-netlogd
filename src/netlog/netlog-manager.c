@@ -539,7 +539,7 @@ int manager_new(const char *state_file, const char *cursor, Manager **ret) {
 
         m = new(Manager, 1);
         if (!m)
-                return -ENOMEM;
+                return log_oom();
 
         *m = (Manager) {
                 .socket = -1,
