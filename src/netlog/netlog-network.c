@@ -326,7 +326,7 @@ int manager_push_to_network(Manager *m,
                r = format_rfc3339(m, severity, facility, identifier, message, hostname, pid, tv);
 
        if (r < 0)
-               return 0;
+               return r;
 
        return 0;
 }
