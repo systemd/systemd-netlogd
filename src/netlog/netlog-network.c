@@ -16,16 +16,17 @@
 #define SEND_TIMEOUT_USEC (200 * USEC_PER_MSEC)
 
 static int sendmsg_loop(Manager *m, struct msghdr *mh) {
-        size_t n;
+        ssize_t n;
         int r;
 
         assert(m);
+        assert(m->socket >= 0);
         assert(mh);
 
         for (;;) {
                 n = sendmsg(m->socket, mh, MSG_NOSIGNAL);
-                if (r >= 0) {
-                        log_debug("Successful sendmsg: %ld bytes", n);
+                if (n >= 0) {
+                        log_debug("Successful sendmsg: %zd bytes", n);
                         return 0;
                 }
 
