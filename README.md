@@ -73,6 +73,11 @@ systemd-netlogd reads configuration files named `/etc/systemd/netlogd.conf` and 
               shows the log data of the specified namespace instead. If the namespace is specified as "*" data from all namespaces is shown, interleaved.
               If the namespace identifier is prefixed with "+" data from the specified namespace and the default namespace is shown, interleaved, but no other
 
+       ConnectionRetrySec=
+               Specifies the minimum delay before subsequent attempts to contact a Log server are made.
+               Takes a time span value. The default unit is seconds, but other units may be specified,
+               see systemd.time(5). Defaults to 30 seconds and must not be smaller than 1 second.
+
    Optional settings
 
        StructuredData=
