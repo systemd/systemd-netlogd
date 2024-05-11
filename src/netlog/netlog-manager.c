@@ -240,10 +240,8 @@ static int process_journal_input(Manager *m) {
 
         for (;;) {
                 r = sd_journal_next(m->journal);
-                if (r < 0) {
-                        log_error_errno(r, "Failed to get next entry: %m");
-                        return r;
-                }
+                if (r < 0)
+                        return log_error_errno(r, "Failed to get next entry: %m");
 
                 if (r == 0)
                         break;
@@ -340,9 +338,9 @@ static int open_journal(Manager *m) {
                 r = sd_journal_open(&m->journal, SD_JOURNAL_LOCAL_ONLY);
 
         if (r < 0)
-                log_error_errno(r, "Failed to open %s: %m", m->dir ?: "journal");
+                log_error_errno(r, "Failed to open %s: %m", m->dir ?: m->namespace ? "namespace journal" : "journal");
 
-        return 0;
+        return r;
 }
 
 static int manager_journal_monitor_listen(Manager *m) {
@@ -428,7 +426,7 @@ int manager_connect(Manager *m) {
         if (r < 0) {
                 log_error_errno(r, "Failed to create network socket: %m");
                 return manager_connect(m);
-         }
+        }
         r = manager_journal_monitor_listen(m);
         if (r < 0)
                 return log_error_errno(r, "Failed to monitor journal: %m");
@@ -541,7 +539,7 @@ int manager_new(const char *state_file, const char *cursor, Manager **ret) {
 
         m = new(Manager, 1);
         if (!m)
-                return -ENOMEM;
+                return log_oom();
 
         *m = (Manager) {
                 .socket = -1,

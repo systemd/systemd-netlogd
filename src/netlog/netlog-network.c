@@ -16,16 +16,17 @@
 #define SEND_TIMEOUT_USEC (200 * USEC_PER_MSEC)
 
 static int sendmsg_loop(Manager *m, struct msghdr *mh) {
-        size_t n;
+        ssize_t n;
         int r;
 
         assert(m);
+        assert(m->socket >= 0);
         assert(mh);
 
         for (;;) {
                 n = sendmsg(m->socket, mh, MSG_NOSIGNAL);
-                if (r >= 0) {
-                        log_debug("Successful sendmsg: %ld bytes", n);
+                if (n >= 0) {
+                        log_debug("Successful sendmsg: %zd bytes", n);
                         return 0;
                 }
 
@@ -97,21 +98,31 @@ static void format_rfc3339_timestamp(const struct timeval *tv, char *header_time
         char gm_buf[sizeof("+0530") + 1];
         struct tm tm;
         time_t t;
+        size_t written;
+        int r;
 
         assert(header_time);
 
         t = tv ? tv->tv_sec : ((time_t) (now(CLOCK_REALTIME) / USEC_PER_SEC));
         localtime_r(&t, &tm);
 
-        strftime(header_time, header_size, "%Y-%m-%dT%T", &tm);
+        written = strftime(header_time, header_size, "%Y-%m-%dT%T", &tm);
+        assert(written != 0);
+        header_time += written;
+        header_size -= written;
 
         /* add fractional part */
-        if (tv)
-                snprintf(header_time + strlen(header_time), header_size, ".%06ld", tv->tv_usec);
+        if (tv) {
+                r = snprintf(header_time, header_size, ".%06ld", tv->tv_usec);
+                assert(r > 0 && (size_t)r < header_size);
+                header_time += r;
+                header_size -= r;
+        }
 
         /* format the timezone according to RFC */
         xstrftime(gm_buf, "%z", &tm);
-        snprintf(header_time + strlen(header_time), header_size, "%.3s:%.2s ", gm_buf, gm_buf + 3);
+        r = snprintf(header_time, header_size, "%.3s:%.2s ", gm_buf, gm_buf + 3);
+        assert(r > 0 && (size_t)r < header_size);
 }
 
 /* The Syslog Protocol RFC5424 format :
@@ -132,7 +143,7 @@ static int format_rfc5424(Manager *m,
         char header_priority[sizeof("<   >1 ")];
         struct iovec iov[14];
         uint8_t makepri;
-        int n = 0;
+        int n = 0, r;
 
         assert(m);
         assert(message);
@@ -140,7 +151,8 @@ static int format_rfc5424(Manager *m,
         makepri = (facility << 3) + severity;
 
         /* First: priority field Second: Version  '<pri>version' */
-        snprintf(header_priority, sizeof(header_priority), "<%i>%i ", makepri, RFC_5424_PROTOCOL);
+        r = snprintf(header_priority, sizeof(header_priority), "<%i>%i ", makepri, RFC_5424_PROTOCOL);
+        assert(r > 0 && (size_t)r < sizeof(header_priority));
         IOVEC_SET_STRING(iov[n++], header_priority);
 
         /* Third: timestamp */
@@ -214,7 +226,7 @@ static int format_rfc3339(Manager *m,
         char header_time[FORMAT_TIMESTAMP_MAX];
         struct iovec iov[14];
         uint8_t makepri;
-        int n = 0;
+        int n = 0, r;
 
         assert(m);
         assert(message);
@@ -226,7 +238,8 @@ static int format_rfc3339(Manager *m,
          */
 
         /* First: priority field '<pri>' */
-        snprintf(header_priority, sizeof(header_priority), "<%i>", makepri);
+        r = snprintf(header_priority, sizeof(header_priority), "<%i>", makepri);
+        assert(r > 0 && (size_t)r < sizeof(header_priority));
         IOVEC_SET_STRING(iov[n++], header_priority);
 
         /* Third: timestamp */
@@ -280,12 +293,12 @@ int manager_push_to_network(Manager *m,
                             const char *syslog_structured_data,
                             const char *syslog_msgid) {
 
-       int r;
+        int r;
 
-       assert(m);
+        assert(m);
 
-       if (!message)
-               return 0;
+        if (!message)
+                return 0;
 
         switch (m->protocol) {
                 case SYSLOG_TRANSMISSION_PROTOCOL_DTLS:
@@ -307,15 +320,15 @@ int manager_push_to_network(Manager *m,
                         break;
         }
 
-       if (m->log_format == SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424)
+        if (m->log_format == SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424)
                r = format_rfc5424(m, severity, facility, identifier, message, hostname, pid, tv, syslog_structured_data, syslog_msgid);
-       else
+        else
                r = format_rfc3339(m, severity, facility, identifier, message, hostname, pid, tv);
 
-       if (r < 0)
-               return 0;
+        if (r < 0)
+               return r;
 
-       return 0;
+        return 0;
 }
 
 void manager_close_network_socket(Manager *m) {
@@ -337,6 +350,7 @@ int manager_network_connect_socket(Manager *m) {
         int r;
 
         assert(m);
+        assert(m->socket >= 0);
 
         switch (m->address.sockaddr.sa.sa_family) {
                 case AF_INET:
@@ -423,7 +437,7 @@ int manager_open_network_socket(Manager *m) {
         if (r < 0)
                 goto fail;
 
-        log_debug("Succesfully created socket with fd='%d'", m->socket);
+        log_debug("Successfully created socket with fd='%d'", m->socket);
 
         return m->socket;
 

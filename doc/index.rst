@@ -54,7 +54,7 @@ This will create a user systemd-journal-netlog
 |  Optional settings
 
 |  ``StructuredData=``
-        Specifes the meta information about the syslog message, which can be used for Cloud Based syslog servers, such as Loggly.
+        Specifies the meta information about the syslog message, which can be used for Cloud Based syslog servers, such as Loggly.
 
 |  ``UseSysLogStructuredData=``
         A boolean. Specifies whether to extract SYSLOG_STRUCTURED_DATA= from journal. Defaults to false.

@@ -23,6 +23,7 @@ int config_parse_netlog_remote_address(const char *unit,
         assert(lvalue);
         assert(rvalue);
         assert(data);
+        assert(m);
 
         r = socket_address_parse(&m->address, rvalue);
         if (r < 0) {
@@ -50,6 +51,7 @@ int config_parse_protocol(const char *unit,
         assert(lvalue);
         assert(rvalue);
         assert(data);
+        assert(m);
 
         r = protocol_from_string(rvalue);
         if (r < 0) {
@@ -78,6 +80,7 @@ int config_parse_log_format(const char *unit,
         assert(lvalue);
         assert(rvalue);
         assert(data);
+        assert(m);
 
         r = log_format_from_string(rvalue);
         if (r < 0) {
@@ -105,6 +108,7 @@ int config_parse_namespace(const char *unit,
         assert(lvalue);
         assert(rvalue);
         assert(data);
+        assert(m);
 
          if (streq(rvalue, "*"))
                  m->namespace_flags = SD_JOURNAL_ALL_NAMESPACES;

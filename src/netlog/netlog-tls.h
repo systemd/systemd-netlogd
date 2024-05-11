@@ -21,11 +21,11 @@ struct TLSManager {
 };
 
 void tls_manager_free(TLSManager *m);
-int tls_manager_init(TLSManager **m);
+int tls_manager_init(TLSManager **ret);
 
 int tls_connect(TLSManager *m, SocketAddress *addr);
 void tls_disconnect(TLSManager *m);
 
-ssize_t tls_stream_writev(TLSManager *m, const struct iovec *iov, size_t iovcnt);
+int tls_stream_writev(TLSManager *m, const struct iovec *iov, size_t iovcnt);
 
 DEFINE_TRIVIAL_CLEANUP_FUNC(TLSManager*, tls_manager_free);

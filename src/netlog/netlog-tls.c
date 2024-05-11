@@ -13,35 +13,37 @@
 #include "iovec-util.h"
 #include "netlog-tls.h"
 
-static ssize_t tls_write(TLSManager *m, const char *buf, size_t count) {
+static int tls_write(TLSManager *m, const char *buf, size_t count) {
         int r;
 
         assert(m);
+        assert(m->ssl);
         assert(buf);
+        assert(count > 0);
+        assert(count < INT_MAX);
 
         ERR_clear_error();
         r = SSL_write(m->ssl, buf, count);
         if (r <= 0)
                 return log_error_errno(r, "Failed to invoke SSL_write: %s", TLS_ERROR_STRING(SSL_get_error(m->ssl, r)));
 
-        if (r > 0)
-                return log_debug("Successful TLS SSL_write: %d bytes", r);
-
-        return 0;
+        return log_debug("Successful TLS SSL_write: %d bytes", r);
 }
 
-ssize_t tls_stream_writev(TLSManager *m, const struct iovec *iov, size_t iovcnt) {
+int tls_stream_writev(TLSManager *m, const struct iovec *iov, size_t iovcnt) {
         _cleanup_free_ char *buf = NULL;
         size_t count;
 
         assert(m);
-        assert(m->ssl);
         assert(iov);
-        assert(iovec_total_size(iov, iovcnt) > 0);
 
         /* single buffer. Suboptimal, but better than multiple SSL_write calls. */
         count = iovec_total_size(iov, iovcnt);
+        assert(count > 0);
         buf = new(char, count);
+        if (!buf)
+                return log_oom();
+
         for (size_t i = 0, pos = 0; i < iovcnt; pos += iov[i].iov_len, i++)
                 memcpy(buf + pos, iov[i].iov_base, iov[i].iov_len);
 
