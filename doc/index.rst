@@ -45,12 +45,13 @@ This will create a user systemd-journal-netlog
         is shown, interleaved. If the namespace identifier is prefixed with "+" data from the specified namespace and the default namespace is shown,
         interleaved, but no other.
 
-    ``ConnectionRetrySec=``
+|   ``ConnectionRetrySec=``
         Specifies the minimum delay before subsequent attempts to contact a Log server are made.
         Takes a time span value. The default unit is seconds, but other units may be specified,
         see systemd.time(5). Defaults to 30 seconds and must not be smaller than 1 second.
 
-
+|
+|
 |  Optional settings
 
 |  ``StructuredData=``
@@ -65,36 +66,47 @@ This will create a user systemd-journal-netlog
 EXAMPLES
 --------
 
-- Example 1. /etc/systemd/systemd-netlogd.conf::
-
-.. code-block:: bash
-       :linenos:
-
-       [Network]
-       Address=239.0.0.1:6000
-
-
-- Example 2. /etc/systemd/systemd-netlogd.conf::
+- Example 1. Multicast::
 
  .. code-block:: bash
-       :linenos:
 
-       [Network]
-       Address=192.168.8.101:514
+    [Network]
+    Address=239.0.0.1:6000
 
-- Example 3. /etc/systemd/systemd-netlogd.conf::
+- Example 2. UDP::
 
  .. code-block:: bash
-    :linenos:
+
+    [Network]
+    Address=192.168.8.101:514
+
+- Example 3. Structured Data::
+
+ .. code-block:: bash
 
     [Network]
     Address=192.168.8.101:514
     StructuredData=[1ab456b6-90bb-6578-abcd-5b734584aaaa@41058]
 
-- Example 4. /etc/systemd/netlogd.conf
+- Example 4. TLS::
 
  .. code-block:: bash
-    :linenos:
+
+    [Network]
+    Address=192.168.8.101:514
+    Protocol=tls
+
+- Example 5. DTLS::
+
+ .. code-block:: bash
+
+    [Network]
+    Address=192.168.8.101:4433
+    Protocol=dtls
+
+- Example 6. Custom Structured Data and Message Id::
+
+ .. code-block:: bash
 
     [Network]
     Address=192.168.8.101:514
@@ -103,30 +115,17 @@ EXAMPLES
     UseSysLogStructuredData=yes
     UseSysLogMsgId=yes
 
- Example 5. /etc/systemd/netlogd.conf
+- Example 7. TCP::
 
  .. code-block:: bash
-    :linenos:
 
     [Network]
     Address=192.168.8.101:514
-    Protocol=dtls
-    LogFormat=rfc5424
+    Protocol=tcp
 
- Example 5. /etc/systemd/netlogd.conf
+- Use case of UseSysLogStructuredData= and UseSysLogMsgId=::
 
  .. code-block:: bash
-    :linenos:
-
-    [Network]
-    Address=192.168.8.101:514
-    Protocol=tls
-    LogFormat=rfc5424
-
-- Use case of UseSysLogStructuredData= and UseSysLogMsgId=
-
- .. code-block::
-    :linenos:
 
     sd_journal_send(
     "MESSAGE=%s", "Message to process",
