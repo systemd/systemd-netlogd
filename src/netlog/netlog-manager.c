@@ -527,6 +527,7 @@ void manager_free(Manager *m) {
         sd_event_source_unref(m->sigterm_event);
         sd_event_source_unref(m->sigint_event);
 
+        sd_event_source_unref(m->event_retry);
         sd_event_unref(m->event);
         free(m);
 }
