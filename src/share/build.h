@@ -1,6 +1,6 @@
 #pragma once
 
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 
 #ifdef HAVE_PAM
 #define _PAM_FEATURE_ "+PAM"
