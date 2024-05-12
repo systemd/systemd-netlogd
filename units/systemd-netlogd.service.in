@@ -3,7 +3,7 @@
 
 [Unit]
 Description=Journal Syslog Unicast and Multicast Daemon
-Documentation=man:systemd-netlogd.conf(5)
+Documentation=man:systemd-netlogd(8)
 After=network.target
 
 [Service]
