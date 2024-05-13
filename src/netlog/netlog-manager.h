@@ -68,10 +68,10 @@ struct Manager {
 
         SysLogTransmissionProtocol protocol;
         SysLogTransmissionLogFormat log_format;
+        OpenSSLCertificateAuthMode auth_mode;
 
         bool syslog_structured_data;
         bool syslog_msgid;
-        bool encrypt;
 
         DTLSManager *dtls;
         TLSManager *tls;

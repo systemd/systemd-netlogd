@@ -15,12 +15,13 @@ struct ConfigPerfItem;
 %struct-type
 %includes
 %%
-Network.Address,                  config_parse_netlog_remote_address, 0, 0
-Network.Protocol,                 config_parse_protocol,              0, offsetof(Manager, protocol)
-Network.LogFormat,                config_parse_log_format,            0, offsetof(Manager, log_format)
-Network.Directory,                config_parse_string,                0, offsetof(Manager, dir)
-Network.Namespace,                config_parse_namespace,             0, offsetof(Manager, namespace)
-Network.StructuredData,           config_parse_string,                0, offsetof(Manager, structured_data)
-Network.UseSysLogStructuredData,  config_parse_bool,                  0, offsetof(Manager, syslog_structured_data)
-Network.UseSysLogMsgId,           config_parse_bool,                  0, offsetof(Manager, syslog_msgid)
-Network.ConnectionRetrySec,       config_parse_sec,                   0, offsetof(Manager, connection_retry_usec)
+Network.Address,                  config_parse_netlog_remote_address,     0, 0
+Network.Protocol,                 config_parse_protocol,                  0, offsetof(Manager, protocol)
+Network.LogFormat,                config_parse_log_format,                0, offsetof(Manager, log_format)
+Network.Directory,                config_parse_string,                    0, offsetof(Manager, dir)
+Network.Namespace,                config_parse_namespace,                 0, offsetof(Manager, namespace)
+Network.StructuredData,           config_parse_string,                    0, offsetof(Manager, structured_data)
+Network.UseSysLogStructuredData,  config_parse_bool,                      0, offsetof(Manager, syslog_structured_data)
+Network.UseSysLogMsgId,           config_parse_bool,                      0, offsetof(Manager, syslog_msgid)
+Network.ConnectionRetrySec,       config_parse_sec,                       0, offsetof(Manager, connection_retry_usec)
+Network.TLSCertificateAuthMode,   config_parse_tls_certificate_auth_mode, 0, offsetof(Manager, auth_mode)

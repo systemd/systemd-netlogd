@@ -92,6 +92,35 @@ int config_parse_log_format(const char *unit,
         return 0;
 }
 
+int config_parse_tls_certificate_auth_mode(const char *unit,
+                                           const char *filename,
+                                           unsigned line,
+                                           const char *section,
+                                           unsigned section_line,
+                                           const char *lvalue,
+                                           int ltype,
+                                           const char *rvalue,
+                                           void *data,
+                                           void *userdata) {
+        Manager *m = userdata;
+        int r;
+
+        assert(filename);
+        assert(lvalue);
+        assert(rvalue);
+        assert(data);
+        assert(m);
+
+        r = certificate_auth_mode_from_string(rvalue);
+        if (r < 0) {
+                log_syntax(unit, LOG_WARNING, filename, line, -r, "Failed to parse '%s=%s', ignoring.", lvalue, rvalue);
+                return 0;
+        }
+
+        m->auth_mode = r;
+        return 0;
+}
+
 int config_parse_namespace(const char *unit,
                            const char *filename,
                            unsigned line,

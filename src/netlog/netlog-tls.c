@@ -12,6 +12,104 @@
 #include "io-util.h"
 #include "iovec-util.h"
 #include "netlog-tls.h"
+#include "string-table.h"
+
+static const char *const certificate_auth_mode_table[OPEN_SSL_CERTIFICATE_AUTH_MODE_MAX] = {
+        [OPEN_SSL_CERTIFICATE_AUTH_MODE_NONE]  = "no",
+        [OPEN_SSL_CERTIFICATE_AUTH_MODE_ALLOW] = "allow",
+        [OPEN_SSL_CERTIFICATE_AUTH_MODE_DENY]  = "deny",
+        [OPEN_SSL_CERTIFICATE_AUTH_MODE_WARN]  = "warn",
+};
+
+DEFINE_STRING_TABLE_LOOKUP(certificate_auth_mode, int);
+
+int ssl_verify_certificate_validity(int s, X509_STORE_CTX *store) {
+        SSL* ssl = X509_STORE_CTX_get_ex_data(store, SSL_get_ex_data_X509_STORE_CTX_idx());
+        _cleanup_(OPENSSL_freep) void *subject = NULL, *issuer = NULL;
+        TLSManager *m = (TLSManager *) SSL_get_ex_data(ssl, 0);
+        X509 *cert = X509_STORE_CTX_get_current_cert(store);
+        int depth = X509_STORE_CTX_get_error_depth(store);
+        int error = X509_STORE_CTX_get_error(store);
+        int verify_mode = SSL_get_verify_mode(ssl);
+        int r;
+
+        assert(store);
+
+        log_debug("Verifying SSL ceritificates ...");
+
+        if (cert) {
+                subject = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
+                issuer = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
+        }
+
+        if (verify_mode == SSL_VERIFY_NONE) {
+                 log_debug("SSL Certificate validation DISABLED but Error at depth: %d, issuer = %s, subject = %s: %s",
+                           depth, (char *) subject, (char *) issuer, X509_verify_cert_error_string(error));
+
+                 return 1;
+        }
+
+        r = SSL_get_verify_result(ssl);
+        if (r != X509_V_OK) {
+                switch(r) {
+                        case X509_V_ERR_CERT_HAS_EXPIRED: {
+                                switch (m->auth_mode) {
+                                        case OPEN_SSL_CERTIFICATE_AUTH_MODE_DENY: {
+                                                log_error_errno(SYNTHETIC_ERRNO(EINVAL),
+                                                                "Failed to verify certificate: %s", X509_verify_cert_error_string(r));
+                                                return 0;
+                                        }
+                                                break;
+                                        case OPEN_SSL_CERTIFICATE_AUTH_MODE_WARN: {
+                                                log_warning_errno(EINVAL,
+                                                                  "Failed to verify certificate: %s", X509_verify_cert_error_string(r));
+
+                                                return 1;
+                                        }
+                                                break;
+                                        case OPEN_SSL_CERTIFICATE_AUTH_MODE_ALLOW: {
+                                                log_debug("Failed to verify certificate: %s", X509_verify_cert_error_string(r));
+                                                return 1;
+                                        }
+
+                                                break;
+                                        default:
+                                                break;
+                                }}
+                                break;
+                        case X509_V_ERR_CERT_REVOKED: {
+                                switch (m->auth_mode) {
+                                        case OPEN_SSL_CERTIFICATE_AUTH_MODE_DENY: {
+                                                log_error_errno(SYNTHETIC_ERRNO(EINVAL),
+                                                                "Failed to verify certificate: %s", X509_verify_cert_error_string(r));
+                                                return 0;
+                                        }
+                                                break;
+                                        case OPEN_SSL_CERTIFICATE_AUTH_MODE_WARN: {
+                                                log_warning_errno(EINVAL,
+                                                                  "Failed to verify certificate: %s", X509_verify_cert_error_string(r));
+
+                                                return 1;
+                                        }
+                                                break;
+                                        case OPEN_SSL_CERTIFICATE_AUTH_MODE_ALLOW: {
+                                                log_debug("Failed to verify certificate: %s", X509_verify_cert_error_string(r));
+                                                return 1;
+                                        }
+                                                break;
+                                        default:
+                                                break;
+                                }}
+                                break;
+                        default:
+                                log_debug("Succesffuly validated certificated: %s", X509_verify_cert_error_string(r));
+                }
+        }
+
+        log_debug("SSL ceritificates verified: %s", X509_verify_cert_error_string(r));
+
+        return 1;
+}
 
 static int tls_write(TLSManager *m, const char *buf, size_t count) {
         int r;
@@ -103,7 +201,6 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
                 return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
                                        "Failed to allocate memory for SSL CTX: %m");
 
-        SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
         SSL_CTX_set_default_verify_paths(ctx);
 
         ssl = SSL_new(ctx);
@@ -116,6 +213,17 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
                 return log_error_errno(SYNTHETIC_ERRNO(EIO),
                                        "Failed to SSL_set_fd: %s",
                                        ERR_error_string(ERR_get_error(), NULL));
+
+        /* Cerification verification  */
+        if (m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_NONE && m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_INVALID) {
+                log_debug("TLS: enable certificate verification");
+
+                SSL_set_ex_data(ssl, 0, m);
+                SSL_set_verify(ssl, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, ssl_verify_certificate_validity);
+        } else {
+                log_debug("TLS: disable certificate verification");
+                SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
+        }
 
         r = SSL_connect(ssl);
         if (r <= 0)
@@ -140,6 +248,7 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
                         log_debug("SSL: Issuer: %s", (char *) issuer);
                 } else
                         log_debug("SSL: No certificates.");
+
         }
 
         r = fd_nonblock(fd, true);
@@ -181,12 +290,16 @@ void tls_manager_free(TLSManager *m) {
         free(m);
 }
 
-int tls_manager_init(TLSManager **ret) {
+int tls_manager_init(OpenSSLCertificateAuthMode auth, TLSManager **ret ) {
         _cleanup_(tls_manager_freep) TLSManager *m = NULL;
 
-        m = new0(TLSManager, 1);
+        m = new(TLSManager, 1);
         if (!m)
                 return log_oom();
+
+        *m = (TLSManager) {
+           .auth_mode = auth,
+        };
 
         *ret = TAKE_PTR(m);
         return 0;

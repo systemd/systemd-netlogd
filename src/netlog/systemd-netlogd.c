@@ -176,7 +176,7 @@ int main(int argc, char **argv) {
                         r = dtls_manager_init(&m->dtls);
                         break;
                 case SYSLOG_TRANSMISSION_PROTOCOL_TLS:
-                        r = tls_manager_init(&m->tls);
+                        r = tls_manager_init( m->auth_mode, &m->tls);
                         break;
                 default:
                         break;
