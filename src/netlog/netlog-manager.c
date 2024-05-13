@@ -84,12 +84,17 @@ static int manager_read_journal_input(Manager *m) {
         const void *data;
         usec_t realtime;
         size_t length;
+        char *cursor;
         int r;
 
         assert(m);
         assert(m->journal);
 
-        log_debug("Reading from journal cursor=%s", m->last_cursor);
+        r = sd_journal_get_cursor(m->journal, &cursor);
+        if (r < 0)
+                return log_error_errno(r, "Failed to get cursor: %m");
+
+        log_debug("Reading from journal cursor=%s", cursor);
 
         JOURNAL_FOREACH_DATA_RETVAL(m->journal, data, length, r) {
 
