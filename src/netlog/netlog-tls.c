@@ -34,23 +34,12 @@ int ssl_verify_certificate_validity(int s, X509_STORE_CTX *store) {
         int verify_mode = SSL_get_verify_mode(ssl);
         _cleanup_free_ char *pretty = NULL;
         union sockaddr_union sa;
-        socklen_t salen;
         int r;
 
         assert(store);
 
-        switch (address->sockaddr.sa.sa_family) {
-                case AF_INET:
-                        salen = sizeof(sa.in);
-                        break;
-                case AF_INET6:
-                        salen = sizeof(sa.in6);
-                        break;
-                default:
-                        return -EAFNOSUPPORT;
-        }
-
-        r = sockaddr_pretty(&address->sockaddr.sa, salen, true, true, &pretty);
+        r = sockaddr_pretty(&address->sockaddr.sa, address->sockaddr.sa.sa_family == AF_INET ?
+                            sizeof(sa.in) : sizeof(sa.in6), true, true, &pretty);
         if (r < 0)
                 return r;
 
@@ -222,8 +211,6 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
                 return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
                                        "Failed to allocate memory for SSL CTX: %m");
 
-        SSL_CTX_set_default_verify_paths(ctx);
-
         ssl = SSL_new(ctx);
         if (!ssl)
                 return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
@@ -247,6 +234,7 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
                 log_debug("TLS: disable certificate verification");
                 SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
         }
+        SSL_CTX_set_default_verify_paths(ctx);
 
         r = SSL_connect(ssl);
         if (r <= 0)
