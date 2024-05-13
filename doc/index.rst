@@ -50,6 +50,9 @@ This will create a user systemd-journal-netlog
         Takes a time span value. The default unit is seconds, but other units may be specified,
         see systemd.time(5). Defaults to 30 seconds and must not be smaller than 1 second.
 
+|    ``TLSCertificateAuthMode=``
+        Specifies whether to validate the certificate. Takes one of no, allow, deny, warn. Defaults to 'no' which disables certificate validation.
+
 |
 |
 |  Optional settings
