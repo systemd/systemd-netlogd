@@ -83,3 +83,23 @@ int fd_inc_rcvbuf(int fd, size_t n);
         })
 
 int sockaddr_pretty(const struct sockaddr *_sa, socklen_t salen, bool translate_ipv6, bool include_port, char **ret);
+
+static inline int setsockopt_int(int fd, int level, int optname, int value) {
+        if (setsockopt(fd, level, optname, &value, sizeof(value)) < 0)
+                return -errno;
+
+        return 0;
+}
+
+static inline int getsockopt_int(int fd, int level, int optname, int *ret) {
+        int v;
+        socklen_t sl = sizeof(v);
+
+        if (getsockopt(fd, level, optname, &v, &sl) < 0)
+                return negative_errno();
+        if (sl != sizeof(v))
+                return -EIO;
+
+        *ret = v;
+        return 0;
+}
