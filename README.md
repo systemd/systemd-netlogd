@@ -96,27 +96,25 @@ systemd-netlogd reads configuration files named `/etc/systemd/netlogd.conf` and 
 
 **EXAMPLE**
 
- Example 1. /etc/systemd/netlogd.conf
+ Example 1.UDP Multicast
 
 ``` sh
     [Network]
     Address=239.0.0.1:6000
     #Protocol=udp
     #LogFormat=rfc5424
-
 ```
 
-Example 2. /etc/systemd/netlogd.conf
+Example 2.UDP
 
 ``` sh
     [Network]
     Address=192.168.8.101:514
     #Protocol=udp
     LogFormat=rfc3339
-
 ```
 
-Example 3. /etc/systemd/netlogd.conf
+Example 3. Structured data
 
 ``` sh
 
@@ -125,10 +123,9 @@ Example 3. /etc/systemd/netlogd.conf
     #Protocol=udp
     LogFormat=rfc5424
     StructuredData=[1ab456b6-90bb-6578-abcd-5b734584aaaa@41058]
-
 ```
 
-Example 4. /etc/systemd/netlogd.conf
+Example 4. Custom syslog structrued data and message ID
 
 ``` sh
 
@@ -138,7 +135,28 @@ Example 4. /etc/systemd/netlogd.conf
     LogFormat=rfc5424
     UseSysLogStructuredData=yes
     UseSysLogMsgId=yes
+```
 
+Example 5. TLS with certificate authentocation mode
+
+``` sh
+
+    [Network]
+    Address=192.168.8.101:4433
+    Protocol=tls
+    #LogFormat=rfc5424
+    TLSCertificateAuthMode=warn
+```
+
+Example 6. DTLS with certificate authentocation mode
+
+``` sh
+
+    [Network]
+    Address=192.168.8.101:4433
+    Protocol=dtls
+    #LogFormat=rfc5424
+    TLSCertificateAuthMode=allow
 ```
 
 Use case of ```UseSysLogStructuredData=``` and ```UseSysLogMsgId=```
