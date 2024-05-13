@@ -173,10 +173,10 @@ int main(int argc, char **argv) {
 
         switch (m->protocol) {
                 case SYSLOG_TRANSMISSION_PROTOCOL_DTLS:
-                        r = dtls_manager_init(&m->dtls);
+                        r = dtls_manager_init(m->auth_mode, &m->dtls);
                         break;
                 case SYSLOG_TRANSMISSION_PROTOCOL_TLS:
-                        r = tls_manager_init( m->auth_mode, &m->tls);
+                        r = tls_manager_init(m->auth_mode, &m->tls);
                         break;
                 default:
                         break;

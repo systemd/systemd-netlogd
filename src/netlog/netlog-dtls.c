@@ -125,6 +125,17 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
         BIO_ctrl(bio, BIO_CTRL_DGRAM_SET_CONNECTED, 0, &address);
         SSL_set_bio(ssl , bio, bio);
 
+        /* Cerification verification  */
+        if (m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_NONE && m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_INVALID) {
+                log_debug("TLS: enable certificate verification");
+
+                SSL_set_ex_data(ssl, 0, m);
+                SSL_set_verify(ssl, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, ssl_verify_certificate_validity);
+        } else {
+                log_debug("TLS: disable certificate verification");
+                SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
+        }
+
         r = SSL_connect(ssl);
         if (r <= 0)
                 return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
@@ -149,10 +160,6 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
                 } else
                         log_debug("DTLS: No certificates.");
         }
-
-        /* Set reference in SSL obj */
-        SSL_set_ex_data(ssl, 0, NULL);
-        SSL_set_ex_data(ssl, 1, NULL);
 
         /* Set and activate timeouts */
         BIO_ctrl(bio, BIO_CTRL_DGRAM_SET_RECV_TIMEOUT, 0, &timeout);
@@ -192,12 +199,16 @@ void dtls_manager_free(DTLSManager *m) {
         free(m);
 }
 
-int dtls_manager_init(DTLSManager **ret) {
+int dtls_manager_init(OpenSSLCertificateAuthMode auth_mode, DTLSManager **ret) {
         _cleanup_(dtls_manager_freep) DTLSManager *m = NULL;
 
-        m = new0(DTLSManager, 1);
+        m = new(DTLSManager, 1);
         if (!m)
                 return log_oom();
+
+        *m = (DTLSManager) {
+           .auth_mode = auth_mode,
+        };
 
         *ret = TAKE_PTR(m);
         return 0;
