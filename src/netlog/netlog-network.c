@@ -387,7 +387,6 @@ int manager_network_connect_socket(Manager *m) {
 }
 
 int manager_open_network_socket(Manager *m) {
-        const int one = 1;
         int r;
 
         assert(m);
@@ -405,26 +404,30 @@ int manager_open_network_socket(Manager *m) {
                 default:
                         return -EPROTONOSUPPORT;
         }
-
         if (m->socket < 0)
-                return log_error_errno(errno, "Failed to allocate socket: %m");;
+                return log_error_errno(errno, "Failed to create socket: %m");;
 
-        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_UDP) {
-                r = setsockopt(m->socket, IPPROTO_IP, IP_MULTICAST_LOOP, &one, sizeof(one));
-                if (r < 0) {
-                        r = -errno;
-                        log_error_errno(errno, "Failed to set socket IP_MULTICAST_LOOP: %m");
-                        goto fail;
-                }
-        }
+        switch (m->protocol) {
+                case SYSLOG_TRANSMISSION_PROTOCOL_UDP: {
+                        r = setsockopt_int(m->socket, IPPROTO_IP, IP_MULTICAST_LOOP, true);
+                        if (r < 0) {
+                                r = -errno;
+                                log_error_errno(errno, "UDP: Failed to set IP_MULTICAST_LOOP: %m");
+                                goto fail;
+                        }}
+                        break;
+                case SYSLOG_TRANSMISSION_PROTOCOL_TCP: {
+                        r = setsockopt_int(m->socket, IPPROTO_TCP, TCP_FASTOPEN, 5); /* Everybody appears to pick qlen=5, let's do the same here. */
+                        if (r < 0)
+                                log_debug_errno(r, "Failed to enable TCP_FASTOPEN on TCP listening socket, ignoring: %m");
 
-        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP) {
-                r = setsockopt(m->socket, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
-                if (r < 0) {
-                        r = -errno;
-                        log_error_errno(errno, "Failed to set socket TCP_NODELAY: %m");
-                        goto fail;
+                        r = setsockopt_int(m->socket, IPPROTO_TCP, TCP_NODELAY, true);
+                        if (r < 0)
+                                log_debug_errno(r, "Failed to enable TCP_NODELAY mode, ignoring: %m");
                 }
+                        break;
+                default:
+                        break;
         }
 
         r = fd_nonblock(m->socket, true);
