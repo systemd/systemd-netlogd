@@ -69,7 +69,7 @@ This will create a user systemd-journal-netlog
 EXAMPLES
 --------
 
-- Example 1. Multicast::
+- Example 1. UDP Multicast::
 
  .. code-block:: bash
 
@@ -125,6 +125,25 @@ EXAMPLES
     [Network]
     Address=192.168.8.101:514
     Protocol=tcp
+
+- Example 8. TLS with certificate authentication mode::
+
+ .. code-block:: bash
+
+    [Network]
+    Address=192.168.8.101:514
+    Protocol=tls
+    TLSCertificateAuthMode=warn
+
+- Example 9. DTLS with certificate authentication mode::
+
+ .. code-block:: bash
+
+    [Network]
+    Address=192.168.8.101:514
+    Protocol=tls
+    TLSCertificateAuthMode=deny
+
 
 - Use case of UseSysLogStructuredData= and UseSysLogMsgId=::
 
