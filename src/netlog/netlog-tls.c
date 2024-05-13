@@ -25,17 +25,36 @@ DEFINE_STRING_TABLE_LOOKUP(certificate_auth_mode, int);
 
 int ssl_verify_certificate_validity(int s, X509_STORE_CTX *store) {
         SSL* ssl = X509_STORE_CTX_get_ex_data(store, SSL_get_ex_data_X509_STORE_CTX_idx());
+        SocketAddress *address = (SocketAddress *) SSL_get_ex_data(ssl, 1);
         _cleanup_(OPENSSL_freep) void *subject = NULL, *issuer = NULL;
         TLSManager *m = (TLSManager *) SSL_get_ex_data(ssl, 0);
         X509 *cert = X509_STORE_CTX_get_current_cert(store);
         int depth = X509_STORE_CTX_get_error_depth(store);
         int error = X509_STORE_CTX_get_error(store);
         int verify_mode = SSL_get_verify_mode(ssl);
+        _cleanup_free_ char *pretty = NULL;
+        union sockaddr_union sa;
+        socklen_t salen;
         int r;
 
         assert(store);
 
-        log_debug("Verifying SSL ceritificates ...");
+        switch (address->sockaddr.sa.sa_family) {
+                case AF_INET:
+                        salen = sizeof(sa.in);
+                        break;
+                case AF_INET6:
+                        salen = sizeof(sa.in6);
+                        break;
+                default:
+                        return -EAFNOSUPPORT;
+        }
+
+        r = sockaddr_pretty(&address->sockaddr.sa, salen, true, true, &pretty);
+        if (r < 0)
+                return r;
+
+        log_debug("Verifying SSL ceritificates of server: %s", pretty);
 
         if (cert) {
                 subject = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
@@ -43,8 +62,8 @@ int ssl_verify_certificate_validity(int s, X509_STORE_CTX *store) {
         }
 
         if (verify_mode == SSL_VERIFY_NONE) {
-                 log_debug("SSL Certificate validation DISABLED but Error at depth: %d, issuer = %s, subject = %s: %s",
-                           depth, (char *) subject, (char *) issuer, X509_verify_cert_error_string(error));
+                 log_debug("SSL Certificate validation DISABLED but Error at depth: %d, issuer=%s, subject=%s: server=%s %s",
+                           depth, (char *) subject, (char *) issuer, pretty, X509_verify_cert_error_string(error));
 
                  return 1;
         }
@@ -56,19 +75,19 @@ int ssl_verify_certificate_validity(int s, X509_STORE_CTX *store) {
                                 switch (m->auth_mode) {
                                         case OPEN_SSL_CERTIFICATE_AUTH_MODE_DENY: {
                                                 log_error_errno(SYNTHETIC_ERRNO(EINVAL),
-                                                                "Failed to verify certificate: %s", X509_verify_cert_error_string(r));
+                                                                "Failed to verify certificate server=%s: %s", pretty, X509_verify_cert_error_string(r));
                                                 return 0;
                                         }
                                                 break;
                                         case OPEN_SSL_CERTIFICATE_AUTH_MODE_WARN: {
-                                                log_warning_errno(EINVAL,
-                                                                  "Failed to verify certificate: %s", X509_verify_cert_error_string(r));
+                                                log_warning_errno(SYNTHETIC_ERRNO(EINVAL),
+                                                                  "Failed to verify certificate server=%s: %s", pretty, X509_verify_cert_error_string(r));
 
                                                 return 1;
                                         }
                                                 break;
                                         case OPEN_SSL_CERTIFICATE_AUTH_MODE_ALLOW: {
-                                                log_debug("Failed to verify certificate: %s", X509_verify_cert_error_string(r));
+                                                log_debug("Failed to verify certificate server=%s: %s", pretty, X509_verify_cert_error_string(r));
                                                 return 1;
                                         }
 
@@ -81,19 +100,20 @@ int ssl_verify_certificate_validity(int s, X509_STORE_CTX *store) {
                                 switch (m->auth_mode) {
                                         case OPEN_SSL_CERTIFICATE_AUTH_MODE_DENY: {
                                                 log_error_errno(SYNTHETIC_ERRNO(EINVAL),
-                                                                "Failed to verify certificate: %s", X509_verify_cert_error_string(r));
+                                                                "Failed to verify certificate server=%s: %s", pretty, X509_verify_cert_error_string(r));
                                                 return 0;
                                         }
                                                 break;
                                         case OPEN_SSL_CERTIFICATE_AUTH_MODE_WARN: {
-                                                log_warning_errno(EINVAL,
-                                                                  "Failed to verify certificate: %s", X509_verify_cert_error_string(r));
+                                                log_warning_errno(SYNTHETIC_ERRNO(EINVAL),
+                                                                  "Failed to verify certificate server=%s: %s", pretty, X509_verify_cert_error_string(r));
 
                                                 return 1;
                                         }
                                                 break;
                                         case OPEN_SSL_CERTIFICATE_AUTH_MODE_ALLOW: {
-                                                log_debug("Failed to verify certificate: %s", X509_verify_cert_error_string(r));
+                                                log_debug_errno(SYNTHETIC_ERRNO(EINVAL),
+                                                                "Failed to verify certificate server=%s: %s", pretty, X509_verify_cert_error_string(r));
                                                 return 1;
                                         }
                                                 break;
@@ -102,12 +122,12 @@ int ssl_verify_certificate_validity(int s, X509_STORE_CTX *store) {
                                 }}
                                 break;
                         default:
-                                log_error("Failed to validate remote certificate: %s. Aborting connection ...", X509_verify_cert_error_string(r));
+                                log_error("Failed to validate remote certificate server=%s: %s. Aborting connection ...", pretty, X509_verify_cert_error_string(r));
                                 return 0;
                 }
         }
 
-        log_debug("SSL ceritificates verified: %s", X509_verify_cert_error_string(r));
+        log_debug("SSL ceritificates verified server=%s: %s", pretty, X509_verify_cert_error_string(r));
 
         return 1;
 }
@@ -220,6 +240,8 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
                 log_debug("TLS: enable certificate verification");
 
                 SSL_set_ex_data(ssl, 0, m);
+                SSL_set_ex_data(ssl, 1, address);
+
                 SSL_set_verify(ssl, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, ssl_verify_certificate_validity);
         } else {
                 log_debug("TLS: disable certificate verification");

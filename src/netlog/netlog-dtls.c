@@ -130,6 +130,7 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
                 log_debug("TLS: enable certificate verification");
 
                 SSL_set_ex_data(ssl, 0, m);
+                SSL_set_ex_data(ssl, 1, address);
                 SSL_set_verify(ssl, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, ssl_verify_certificate_validity);
         } else {
                 log_debug("TLS: disable certificate verification");
