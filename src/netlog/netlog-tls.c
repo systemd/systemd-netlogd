@@ -262,10 +262,6 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
 
         }
 
-        r = fd_nonblock(fd, true);
-        if (r < 0)
-                return log_error_errno(errno, "Failed to set socket nonblock: %m");
-
         m->bio = TAKE_PTR(bio);
         m->ssl = TAKE_PTR(ssl);
         m->ctx = ctx;
