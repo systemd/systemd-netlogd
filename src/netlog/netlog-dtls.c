@@ -107,9 +107,6 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
                 return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
                                        "Failed to allocate memory for SSL CTX: %m");
 
-        SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
-        SSL_CTX_set_default_verify_paths(ctx);
-
         ssl = SSL_new(ctx);
         if (!ssl)
                 return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
@@ -136,6 +133,7 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
                 log_debug("TLS: disable certificate verification");
                 SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
         }
+        SSL_CTX_set_default_verify_paths(ctx);
 
         r = SSL_connect(ssl);
         if (r <= 0)
