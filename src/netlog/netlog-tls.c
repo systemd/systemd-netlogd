@@ -102,7 +102,8 @@ int ssl_verify_certificate_validity(int s, X509_STORE_CTX *store) {
                                 }}
                                 break;
                         default:
-                                log_debug("Succesffuly validated certificated: %s", X509_verify_cert_error_string(r));
+                                log_error("Failed to validate remote certificate: %s. Aborting connection ...", X509_verify_cert_error_string(r));
+                                return 0;
                 }
         }
 
