@@ -105,3 +105,7 @@ static inline usec_t usec_sub_signed(usec_t timestamp, int64_t delta) {
 
 int parse_sec(const char *t, usec_t *ret);
 int parse_time(const char *t, usec_t *ret, usec_t default_unit);
+
+static inline bool timestamp_is_set(usec_t timestamp) {
+        return timestamp > 0 && timestamp != USEC_INFINITY;
+}
