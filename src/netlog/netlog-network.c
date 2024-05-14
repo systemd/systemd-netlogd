@@ -412,7 +412,13 @@ int manager_open_network_socket(Manager *m) {
                         r = setsockopt_int(m->socket, IPPROTO_IP, IP_MULTICAST_LOOP, true);
                         if (r < 0)
                                 log_debug_errno(errno, "UDP: Failed to set IP_MULTICAST_LOOP: %m");
-                        }
+
+                        if (m->send_buffer > 0) {
+                                r = fd_set_sndbuf(m->socket, m->send_buffer, false);
+                                if (r < 0)
+                                        log_debug_errno(r, "UDP: SO_SNDBUF/SO_SNDBUFFORCE failed: %m");
+                        }}
+
                         break;
                 case SYSLOG_TRANSMISSION_PROTOCOL_TCP: {
                         if (m->no_delay) {
@@ -424,7 +430,7 @@ int manager_open_network_socket(Manager *m) {
                         if (m->send_buffer > 0) {
                                 r = fd_set_sndbuf(m->socket, m->send_buffer, false);
                                 if (r < 0)
-                                        log_debug_errno(r, "SO_SNDBUF/SO_SNDBUFFORCE failed: %m");
+                                        log_debug_errno(r, "TCP: SO_SNDBUF/SO_SNDBUFFORCE failed: %m");
                         }
 
                         if (m->keep_alive) {
