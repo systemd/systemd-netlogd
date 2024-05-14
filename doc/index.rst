@@ -70,6 +70,14 @@ This will create a user systemd-journal-netlog
        Takes an integer as argument. It is the number of unacknowledged probes to send before considering the connection dead and notifying
        the application layer. This controls the TCP_KEEPCNT socket option (see socket(7) and the TCP Keepalive HOWTO for details.) Default value is 9.
 
+| ``SendBuffer=``
+       Takes an integer argument controlling the receive or send buffer sizes of this socket, respectively. This controls the SO_SNDBUF
+       socket options (see socket(7) for details.). The usual suffixes K, M, G are supported and are understood to the base of 1024.
+
+| ``NoDelay=``
+       Takes a boolean argument. TCP Nagle's algorithm works by combining a number of small outgoing messages, and sending them all at once.
+       This controls the TCP_NODELAY socket option (see tcp(7)). Defaults to false.
+
 |  Optional settings
 
 |  ``StructuredData=``
