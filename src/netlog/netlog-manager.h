@@ -80,6 +80,9 @@ struct Manager {
         bool no_delay;
 
         unsigned keep_alive_cnt;
+
+        size_t send_buffer;
+
         usec_t timeout_usec;
         usec_t keep_alive_time;
         usec_t keep_alive_interval;

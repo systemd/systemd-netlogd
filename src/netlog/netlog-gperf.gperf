@@ -30,3 +30,4 @@ Network.KeepAliveTimeSec,         config_parse_sec,                       0, off
 Network.KeepAliveIntervalSec,     config_parse_sec,                       0, offsetof(Manager, keep_alive_interval)
 Network.KeepAliveProbes,          config_parse_unsigned,                  0, offsetof(Manager, keep_alive_cnt)
 Network.NoDelay,                  config_parse_bool,                      0, offsetof(Manager, no_delay)
+Network.SendBuffer,               config_parse_iec_size,                  0, offsetof(Manager, send_buffer)

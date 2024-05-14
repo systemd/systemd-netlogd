@@ -421,6 +421,12 @@ int manager_open_network_socket(Manager *m) {
                                         log_debug_errno(r, "Failed to enable TCP_NODELAY mode, ignoring: %m");
                         }
 
+                        if (m->send_buffer > 0) {
+                                r = fd_set_sndbuf(m->socket, m->send_buffer, false);
+                                if (r < 0)
+                                        log_debug_errno(r, "SO_SNDBUF/SO_SNDBUFFORCE failed: %m");
+                        }
+
                         if (m->keep_alive) {
                                 r = setsockopt_int(m->socket, SOL_SOCKET, SO_KEEPALIVE, true);
                                 if (r < 0)
