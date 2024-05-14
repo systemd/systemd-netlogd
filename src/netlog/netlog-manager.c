@@ -46,38 +46,81 @@ static const char *const log_format_table[_SYSLOG_TRANSMISSION_LOG_FORMAT_MAX] =
 
 DEFINE_STRING_TABLE_LOOKUP(log_format, int);
 
-static int parse_field(const void *data, size_t length, const char *field, char **target) {
-        size_t fl, nl;
-        void *buf;
+typedef struct ParseFieldVec {
+        const char *field;
+        size_t field_len;
+        char **target;
+        size_t *target_len;
+} ParseFieldVec;
+
+#define PARSE_FIELD_VEC_ENTRY(_field, _target, _target_len) {           \
+                .field = _field,                                        \
+                .field_len = strlen(_field),                            \
+                .target = _target,                                      \
+                .target_len = _target_len                               \
+        }
+
+static int parse_field(
+                const void *data,
+                size_t length,
+                const char *field,
+                size_t field_len,
+                char **target,
+                size_t *target_len) {
+
+        size_t nl;
+        char *buf;
 
         assert(data);
         assert(field);
         assert(target);
 
-        fl = strlen(field);
-        if (length < fl)
+        if (length < field_len)
                 return 0;
 
-        if (memcmp(data, field, fl))
+        if (memcmp(data, field, field_len))
                 return 0;
 
-        nl = length - fl;
-        buf = malloc(nl+1);
+        nl = length - field_len;
+
+        buf = newdup_suffix0(char, (const char*) data + field_len, nl);
         if (!buf)
-                return -ENOMEM;
+                return log_oom();
 
-        memcpy(buf, (const char*) data + fl, nl);
-        ((char*)buf)[nl] = 0;
+        free_and_replace(*target, buf);
 
-        free(*target);
-        *target = buf;
+        if (target_len)
+                *target_len = nl;
 
         return 1;
+}
+
+static int parse_fieldv(
+                const void *data,
+                size_t length,
+                const ParseFieldVec *fields,
+                size_t n_fields) {
+
+        int r;
+
+        for (size_t i = 0; i < n_fields; i++) {
+                const ParseFieldVec *f = &fields[i];
+
+                r = parse_field(data, length, f->field, f->field_len, f->target, f->target_len);
+                if (r < 0)
+                        return r;
+                if (r > 0)
+                        break;
+        }
+
+        return 0;
 }
 
 static int manager_read_journal_input(Manager *m) {
         _cleanup_free_ char *facility = NULL, *identifier = NULL, *priority = NULL, *message = NULL, *pid = NULL,
                 *hostname = NULL, *structured_data = NULL, *msgid = NULL;
+        size_t hostname_len = 0, identifier_len = 0, message_len = 0, priority_len = 0, facility_len = 0,
+                structured_data_len = 0, msgid_len = 0, pid_len = 0;
         unsigned sev = JOURNAL_DEFAULT_SEVERITY;
         unsigned fac = JOURNAL_DEFAULT_FACILITY;
         struct timeval tv;
@@ -86,6 +129,16 @@ static int manager_read_journal_input(Manager *m) {
         size_t length;
         char *cursor;
         int r;
+        const ParseFieldVec fields[] = {
+                PARSE_FIELD_VEC_ENTRY("_PID=",                        &pid,               &pid_len              ),
+                PARSE_FIELD_VEC_ENTRY("MESSAGE=",                     &message,           &message_len          ),
+                PARSE_FIELD_VEC_ENTRY("PRIORITY=",                    &priority,          &priority_len         ),
+                PARSE_FIELD_VEC_ENTRY("_HOSTNAME=",                   &hostname,          &hostname_len         ),
+                PARSE_FIELD_VEC_ENTRY("SYSLOG_FACILITY=",             &facility,          &facility_len         ),
+                PARSE_FIELD_VEC_ENTRY("SYSLOG_IDENTIFIER=",           &identifier,        &identifier_len       ),
+                PARSE_FIELD_VEC_ENTRY("SYSLOG_STRUCTURED_DATA=",      &structured_data,   &structured_data_len  ),
+                PARSE_FIELD_VEC_ENTRY("SYSLOG_MSGID",                 &msgid,             &msgid_len            ),
+        };
 
         assert(m);
         assert(m->journal);
@@ -97,50 +150,21 @@ static int manager_read_journal_input(Manager *m) {
         log_debug("Reading from journal cursor=%s", cursor);
 
         JOURNAL_FOREACH_DATA_RETVAL(m->journal, data, length, r) {
-
-                r = parse_field(data, length, "PRIORITY=", &priority);
+                r = parse_fieldv(data, length, fields, ELEMENTSOF(fields));
                 if (r < 0)
                         return r;
-                else if (r > 0)
-                        continue;
+        }
 
-                r = parse_field(data, length, "SYSLOG_FACILITY=", &facility);
-                if (r < 0)
-                        return r;
-                else if (r > 0)
-                        continue;
+        if (IN_SET(r, -EBADMSG, -EADDRNOTAVAIL)) {
+                log_debug_errno(r, "Skipping message we can't read: %m");
+                return 0;
+        }
+        if (r < 0)
+                return log_error_errno(r, "Failed to get journal fields: %m");
 
-                r = parse_field(data, length, "_HOSTNAME=", &hostname);
-                if (r < 0)
-                        return r;
-                else if (r > 0)
-                        continue;
-
-                r = parse_field(data, length, "SYSLOG_IDENTIFIER=", &identifier);
-                if (r < 0)
-                        return r;
-                else if (r > 0)
-                        continue;
-
-                r = parse_field(data, length, "_PID=", &pid);
-                if (r < 0)
-                        return r;
-                else if (r > 0)
-                        continue;
-
-                r = parse_field(data, length, "MESSAGE=", &message);
-                if (r < 0)
-                        return r;
-
-                r = parse_field(data, length, "SYSLOG_STRUCTURED_DATA=", &structured_data);
-                if (r < 0)
-                        return r;
-                else if (r > 0)
-                        continue;
-
-                r = parse_field(data, length, "SYSLOG_MSGID=", &msgid);
-                if (r < 0)
-                        return r;
+        if (!message) {
+                log_debug("Skipping message without MESSAGE= field.");
+                return 0;
         }
 
         r = sd_journal_get_realtime_usec(m->journal, &realtime);
