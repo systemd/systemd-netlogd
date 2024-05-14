@@ -2,3 +2,13 @@
 #Address=239.0.0.1:6000
 #Protocol=udp
 #LogFormat=rfc5424
+#StructuredData=
+#UseSysLogStructuredData=no
+#UseSysLogMsgId=no
+#ConnectionRetrySec=30s
+#KeepAlive=
+#KeepAliveTimeSec=
+#KeepAliveIntervalSec=
+#KeepAliveProbes=
+#NoDelay=
+#SendBuffer=

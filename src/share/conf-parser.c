@@ -481,6 +481,38 @@ int config_parse_bool(
         return 0;
 }
 
+int config_parse_iec_size(
+                const char* unit,
+                const char *filename,
+                unsigned line,
+                const char *section,
+                unsigned section_line,
+                const char *lvalue,
+                int ltype,
+                const char *rvalue,
+                void *data,
+                void *userdata) {
+
+        size_t *sz = ASSERT_PTR(data);
+        uint64_t v;
+        int r;
+
+        assert(filename);
+        assert(lvalue);
+        assert(rvalue);
+
+        r = parse_size(rvalue, 1024, &v);
+        if (r >= 0 && (uint64_t) (size_t) v != v)
+                r = -ERANGE;
+        if (r < 0) {
+                log_syntax(unit, LOG_WARNING, filename, line, r, "Failed to parse size value '%s', ignoring: %m", rvalue);
+                return 0;
+        }
+
+        *sz = (size_t) v;
+        return 0;
+}
+
 #define DEFINE_PARSER(type, vartype, conv_func)                         \
         DEFINE_CONFIG_PARSE_PTR(config_parse_##type, conv_func, vartype, "Failed to parse " #type " value")
 
