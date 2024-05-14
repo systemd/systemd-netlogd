@@ -410,16 +410,16 @@ int manager_open_network_socket(Manager *m) {
         switch (m->protocol) {
                 case SYSLOG_TRANSMISSION_PROTOCOL_UDP: {
                         r = setsockopt_int(m->socket, IPPROTO_IP, IP_MULTICAST_LOOP, true);
-                        if (r < 0) {
-                                r = -errno;
-                                log_error_errno(errno, "UDP: Failed to set IP_MULTICAST_LOOP: %m");
-                                goto fail;
-                        }}
+                        if (r < 0)
+                                log_debug_errno(errno, "UDP: Failed to set IP_MULTICAST_LOOP: %m");
+                        }
                         break;
                 case SYSLOG_TRANSMISSION_PROTOCOL_TCP: {
-                        r = setsockopt_int(m->socket, IPPROTO_TCP, TCP_NODELAY, true);
-                        if (r < 0)
-                                log_debug_errno(r, "Failed to enable TCP_NODELAY mode, ignoring: %m");
+                        if (m->no_delay) {
+                                r = setsockopt_int(m->socket, IPPROTO_TCP, TCP_NODELAY, true);
+                                if (r < 0)
+                                        log_debug_errno(r, "Failed to enable TCP_NODELAY mode, ignoring: %m");
+                        }
 
                         if (m->keep_alive) {
                                 r = setsockopt_int(m->socket, SOL_SOCKET, SO_KEEPALIVE, true);

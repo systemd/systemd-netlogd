@@ -77,6 +77,7 @@ struct Manager {
         TLSManager *tls;
 
         bool keep_alive;
+        bool no_delay;
 
         unsigned keep_alive_cnt;
         usec_t timeout_usec;
