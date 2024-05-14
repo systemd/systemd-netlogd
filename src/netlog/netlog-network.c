@@ -417,14 +417,33 @@ int manager_open_network_socket(Manager *m) {
                         }}
                         break;
                 case SYSLOG_TRANSMISSION_PROTOCOL_TCP: {
-                        r = setsockopt_int(m->socket, IPPROTO_TCP, TCP_FASTOPEN, 5); /* Everybody appears to pick qlen=5, let's do the same here. */
-                        if (r < 0)
-                                log_debug_errno(r, "Failed to enable TCP_FASTOPEN on TCP listening socket, ignoring: %m");
-
                         r = setsockopt_int(m->socket, IPPROTO_TCP, TCP_NODELAY, true);
                         if (r < 0)
                                 log_debug_errno(r, "Failed to enable TCP_NODELAY mode, ignoring: %m");
-                }
+
+                        if (m->keep_alive) {
+                                r = setsockopt_int(m->socket, SOL_SOCKET, SO_KEEPALIVE, true);
+                                if (r < 0)
+                                        log_debug_errno(r, "Failed to enable SO_KEEPALIVE: %m");
+                        }
+
+                        if (timestamp_is_set(m->keep_alive_time)) {
+                                r = setsockopt_int(m->socket, SOL_TCP, TCP_KEEPIDLE, m->keep_alive_time / USEC_PER_SEC);
+                                if (r < 0)
+                                        log_debug_errno(r, "TCP_KEEPIDLE failed: %m");
+                        }
+
+                        if (m->keep_alive_interval > 0) {
+                                r = setsockopt_int(m->socket, SOL_TCP, TCP_KEEPINTVL, m->keep_alive_interval / USEC_PER_SEC);
+                                if (r < 0)
+                                        log_debug_errno(r, "TCP_KEEPINTVL failed: %m");
+                        }
+
+                        if (m->keep_alive_cnt > 0) {
+                                r = setsockopt_int(m->socket, SOL_TCP, TCP_KEEPCNT, m->keep_alive_cnt);
+                                if (r < 0)
+                                        log_debug_errno(r, "TCP_KEEPCNT failed: %m");
+                        }}
                         break;
                 default:
                         break;

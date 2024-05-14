@@ -411,39 +411,6 @@ int config_parse_many(const char *conf_file,
         return 0;
 }
 
-#if 0
-#define DEFINE_PARSER(type, vartype, conv_func)                         \
-        int config_parse_##type(                                        \
-                        const char *unit,                               \
-                        const char *filename,                           \
-                        unsigned line,                                  \
-                        const char *section,                            \
-                        unsigned section_line,                          \
-                        const char *lvalue,                             \
-                        int ltype,                                      \
-                        const char *rvalue,                             \
-                        void *data,                                     \
-                        void *userdata) {                               \
-                                                                        \
-                vartype *i = data;                                      \
-                int r;                                                  \
-                                                                        \
-                assert(filename);                                       \
-                assert(lvalue);                                         \
-                assert(rvalue);                                         \
-                assert(data);                                           \
-                                                                        \
-                r = conv_func(rvalue, i);                               \
-                if (r < 0)                                              \
-                        log_syntax(unit, LOG_ERR, filename, line, r,    \
-                                   "Failed to parse %s value, ignoring: %s", \
-                                   #type, rvalue);                      \
-                                                                        \
-                return 0;                                               \
-        }                                                               \
-        struct __useless_struct_to_allow_trailing_semicolon__
-
-#endif
 int config_parse_string(
                 const char *unit,
                 const char *filename,
@@ -518,3 +485,4 @@ int config_parse_bool(
         DEFINE_CONFIG_PARSE_PTR(config_parse_##type, conv_func, vartype, "Failed to parse " #type " value")
 
 DEFINE_PARSER(sec, usec_t, parse_sec);
+DEFINE_PARSER(unsigned, unsigned, safe_atou);

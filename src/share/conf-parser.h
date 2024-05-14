@@ -250,3 +250,4 @@ int config_parse_many(const char *conf_file,      /* possibly NULL */
 CONFIG_PARSER_PROTOTYPE(config_parse_string);
 CONFIG_PARSER_PROTOTYPE(config_parse_bool);
 CONFIG_PARSER_PROTOTYPE(config_parse_sec);
+CONFIG_PARSER_PROTOTYPE(config_parse_unsigned);
