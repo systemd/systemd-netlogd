@@ -20,6 +20,24 @@ void* memdup(const void *p, size_t l) {
         return r;
 }
 
+void* memdup_suffix0(const void *p, size_t l) {
+        void *ret;
+
+        assert(l == 0 || p);
+
+        /* The same as memdup() but place a safety NUL byte after the allocated memory */
+
+        if (_unlikely_(l == SIZE_MAX)) /* prevent overflow */
+                return NULL;
+
+        ret = malloc(l + 1);
+        if (!ret)
+                return NULL;
+
+        ((uint8_t*) ret)[l] = 0;
+        return memcpy_safe(ret, p, l);
+}
+
 void* greedy_realloc(void **p, size_t *allocated, size_t need, size_t size) {
         size_t a, newalloc;
         void *q;
