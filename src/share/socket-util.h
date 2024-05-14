@@ -103,3 +103,5 @@ static inline int getsockopt_int(int fd, int level, int optname, int *ret) {
         *ret = v;
         return 0;
 }
+
+int fd_set_sndbuf(int fd, size_t n, bool increase);

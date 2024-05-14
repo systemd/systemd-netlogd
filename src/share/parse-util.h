@@ -27,6 +27,8 @@ static inline int safe_atou32(const char *s, uint32_t *ret_u) {
         return safe_atou(s, (unsigned*) ret_u);
 }
 
+int parse_size(const char *t, uint64_t base, uint64_t *size);
+
 #if LONG_MAX == INT_MAX
 static inline int safe_atolu(const char *s, unsigned long *ret_u) {
         assert_cc(sizeof(unsigned long) == sizeof(unsigned));

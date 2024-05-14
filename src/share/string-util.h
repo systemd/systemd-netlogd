@@ -22,6 +22,8 @@
 #define ALPHANUMERICAL    LETTERS DIGITS
 #define HEXDIGITS         DIGITS "abcdefABCDEF"
 
+typedef char sd_char;
+
 #define streq(a,b) (strcmp((a),(b)) == 0)
 #define strneq(a, b, n) (strncmp((a), (b), (n)) == 0)
 #define strcaseeq(a,b) (strcasecmp((a),(b)) == 0)
@@ -111,6 +113,11 @@ char *strjoin(const char *x, ...) _sentinel_;
                 *_p_ = 0;                                               \
                 _d_;                                                    \
         })
+
+static inline bool ascii_isdigit(sd_char a) {
+        /* A pure ASCII, locale independent version of isdigit() */
+        return a >= '0' && a <= '9';
+}
 
 char *strstrip(char *s);
 char *truncate_nl(char *s);
