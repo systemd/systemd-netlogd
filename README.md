@@ -80,7 +80,7 @@ systemd-netlogd reads configuration files named `/etc/systemd/netlogd.conf` and 
 
        TLSCertificateAuthMode=
                Specifies whether to validate the certificate. Takes one of no, allow, deny, warn. Defaults to 'no' which disables certificate validation.
-               
+
        KeepAlive=
                Takes a boolean argument. If true, the TCP/IP stack will send a keep alive message after 2h (depending on the configuration of /proc/sys/net/ipv4/tcp_keepalive_time)
                for all TCP streams accepted on this socket. This controls the SO_KEEPALIVE socket option (see socket(7) and the TCP Keepalive HOWTO for details.) Defaults to false.
@@ -90,19 +90,18 @@ systemd-netlogd reads configuration files named `/etc/systemd/netlogd.conf` and 
                and the TCP Keepalive HOWTO for details.) Default value is 7200 seconds (2 hours).
 
        KeepAliveIntervalSec=
-               Takes time (in seconds) as argument between individual keepalive probes, if the socket option SO_KEEPALIVE has been set on this socket. This controls the TCP_KEEPINTVL 
+               Takes time (in seconds) as argument between individual keepalive probes, if the socket option SO_KEEPALIVE has been set on this socket. This controls the TCP_KEEPINTVL
                socket option (see socket(7) and the TCP Keepalive HOWTO for details.) Default value is 75 seconds.
-               
+
        KeepAliveProbes=
               Takes an integer as argument. It is the number of unacknowledged probes to send before considering the connection dead and notifying the application layer. This controls the
               TCP_KEEPCNT socket option (see socket(7) and the TCP Keepalive HOWTO for details.) Default value is 9.
 
        SendBuffer=
-             Takes an integer argument controlling the receive or send buffer sizes of this socket, respectively. This controls the SO_RCVBUF and SO_SNDBUF socket options (see socket(7) for details.). 
-             The usual suffixes K, M, G are supported and are understood to the base of 1024.
-             
+             Takes an integer argument controlling the receive or send buffer sizes of this socket, respectively. This controls the SO_SNDBUF socket options (see socket(7) for details.). The usual suffixes K, M, G are supported and are understood to the base of 1024.
+
        NoDelay=
-             Takes a boolean argument. TCP Nagle's algorithm works by combining a number of small outgoing messages, and sending them all at once. 
+             Takes a boolean argument. TCP Nagle's algorithm works by combining a number of small outgoing messages, and sending them all at once.
              This controls the TCP_NODELAY socket option (see tcp(7)). Defaults to false.
 
    Optional settings
