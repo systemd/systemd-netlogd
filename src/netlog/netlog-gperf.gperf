@@ -26,3 +26,6 @@ Network.UseSysLogMsgId,           config_parse_bool,                      0, off
 Network.ConnectionRetrySec,       config_parse_sec,                       0, offsetof(Manager, connection_retry_usec)
 Network.TLSCertificateAuthMode,   config_parse_tls_certificate_auth_mode, 0, offsetof(Manager, auth_mode)
 Network.KeepAlive,                config_parse_bool,                      0, offsetof(Manager, keep_alive)
+Network.KeepAliveTimeSec,         config_parse_sec,                       0, offsetof(Manager, keep_alive_time)
+Network.KeepAliveIntervalSec,     config_parse_sec,                       0, offsetof(Manager, keep_alive_interval)
+Network.KeepAliveProbes,          config_parse_unsigned,                  0, offsetof(Manager, keep_alive_cnt)

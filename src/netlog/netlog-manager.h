@@ -77,6 +77,11 @@ struct Manager {
         TLSManager *tls;
 
         bool keep_alive;
+
+        unsigned keep_alive_cnt;
+        usec_t timeout_usec;
+        usec_t keep_alive_time;
+        usec_t keep_alive_interval;
 };
 
 int manager_new(const char *state_file, const char *cursor, Manager **ret);
