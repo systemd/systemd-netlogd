@@ -75,6 +75,8 @@ struct Manager {
 
         DTLSManager *dtls;
         TLSManager *tls;
+
+        bool keep_alive;
 };
 
 int manager_new(const char *state_file, const char *cursor, Manager **ret);

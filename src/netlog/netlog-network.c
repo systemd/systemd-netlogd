@@ -417,13 +417,15 @@ int manager_open_network_socket(Manager *m) {
                         }}
                         break;
                 case SYSLOG_TRANSMISSION_PROTOCOL_TCP: {
-                        r = setsockopt_int(m->socket, IPPROTO_TCP, TCP_FASTOPEN, 5); /* Everybody appears to pick qlen=5, let's do the same here. */
-                        if (r < 0)
-                                log_debug_errno(r, "Failed to enable TCP_FASTOPEN on TCP listening socket, ignoring: %m");
-
                         r = setsockopt_int(m->socket, IPPROTO_TCP, TCP_NODELAY, true);
                         if (r < 0)
                                 log_debug_errno(r, "Failed to enable TCP_NODELAY mode, ignoring: %m");
+
+                        if (m->keep_alive) {
+                                r = setsockopt_int(m->socket, SOL_SOCKET, SO_KEEPALIVE, true);
+                                if (r < 0)
+                                        log_debug_errno(r, "Failed to enable SO_KEEPALIVE: %m");
+                        }
                 }
                         break;
                 default:
