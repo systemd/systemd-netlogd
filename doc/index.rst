@@ -25,36 +25,51 @@ This will create a user systemd-journal-netlog
 |
    The "[Network]" section only applies for UDP multicast address and Port:
 
-|   ``Address=``
+| ``Address=``
         Controls whether log messages received by the systemd daemon shall be forwarded
         to a unicast UDP address or multicast UDP network group in syslog RFC 5424 format.
         The address string format is similar to socket units. See systemd.socket(1)
 
-|   ``Protocol=``
+| ``Protocol=``
         Specifies whether to use udp, tcp, tls or dtls (Datagram Transport Layer Security) protocol. Defaults to udp.
 
-|   ``LogFormat=``
+| ``LogFormat=``
         Specifies whether to use RFC 5424 format or RFC 3339 format. Takes one of rfc5424 or rfc3339. Defaults to rfc5424.
 
-|   ``Directory=``
+| ``Directory=``
         Takes a directory path. Specifies whether to operate on the specified journal directory DIR instead of the default runtime and system journal paths.
 
-|   ``Namespace=``
+| ``Namespace=``
         Takes a journal namespace identifier string as argument. If not specified the data collected by the default namespace is shown.
         If specified shows the log data of the specified namespace instead. If the namespace is specified as "*" data from all namespaces
         is shown, interleaved. If the namespace identifier is prefixed with "+" data from the specified namespace and the default namespace is shown,
         interleaved, but no other.
 
-|   ``ConnectionRetrySec=``
+| ``ConnectionRetrySec=``
         Specifies the minimum delay before subsequent attempts to contact a Log server are made.
         Takes a time span value. The default unit is seconds, but other units may be specified,
         see systemd.time(5). Defaults to 30 seconds and must not be smaller than 1 second.
 
-|    ``TLSCertificateAuthMode=``
+| ``TLSCertificateAuthMode=``
         Specifies whether to validate the certificate. Takes one of no, allow, deny, warn. Defaults to 'no' which disables certificate validation.
 
-|
-|
+| ``KeepAlive=``
+        Takes a boolean argument. If true, the TCP/IP stack will send a keep alive message after 2h (depending on the configuration of
+        /proc/sys/net/ipv4/tcp_keepalive_time) for all TCP streams accepted on this socket. This controls the SO_KEEPALIVE socket option
+        (see socket(7) and the TCP Keepalive HOWTO for details.) Defaults to false.
+
+| ``KeepAliveTimeSec=``
+        Takes time (in seconds) as argument. The connection needs to remain idle before TCP starts sending keepalive probes.
+        This controls the TCP_KEEPIDLE socket option (see socket(7) and the TCP Keepalive HOWTO for details.) Default value is 7200 seconds (2 hours).
+
+| ``KeepAliveIntervalSec=``
+        Takes time (in seconds) as argument between individual keepalive probes, if the socket option SO_KEEPALIVE has been set on this socket.
+        This controls the TCP_KEEPINTVL socket option (see socket(7) and the TCP Keepalive HOWTO for details.) Default value is 75 seconds.
+
+| ``KeepAliveProbes=``
+       Takes an integer as argument. It is the number of unacknowledged probes to send before considering the connection dead and notifying
+       the application layer. This controls the TCP_KEEPCNT socket option (see socket(7) and the TCP Keepalive HOWTO for details.) Default value is 9.
+
 |  Optional settings
 
 |  ``StructuredData=``
