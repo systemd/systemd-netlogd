@@ -221,7 +221,6 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
                 return log_error_errno(SYNTHETIC_ERRNO(EIO),
                                        "Failed to SSL_set_fd: %s",
                                        ERR_error_string(ERR_get_error(), NULL));
-
         /* Cerification verification  */
         if (m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_NONE && m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_INVALID) {
                 log_debug("TLS: enable certificate verification");
@@ -234,7 +233,9 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
                 log_debug("TLS: disable certificate verification");
                 SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
         }
+
         SSL_CTX_set_default_verify_paths(ctx);
+        SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
 
         r = SSL_connect(ssl);
         if (r <= 0)
