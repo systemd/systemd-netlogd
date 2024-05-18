@@ -91,7 +91,7 @@ systemd-netlogd reads configuration files named `/etc/systemd/netlogd.conf` and 
     NoDelay=
         Takes a boolean argument. TCP Nagle's algorithm works by combining a number of small outgoing messages, and sending them all at once. This controls the TCP_NODELAY socket option (see tcp(7)). Defaults to false.
 
-   Optional settings
+Optional settings
 
     StructuredData=
         Meta information about the syslog message, which can be used for Cloud Based syslog servers, such as Loggly
@@ -106,76 +106,72 @@ systemd-netlogd reads configuration files named `/etc/systemd/netlogd.conf` and 
 
  Example 1.UDP Multicast
 
-``` sh
-    [Network]
-    Address=239.0.0.1:6000
-    #Protocol=udp
-    #LogFormat=rfc5424
+``` toml
+[Network]
+Address=239.0.0.1:6000
+#Protocol=udp
+#LogFormat=rfc5424
 ```
 
 Example 2.UDP
 
-``` sh
-    [Network]
-    Address=192.168.8.101:514
-    #Protocol=udp
-    LogFormat=rfc3339
+``` toml
+[Network]
+Address=192.168.8.101:514
+#Protocol=udp
+LogFormat=rfc3339
 ```
 
 Example 3. Structured data
 
-``` sh
-
-    [Network]
-    Address=192.168.8.101:514
-    #Protocol=udp
-    LogFormat=rfc5424
-    StructuredData=[1ab456b6-90bb-6578-abcd-5b734584aaaa@41058]
+``` toml
+[Network]
+Address=192.168.8.101:514
+#Protocol=udp
+LogFormat=rfc5424
+ StructuredData=[1ab456b6-90bb-6578-abcd-5b734584aaaa@41058]
 ```
 
 Example 4. Custom syslog structrued data and message ID
 
-``` sh
-
-    [Network]
-    Address=192.168.8.101:514
-    #Protocol=udp
-    LogFormat=rfc5424
-    UseSysLogStructuredData=yes
-    UseSysLogMsgId=yes
+``` toml
+[Network]
+Address=192.168.8.101:514
+#Protocol=udp
+LogFormat=rfc5424
+UseSysLogStructuredData=yes
+UseSysLogMsgId=yes
 ```
 
 Example 5. TLS with certificate authentocation mode
 
-``` sh
-
-    [Network]
-    Address=192.168.8.101:4433
-    Protocol=tls
-    #LogFormat=rfc5424
-    TLSCertificateAuthMode=warn
+``` toml
+[Network]
+Address=192.168.8.101:4433
+Protocol=tls
+#LogFormat=rfc5424
+TLSCertificateAuthMode=warn
 ```
 
 Example 6. DTLS with certificate authentocation mode
 
-``` sh
-
-    [Network]
-    Address=192.168.8.101:4433
-    Protocol=dtls
-    #LogFormat=rfc5424
-    TLSCertificateAuthMode=allow
+``` toml
+[Network]
+Address=192.168.8.101:4433
+Protocol=dtls
+#LogFormat=rfc5424
+TLSCertificateAuthMode=allow
 ```
 
 Use case of ```UseSysLogStructuredData=``` and ```UseSysLogMsgId=```
 
 ```C
-  sd_journal_send(
+sd_journal_send(
     "MESSAGE=%s", "Message to process",
     "PRIORITY=%s", "4",
     "SYSLOG_FACILITY=%s", "1",
     "SYSLOG_MSGID=%s", "1011",
     "SYSLOG_STRUCTURED_DATA=%s", R"([exampleSDID@32473 iut="3" eventSource="Application"])",
     NULL
-  );
+);
 ```
