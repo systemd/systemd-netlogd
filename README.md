@@ -53,7 +53,7 @@ systemd-netlogd reads configuration files named `/etc/systemd/netlogd.conf` and 
     The "[Network]" section only applies for UDP multicast address and Port:
 
     Address=
-        Controls whether log messages received by the systemd daemon shall be forwarded to a unicast UDP address or multicast UDP network group in syslog RFC 5424 format. The the address string format is similar to socket units. See systemd.socket(1)
+        Controls whether log messages received by the systemd-netlogd daemon shall be forwarded to a unicast UDP address or multicast UDP network group in syslog RFC 5424 format. The the address string format is similar to socket units. See systemd.socket(1)
 
     Protocol=
         Specifies whether to use udp, tcp, tls or dtls (Datagram Transport Layer Security)  protocol. Defaults to udp.
@@ -129,7 +129,7 @@ Example 3. Structured data
 Address=192.168.8.101:514
 #Protocol=udp
 LogFormat=rfc5424
- StructuredData=[1ab456b6-90bb-6578-abcd-5b734584aaaa@41058]
+StructuredData=[1ab456b6-90bb-6578-abcd-5b734584aaaa@41058]
 ```
 
 Example 4. Custom syslog structrued data and message ID
