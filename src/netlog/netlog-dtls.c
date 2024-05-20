@@ -25,9 +25,9 @@ static int dtls_write(DTLSManager *m, const char *buf, size_t count) {
         ERR_clear_error();
         r = SSL_write(m->ssl, buf, count);
         if (r <= 0)
-                return log_error_errno(r, "Failed to invoke SSL_write: %s", TLS_ERROR_STRING(SSL_get_error(m->ssl, r)));
+                return log_error_errno(r, "DTLS: Failed to invoke SSL_write: %s", TLS_ERROR_STRING(SSL_get_error(m->ssl, r)));
 
-        return log_debug("Successful DTLS SSL_write: %d bytes", r);
+        return log_debug("DTLS: Successful SSL_write: %d bytes", r);
 }
 
 int dtls_datagram_writev(DTLSManager *m, const struct iovec *iov, size_t iovcnt) {
@@ -90,7 +90,7 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
 
         fd = socket(AF_INET, SOCK_DGRAM, 0);
         if (fd < 0)
-                return log_error_errno(errno, "Failed to allocate socket: %m");;
+                return log_error_errno(errno, "DTLS: Failed to allocate socket: %m");;
 
         r = sockaddr_pretty(&address->sockaddr.sa, salen, true, true, &pretty);
         if (r < 0)
@@ -98,26 +98,26 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
 
         r = connect(fd, &address->sockaddr.sa, salen);
         if (r < 0 && errno != EINPROGRESS)
-                return log_error_errno(errno, "Failed to connect to remote server='%s': %m", pretty);;
+                return log_error_errno(errno, "DTLS: Failed to connect to remote server='%s': %m", pretty);;
 
         log_debug("Connected to remote server: '%s'", pretty);
 
         ctx = SSL_CTX_new(DTLS_method());
         if (!ctx)
                 return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
-                                       "Failed to allocate memory for SSL CTX: %m");
+                                       "DTLS: Failed to allocate memory for SSL CTX: %m");
 
         ssl = SSL_new(ctx);
         if (!ssl)
                 return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
-                                       "Failed to allocate memory for ssl: %s",
+                                       "DTLS: Failed to allocate memory for ssl: %s",
                                        ERR_error_string(ERR_get_error(), NULL));
 
         /* Create BIO from socket array! */
         bio = BIO_new_dgram(fd, BIO_NOCLOSE);
         if (!bio)
                 return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
-                                       "Failed to allocate memory for bio: %m");
+                                       "DTLS: Failed to allocate memory for bio: %m");
 
         BIO_ctrl(bio, BIO_CTRL_DGRAM_SET_CONNECTED, 0, &address);
         SSL_set_bio(ssl, bio, bio);
@@ -125,13 +125,13 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
 
         /* Cerification verification  */
         if (m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_NONE && m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_INVALID) {
-                log_debug("TLS: enable certificate verification");
+                log_debug("DTLS: enable certificate verification");
 
                 SSL_set_ex_data(ssl, 0, m);
                 SSL_set_ex_data(ssl, 1, address);
                 SSL_set_verify(ssl, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, ssl_verify_certificate_validity);
         } else {
-                log_debug("TLS: disable certificate verification");
+                log_debug("DTLS: disable certificate verification");
                 SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
         }
         SSL_CTX_set_default_verify_paths(ctx);
@@ -139,12 +139,12 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
         r = SSL_connect(ssl);
         if (r <= 0)
                 return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
-                                       "Failed to SSL_connect: %s",
+                                       "DTLS: Failed to SSL_connect: %s",
                                        ERR_error_string(ERR_get_error(), NULL));
 
         cipher = SSL_get_current_cipher(ssl);
 
-        log_debug("SSL: Cipher Version: %s Name: %s", SSL_CIPHER_get_version(cipher), SSL_CIPHER_get_name(cipher));
+        log_debug("DTLS: SSL Cipher Version: %s Name: %s", SSL_CIPHER_get_version(cipher), SSL_CIPHER_get_name(cipher));
         if (DEBUG_LOGGING) {
                 _cleanup_(X509_freep) X509* cert = NULL;
 
