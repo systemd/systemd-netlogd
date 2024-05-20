@@ -3,10 +3,10 @@
 #include <systemd/sd-daemon.h>
 
 #include "capability-util.h"
-#include "conf-parser.h"
-#include "fd-util.h"
 #include "fileio.h"
 #include "mkdir.h"
+#include "conf-parser.h"
+#include "fd-util.h"
 #include "netlog-manager.h"
 #include "network-util.h"
 #include "parse-util.h"
@@ -576,7 +576,7 @@ int manager_new(const char *state_file, const char *cursor, Manager **ret) {
                 .journal_watch_fd = -1,
                 .state_file = strdup(state_file),
                 .protocol = SYSLOG_TRANSMISSION_PROTOCOL_UDP,
-                .log_format  = SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424,
+                .log_format = SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424,
                 .auth_mode = OPEN_SSL_CERTIFICATE_AUTH_MODE_INVALID,
                 .connection_retry_usec = DEFAULT_CONNECTION_RETRY_USEC,
                 .ratelimit = (const RateLimit) {
