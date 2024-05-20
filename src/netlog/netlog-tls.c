@@ -43,7 +43,7 @@ int ssl_verify_certificate_validity(int s, X509_STORE_CTX *store) {
         if (r < 0)
                 return r;
 
-        log_debug("Verifying SSL ceritificates of server: %s", pretty);
+        log_debug("TLS: Verifying SSL ceritificates of server: %s", pretty);
 
         if (cert) {
                 subject = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
@@ -51,7 +51,7 @@ int ssl_verify_certificate_validity(int s, X509_STORE_CTX *store) {
         }
 
         if (verify_mode == SSL_VERIFY_NONE) {
-                 log_debug("SSL Certificate validation DISABLED but Error at depth: %d, issuer=%s, subject=%s: server=%s %s",
+                 log_debug("TLS: SSL Certificate validation DISABLED but Error at depth: %d, issuer=%s, subject=%s: server=%s %s",
                            depth, (char *) subject, (char *) issuer, pretty, X509_verify_cert_error_string(error));
 
                  return 1;
@@ -64,19 +64,19 @@ int ssl_verify_certificate_validity(int s, X509_STORE_CTX *store) {
                                 switch (m->auth_mode) {
                                         case OPEN_SSL_CERTIFICATE_AUTH_MODE_DENY: {
                                                 log_error_errno(SYNTHETIC_ERRNO(EINVAL),
-                                                                "Failed to verify certificate server=%s: %s", pretty, X509_verify_cert_error_string(r));
+                                                                "TLS: Failed to verify certificate server=%s: %s", pretty, X509_verify_cert_error_string(r));
                                                 return 0;
                                         }
                                                 break;
                                         case OPEN_SSL_CERTIFICATE_AUTH_MODE_WARN: {
                                                 log_warning_errno(SYNTHETIC_ERRNO(EINVAL),
-                                                                  "Failed to verify certificate server=%s: %s", pretty, X509_verify_cert_error_string(r));
+                                                                  "TLS: Failed to verify certificate server=%s: %s", pretty, X509_verify_cert_error_string(r));
 
                                                 return 1;
                                         }
                                                 break;
                                         case OPEN_SSL_CERTIFICATE_AUTH_MODE_ALLOW: {
-                                                log_debug("Failed to verify certificate server=%s: %s", pretty, X509_verify_cert_error_string(r));
+                                                log_debug("TLS: Failed to verify certificate server=%s: %s", pretty, X509_verify_cert_error_string(r));
                                                 return 1;
                                         }
 
@@ -89,20 +89,20 @@ int ssl_verify_certificate_validity(int s, X509_STORE_CTX *store) {
                                 switch (m->auth_mode) {
                                         case OPEN_SSL_CERTIFICATE_AUTH_MODE_DENY: {
                                                 log_error_errno(SYNTHETIC_ERRNO(EINVAL),
-                                                                "Failed to verify certificate server=%s: %s", pretty, X509_verify_cert_error_string(r));
+                                                                "TLS: Failed to verify certificate server=%s: %s", pretty, X509_verify_cert_error_string(r));
                                                 return 0;
                                         }
                                                 break;
                                         case OPEN_SSL_CERTIFICATE_AUTH_MODE_WARN: {
                                                 log_warning_errno(SYNTHETIC_ERRNO(EINVAL),
-                                                                  "Failed to verify certificate server=%s: %s", pretty, X509_verify_cert_error_string(r));
+                                                                  "TLS: Failed to verify certificate server=%s: %s", pretty, X509_verify_cert_error_string(r));
 
                                                 return 1;
                                         }
                                                 break;
                                         case OPEN_SSL_CERTIFICATE_AUTH_MODE_ALLOW: {
                                                 log_debug_errno(SYNTHETIC_ERRNO(EINVAL),
-                                                                "Failed to verify certificate server=%s: %s", pretty, X509_verify_cert_error_string(r));
+                                                                "TLS: Failed to verify certificate server=%s: %s", pretty, X509_verify_cert_error_string(r));
                                                 return 1;
                                         }
                                                 break;
@@ -111,12 +111,12 @@ int ssl_verify_certificate_validity(int s, X509_STORE_CTX *store) {
                                 }}
                                 break;
                         default:
-                                log_error("Failed to validate remote certificate server=%s: %s. Aborting connection ...", pretty, X509_verify_cert_error_string(r));
+                                log_error("TLS: Failed to validate remote certificate server=%s: %s. Aborting connection ...", pretty, X509_verify_cert_error_string(r));
                                 return 0;
                 }
         }
 
-        log_debug("SSL ceritificates verified server=%s: %s", pretty, X509_verify_cert_error_string(r));
+        log_debug("TLS: SSL ceritificates verified server=%s: %s", pretty, X509_verify_cert_error_string(r));
 
         return 1;
 }
@@ -133,9 +133,9 @@ static int tls_write(TLSManager *m, const char *buf, size_t count) {
         ERR_clear_error();
         r = SSL_write(m->ssl, buf, count);
         if (r <= 0)
-                return log_error_errno(r, "Failed to invoke SSL_write: %s", TLS_ERROR_STRING(SSL_get_error(m->ssl, r)));
+                return log_error_errno(r, "TLS: Failed to invoke SSL_write: %s", TLS_ERROR_STRING(SSL_get_error(m->ssl, r)));
 
-        return log_debug("Successful TLS SSL_write: %d bytes", r);
+        return log_debug("TLS: Successful TLS SSL_write: %d bytes", r);
 }
 
 int tls_stream_writev(TLSManager *m, const struct iovec *iov, size_t iovcnt) {
@@ -194,7 +194,7 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
 
         fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
         if (fd < 0)
-                return log_error_errno(errno, "Failed to allocate socket: %m");;
+                return log_error_errno(errno, "TLS: Failed to allocate socket: %m");;
 
         r = sockaddr_pretty(&address->sockaddr.sa, salen, true, true, &pretty);
         if (r < 0)
@@ -202,24 +202,24 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
 
         r = connect(fd, &address->sockaddr.sa, salen);
         if (r < 0 && errno != EINPROGRESS)
-                return log_error_errno(errno, "Failed to connect to remote server='%s': %m", pretty);;
+                return log_error_errno(errno, "TLS: Failed to connect to remote server='%s': %m", pretty);;
 
-        log_debug("Connected to remote server: '%s'", pretty);
+        log_debug("TLS: Connected to remote server: '%s'", pretty);
 
         ctx = SSL_CTX_new(SSLv23_client_method());
         if (!ctx)
                 return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
-                                       "Failed to allocate memory for SSL CTX: %m");
+                                       "TLS: Failed to allocate memory for SSL CTX: %m");
 
         ssl = SSL_new(ctx);
         if (!ssl)
                 return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
-                                       "Failed to allocate memory for ssl: %s",
+                                       "TLS: Failed to allocate memory for ssl: %s",
                                        ERR_error_string(ERR_get_error(), NULL));
         r = SSL_set_fd(ssl, fd);
         if (r <= 0)
                 return log_error_errno(SYNTHETIC_ERRNO(EIO),
-                                       "Failed to SSL_set_fd: %s",
+                                       "TLS: Failed to SSL_set_fd: %s",
                                        ERR_error_string(ERR_get_error(), NULL));
         /* Cerification verification  */
         if (m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_NONE && m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_INVALID) {
@@ -240,12 +240,12 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
         r = SSL_connect(ssl);
         if (r <= 0)
                 return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
-                                       "Failed to SSL_connect: %s",
+                                       "TLS: Failed to SSL_connect: %s",
                                        ERR_error_string(ERR_get_error(), NULL));
 
         cipher = SSL_get_current_cipher(ssl);
 
-        log_debug("SSL: Cipher Version: %s Name: %s", SSL_CIPHER_get_version(cipher), SSL_CIPHER_get_name(cipher));
+        log_debug("TLS: SSL Cipher Version: %s Name: %s", SSL_CIPHER_get_version(cipher), SSL_CIPHER_get_name(cipher));
         if (DEBUG_LOGGING) {
                 _cleanup_(X509_freep) X509* cert = NULL;
 
@@ -254,12 +254,12 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
                         _cleanup_(OPENSSL_freep) void *subject = NULL, *issuer = NULL;
 
                         subject = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
-                        log_debug("SSL: Subject: %s", (char *) subject);
+                        log_debug("TLS: SSL Subject: %s", (char *) subject);
 
                         issuer = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
-                        log_debug("SSL: Issuer: %s", (char *) issuer);
+                        log_debug("TLS: SSL Issuer: %s", (char *) issuer);
                 } else
-                        log_debug("SSL: No certificates.");
+                        log_debug("TLS: SSL No certificates.");
 
         }
 
