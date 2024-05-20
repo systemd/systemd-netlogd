@@ -120,7 +120,8 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
                                        "Failed to allocate memory for bio: %m");
 
         BIO_ctrl(bio, BIO_CTRL_DGRAM_SET_CONNECTED, 0, &address);
-        SSL_set_bio(ssl , bio, bio);
+        SSL_set_bio(ssl, bio, bio);
+        m->bio = TAKE_PTR(bio);
 
         /* Cerification verification  */
         if (m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_NONE && m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_INVALID) {
@@ -163,7 +164,6 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
         /* Set and activate timeouts */
         BIO_ctrl(bio, BIO_CTRL_DGRAM_SET_RECV_TIMEOUT, 0, &timeout);
 
-        m->bio = TAKE_PTR(bio);
         m->ssl = TAKE_PTR(ssl);
         m->ctx = ctx;
         m->fd = fd;
