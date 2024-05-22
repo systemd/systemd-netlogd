@@ -100,7 +100,7 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
         if (r < 0 && errno != EINPROGRESS)
                 return log_error_errno(errno, "DTLS: Failed to connect to remote server='%s': %m", pretty);;
 
-        log_debug("Connected to remote server: '%s'", pretty);
+        log_debug("DTLS: Connected to remote server: '%s'", pretty);
 
         ctx = SSL_CTX_new(DTLS_method());
         if (!ctx)
