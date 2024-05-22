@@ -165,7 +165,8 @@ static int manager_read_journal_input(Manager *m) {
         if (!message) {
                 log_debug("Skipping message without MESSAGE= field.");
                 return 0;
-        }
+        } else
+                log_debug("Received from journal MESSAGE='%s'", message);
 
         r = sd_journal_get_realtime_usec(m->journal, &realtime);
         if (r < 0)
