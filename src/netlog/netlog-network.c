@@ -75,26 +75,24 @@ static int protocol_send(Manager *m, struct iovec *iovec, unsigned n_iovec) {
                 case SYSLOG_TRANSMISSION_PROTOCOL_DTLS:
                         r = dtls_datagram_writev(m->dtls, iovec, n_iovec);
                         if (r < 0 && r != -EAGAIN) {
-                                dtls_disconnect(m->dtls);
+                                manager_connect(m);
                                 return r;
                         }
                         break;
                 case SYSLOG_TRANSMISSION_PROTOCOL_TLS:
                         r = tls_stream_writev(m->tls, iovec, n_iovec);
                         if (r < 0 && r != -EAGAIN) {
-                                tls_disconnect(m->tls);
-                                return r;
-                        }
-                        break;
-               case SYSLOG_TRANSMISSION_PROTOCOL_TCP:
-                       r = network_send(m, iovec, n_iovec);
-                        if (r < 0 && r != -EAGAIN) {
-                                manager_close_network_socket(m);
+                                manager_connect(m);
                                 return r;
                         }
                         break;
                 default:
-                        return network_send(m, iovec, n_iovec);
+                       r = network_send(m, iovec, n_iovec);
+                        if (r < 0 && r != -EAGAIN) {
+                                manager_connect(m);
+                                return r;
+                        }
+                        break;
         }
 
         return 0;
@@ -307,7 +305,7 @@ int manager_push_to_network(Manager *m,
         switch (m->protocol) {
                 case SYSLOG_TRANSMISSION_PROTOCOL_DTLS:
                         if (!m->dtls->connected) {
-                                r = dtls_connect(m->dtls, &m->address);
+                                r = manager_connect(m);
                                 if (r < 0)
                                         return r;
                         }
@@ -315,19 +313,17 @@ int manager_push_to_network(Manager *m,
                         break;
                 case SYSLOG_TRANSMISSION_PROTOCOL_TLS:
                         if (!m->tls->connected) {
-                                r = tls_connect(m->tls, &m->address);
-                                if (r < 0)
-                                        return r;
-                        }
-                        break;
-                case SYSLOG_TRANSMISSION_PROTOCOL_TCP:
-                        if (!m->connected) {
-                                r = manager_open_network_socket(m);
+                                r = manager_connect(m);
                                 if (r < 0)
                                         return r;
                         }
                         break;
                 default:
+                        if (!m->connected) {
+                                r = manager_connect(m);
+                                if (r < 0)
+                                        return r;
+                        }
                         break;
         }
 
@@ -489,7 +485,7 @@ int manager_open_network_socket(Manager *m) {
                 goto fail;
 
         m->connected = true;
-        return m->socket;
+        return 0;
 
  fail:
         m->socket = safe_close(m->socket);
