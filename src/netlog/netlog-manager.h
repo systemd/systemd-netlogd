@@ -78,6 +78,7 @@ struct Manager {
 
         bool keep_alive;
         bool no_delay;
+        bool connected;
 
         unsigned keep_alive_cnt;
 
