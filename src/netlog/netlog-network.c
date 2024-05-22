@@ -86,6 +86,13 @@ static int protocol_send(Manager *m, struct iovec *iovec, unsigned n_iovec) {
                                 return r;
                         }
                         break;
+               case SYSLOG_TRANSMISSION_PROTOCOL_TCP:
+                       r = network_send(m, iovec, n_iovec);
+                        if (r < 0 && r != -EAGAIN) {
+                                manager_close_network_socket(m);
+                                return r;
+                        }
+                        break;
                 default:
                         return network_send(m, iovec, n_iovec);
         }
@@ -297,9 +304,6 @@ int manager_push_to_network(Manager *m,
 
         assert(m);
 
-        if (!message)
-                return 0;
-
         switch (m->protocol) {
                 case SYSLOG_TRANSMISSION_PROTOCOL_DTLS:
                         if (!m->dtls->connected) {
@@ -312,6 +316,13 @@ int manager_push_to_network(Manager *m,
                 case SYSLOG_TRANSMISSION_PROTOCOL_TLS:
                         if (!m->tls->connected) {
                                 r = tls_connect(m->tls, &m->address);
+                                if (r < 0)
+                                        return r;
+                        }
+                        break;
+                case SYSLOG_TRANSMISSION_PROTOCOL_TCP:
+                        if (!m->connected) {
+                                r = manager_open_network_socket(m);
                                 if (r < 0)
                                         return r;
                         }
@@ -340,6 +351,7 @@ void manager_close_network_socket(Manager *m) {
                         log_error_errno(errno, "Failed to shutdown netlog socket: %m");
         }
 
+        m->connected = false;
         m->socket = safe_close(m->socket);
 }
 
@@ -377,11 +389,16 @@ int manager_network_connect_socket(Manager *m) {
         if (r < 0)
                 return r;
 
+        log_debug("Connecting to remote server: '%s'", pretty);
+
         r = connect(m->socket, &m->address.sockaddr.sa, salen);
         if (r < 0 && errno != EINPROGRESS)
-                return log_error_errno(errno, "Failed to connect to remote server='%s'", pretty);
+                return log_error_errno(errno, "Failed to connect to remote server='%s': %m", pretty);
 
-        log_debug("Connected to remote server: '%s'", pretty);
+        if (errno != EINPROGRESS)
+                log_debug("Connected to remote server: '%s'", pretty);
+        else
+                log_debug("Connection in progress to remote server: '%s'", pretty);
 
         return 0;
 }
@@ -406,6 +423,8 @@ int manager_open_network_socket(Manager *m) {
         }
         if (m->socket < 0)
                 return log_error_errno(errno, "Failed to create socket: %m");;
+
+        log_debug("Successfully created socket with fd='%d'", m->socket);
 
         switch (m->protocol) {
                 case SYSLOG_TRANSMISSION_PROTOCOL_UDP: {
@@ -462,17 +481,14 @@ int manager_open_network_socket(Manager *m) {
         }
 
         r = fd_nonblock(m->socket, true);
-        if (r < 0) {
-                log_error_errno(errno, "Failed to set socket nonblock: %m");
-                goto fail;
-        }
+        if (r < 0)
+                log_debug_errno(errno, "Failed to set socket='%d' nonblock: %m", m->socket);
 
         r = manager_network_connect_socket(m);
         if (r < 0)
                 goto fail;
 
-        log_debug("Successfully created socket with fd='%d'", m->socket);
-
+        m->connected = true;
         return m->socket;
 
  fail:
