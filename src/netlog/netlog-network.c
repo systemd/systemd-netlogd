@@ -181,6 +181,51 @@ int manager_network_connect_socket(Manager *m) {
         return 0;
 }
 
+static int apply_tcp_socket_options(Manager *m){
+        int r;
+
+        assert(m);
+        assert(m->socket >= 0);
+
+        if (m->no_delay) {
+                r = setsockopt_int(m->socket, IPPROTO_TCP, TCP_NODELAY, true);
+                if (r < 0)
+                        log_debug_errno(r, "Failed to enable TCP_NODELAY mode, ignoring: %m");
+        }
+
+        if (m->send_buffer > 0) {
+                r = fd_set_sndbuf(m->socket, m->send_buffer, false);
+                if (r < 0)
+                        log_debug_errno(r, "TCP: SO_SNDBUF/SO_SNDBUFFORCE failed: %m");
+        }
+
+        if (m->keep_alive) {
+                r = setsockopt_int(m->socket, SOL_SOCKET, SO_KEEPALIVE, true);
+                if (r < 0)
+                        log_debug_errno(r, "Failed to enable SO_KEEPALIVE: %m");
+        }
+
+        if (timestamp_is_set(m->keep_alive_time)) {
+                r = setsockopt_int(m->socket, SOL_TCP, TCP_KEEPIDLE, m->keep_alive_time / USEC_PER_SEC);
+                if (r < 0)
+                        log_debug_errno(r, "TCP_KEEPIDLE failed: %m");
+        }
+
+        if (m->keep_alive_interval > 0) {
+                r = setsockopt_int(m->socket, SOL_TCP, TCP_KEEPINTVL, m->keep_alive_interval / USEC_PER_SEC);
+                if (r < 0)
+                        log_debug_errno(r, "TCP_KEEPINTVL failed: %m");
+        }
+
+        if (m->keep_alive_cnt > 0) {
+                r = setsockopt_int(m->socket, SOL_TCP, TCP_KEEPCNT, m->keep_alive_cnt);
+                if (r < 0)
+                        log_debug_errno(r, "TCP_KEEPCNT failed: %m");
+        }
+
+        return 0;
+}
+
 int manager_open_network_socket(Manager *m) {
         int r;
 
@@ -218,41 +263,10 @@ int manager_open_network_socket(Manager *m) {
 
                         break;
                 case SYSLOG_TRANSMISSION_PROTOCOL_TCP: {
-                        if (m->no_delay) {
-                                r = setsockopt_int(m->socket, IPPROTO_TCP, TCP_NODELAY, true);
-                                if (r < 0)
-                                        log_debug_errno(r, "Failed to enable TCP_NODELAY mode, ignoring: %m");
-                        }
-
-                        if (m->send_buffer > 0) {
-                                r = fd_set_sndbuf(m->socket, m->send_buffer, false);
-                                if (r < 0)
-                                        log_debug_errno(r, "TCP: SO_SNDBUF/SO_SNDBUFFORCE failed: %m");
-                        }
-
-                        if (m->keep_alive) {
-                                r = setsockopt_int(m->socket, SOL_SOCKET, SO_KEEPALIVE, true);
-                                if (r < 0)
-                                        log_debug_errno(r, "Failed to enable SO_KEEPALIVE: %m");
-                        }
-
-                        if (timestamp_is_set(m->keep_alive_time)) {
-                                r = setsockopt_int(m->socket, SOL_TCP, TCP_KEEPIDLE, m->keep_alive_time / USEC_PER_SEC);
-                                if (r < 0)
-                                        log_debug_errno(r, "TCP_KEEPIDLE failed: %m");
-                        }
-
-                        if (m->keep_alive_interval > 0) {
-                                r = setsockopt_int(m->socket, SOL_TCP, TCP_KEEPINTVL, m->keep_alive_interval / USEC_PER_SEC);
-                                if (r < 0)
-                                        log_debug_errno(r, "TCP_KEEPINTVL failed: %m");
-                        }
-
-                        if (m->keep_alive_cnt > 0) {
-                                r = setsockopt_int(m->socket, SOL_TCP, TCP_KEEPCNT, m->keep_alive_cnt);
-                                if (r < 0)
-                                        log_debug_errno(r, "TCP_KEEPCNT failed: %m");
-                        }}
+                        r = apply_tcp_socket_options(m);
+                        if (r < 0)
+                                return r;
+                }
                         break;
                 default:
                         break;
