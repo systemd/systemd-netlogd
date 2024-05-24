@@ -3,3 +3,5 @@
 #pragma once
 
 #include "netlog-manager.h"
+
+int network_send(Manager *m, struct iovec *iovec, unsigned n_iovec);
