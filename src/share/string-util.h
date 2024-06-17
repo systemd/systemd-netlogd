@@ -119,6 +119,11 @@ static inline bool ascii_isdigit(sd_char a) {
         return a >= '0' && a <= '9';
 }
 
+static inline bool ascii_isalpha(sd_char a) {
+        /* A pure ASCII, locale independent version of isalpha() */
+        return (a >= 'a' && a <= 'z') || (a >= 'A' && a <= 'Z');
+}
+
 char *strstrip(char *s);
 char *truncate_nl(char *s);
 

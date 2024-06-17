@@ -9,6 +9,11 @@ libshared_sources = files('''
                   share/conf-parser.h
                   share/conf-files.c
                   share/conf-files.h
+                  share/dns-def.h
+                  share/dns-domain.c
+                  share/dns-domain.h
+                  share/hostname-util.c
+                  share/hostname-util.h
                   share/alloc-util.c
                   share/alloc-util.h
                   share/build.h
@@ -95,6 +100,8 @@ libshared_sources = files('''
                   share/virt.h
                   share/sd-network.h
                   share/sd-network.c
+                  share/sd-resolve.h
+                  share/sd-resolve.c
                   '''.split())
 
 libshared = static_library(

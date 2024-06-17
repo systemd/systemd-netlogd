@@ -49,3 +49,12 @@ static inline int getrandom(void *buffer, size_t count, unsigned flags) {
 }
 #endif
 
+/* ======================================================================= */
+
+static inline pid_t raw_getpid(void) {
+#if defined(__alpha__)
+        return (pid_t) syscall(__NR_getxpid);
+#else
+        return (pid_t) syscall(__NR_getpid);
+#endif
+}

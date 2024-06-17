@@ -44,6 +44,9 @@ int get_process_gid(pid_t pid, gid_t *gid);
 
 int getenv_for_pid(pid_t pid, const char *field, char **_value);
 
+void reset_cached_pid(void);
+
+pid_t getpid_cached(void);
 bool is_main_thread(void);
 
 const char *sigchld_code_to_string(int i) _const_;
