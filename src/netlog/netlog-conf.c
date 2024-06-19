@@ -1,9 +1,13 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 
+#include <resolv.h>
+
+#include "conf-parser.h"
 #include "def.h"
 #include "in-addr-util.h"
 #include "netlog-conf.h"
-#include "conf-parser.h"
+#include "parse-util.h"
+#include "sd-resolve.h"
 #include "string-util.h"
 
 int config_parse_netlog_remote_address(const char *unit,
@@ -17,6 +21,7 @@ int config_parse_netlog_remote_address(const char *unit,
                                        void *data,
                                        void *userdata) {
         Manager *m = userdata;
+        char *e;
         int r;
 
         assert(filename);
@@ -27,6 +32,43 @@ int config_parse_netlog_remote_address(const char *unit,
 
         r = socket_address_parse(&m->address, rvalue);
         if (r < 0) {
+                struct addrinfo hints = {
+                        .ai_flags = AI_NUMERICSERV|AI_ADDRCONFIG,
+                        .ai_socktype = SOCK_DGRAM,
+                        .ai_family = socket_ipv6_is_supported() ? AF_UNSPEC : AF_INET,
+                };
+               uint32_t u;
+
+                e = strchr(rvalue, ':');
+                if (e) {
+                        r = safe_atou(e+1, &u);
+                        if (r < 0)
+                                return r;
+
+                        if (u <= 0 || u > 0xFFFF)
+                                return -EINVAL;
+
+                        m->port = u;
+                        m->server_name = strndupa(rvalue, e-rvalue);
+                        if (!m->server_name)
+                                return log_oom();
+
+                        log_debug("Remote server='%s' port: '%u'...", m->server_name, u);
+
+                        /* Tell the resolver to reread /etc/resolv.conf, in
+                         * case it changed. */
+                        res_init();
+
+                        log_debug("Resolving %s...", m->server_name);
+
+                        r = sd_resolve_getaddrinfo(m->resolve, &m->resolve_query, m->server_name, NULL, &hints, manager_resolve_handler, m);
+                        if (r < 0)
+                                return log_error_errno(r, "Failed to create resolver: %m");
+
+                        m->resolving = true;
+                        return 0;
+                }
+
                 log_syntax(unit, LOG_WARNING, filename, line, -r, "Failed to parse '%s=%s', ignoring.", lvalue, rvalue);
                 return 0;
         }

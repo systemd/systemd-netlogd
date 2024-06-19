@@ -41,7 +41,7 @@ int fd_cloexec(int fd, bool cloexec);
 int fd_nonblock(int fd, bool nonblock);
 void stdio_unset_cloexec(void);
 
-
+int fd_move_above_stdio(int fd);
 
 void cmsg_close_all(struct msghdr *mh);
 

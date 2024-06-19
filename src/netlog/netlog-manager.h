@@ -7,6 +7,7 @@
 #include "netlog-dtls.h"
 #include "netlog-tls.h"
 #include "sd-network.h"
+#include "sd-resolve.h"
 #include "socket-util.h"
 #include "ratelimit.h"
 
@@ -31,7 +32,9 @@ typedef enum SysLogTransmissionLogFormat {
 typedef struct Manager Manager;
 
 struct Manager {
+        sd_resolve *resolve;
         sd_event *event;
+
         sd_event_source *event_journal_input;
         uint64_t timeout;
         usec_t retry_interval;
@@ -48,10 +51,19 @@ struct Manager {
 
         RateLimit ratelimit;
 
+        /* peer */
+        sd_resolve_query *resolve_query;
+        sd_event_source *event_receive;
+        sd_event_source *event_timeout;
+
         int socket;
 
         /* Multicast UDP address */
         SocketAddress address;
+        socklen_t socklen;
+        uint32_t port;
+
+        char *server_name;
 
         /* journal  */
         int journal_watch_fd;
@@ -79,6 +91,7 @@ struct Manager {
         bool keep_alive;
         bool no_delay;
         bool connected;
+        bool resolving;
 
         unsigned keep_alive_cnt;
 
@@ -100,6 +113,8 @@ void manager_disconnect(Manager *m);
 void manager_close_network_socket(Manager *m);
 int manager_open_network_socket(Manager *m);
 int manager_network_connect_socket(Manager *m);
+
+int manager_resolve_handler(sd_resolve_query *q, int ret, const struct addrinfo *ai, void *userdata);
 
 int manager_push_to_network(Manager *m,
                             int severity,

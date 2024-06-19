@@ -426,6 +426,9 @@ int manager_connect(Manager *m) {
 
         assert(m);
 
+        if (m->resolving)
+                return 0;
+
         manager_disconnect(m);
 
         log_debug("Connecting network ...");
@@ -469,6 +472,8 @@ void manager_disconnect(Manager *m) {
 
         log_debug("Disconnecting network ...");
 
+        m->resolve_query = sd_resolve_query_unref(m->resolve_query);
+
         close_journal_input(m);
 
         manager_close_network_socket(m);
@@ -479,6 +484,62 @@ void manager_disconnect(Manager *m) {
         m->event_journal_input = sd_event_source_unref(m->event_journal_input);
 
         sd_notifyf(false, "STATUS=Idle.");
+}
+
+int manager_resolve_handler(sd_resolve_query *q, int ret, const struct addrinfo *ai, void *userdata) {
+        Manager *m = userdata;
+
+        assert(q);
+        assert(m);
+        assert(m->server_name);
+
+        log_debug("Resolve %s: %s", m->server_name, gai_strerror(ret));
+
+        m->resolve_query = sd_resolve_query_unref(m->resolve_query);
+
+        if (ret != 0) {
+                log_debug("Failed to resolve %s: %s", m->server_name, gai_strerror(ret));
+
+                /* Try next host */
+                return manager_connect(m);
+        }
+
+        for (; ai; ai = ai->ai_next) {
+                _cleanup_free_ char *pretty = NULL;
+
+                assert(ai->ai_addr);
+                assert(ai->ai_addrlen >= offsetof(struct sockaddr, sa_data));
+
+                if (!IN_SET(ai->ai_addr->sa_family, AF_INET, AF_INET6)) {
+                        log_warning("Unsuitable address protocol for %s", m->server_name);
+                        continue;
+                }
+
+                m->socklen = ai->ai_addrlen;
+                memcpy(&m->address.sockaddr, (const union sockaddr_union*) ai->ai_addr, ai->ai_addrlen);
+
+                if (ai->ai_addr->sa_family == AF_INET6)
+                        m->address.sockaddr.in6.sin6_port = htobe16((uint16_t) m->port);
+                else
+                        m->address.sockaddr.in.sin_port = htobe16((uint16_t) m->port);
+
+                sockaddr_pretty(&m->address.sockaddr.sa, m->socklen, true, true, &pretty);
+
+                log_debug("Resolved address %s for %s.", pretty, m->server_name);
+
+                /* take the first one */
+                break;
+        }
+
+        if (!IN_SET(m->address.sockaddr.sa.sa_family, AF_INET, AF_INET6)) {
+                log_error("Failed to find suitable address for host %s.", m->server_name);
+
+                /* Try next host */
+                return manager_connect(m);
+        }
+
+        m->resolving = false;
+        return manager_connect(m);
 }
 
 static int manager_network_event_handler(sd_event_source *s, int fd, uint32_t revents, void *userdata) {
@@ -551,6 +612,8 @@ void manager_free(Manager *m) {
         free(m->dir);
         free(m->namespace);
 
+        sd_resolve_unref(m->resolve);
+
         sd_event_source_unref(m->network_event_source);
         sd_network_monitor_unref(m->network_monitor);
 
@@ -586,7 +649,7 @@ int manager_new(const char *state_file, const char *cursor, Manager **ret) {
                 },
             };
 
-        socket_address_parse(&m->address, "239.0.0.1:6000");
+        (void) socket_address_parse(&m->address, "239.0.0.1:6000");
 
         if (!m->state_file)
                 return log_oom();
@@ -606,6 +669,14 @@ int manager_new(const char *state_file, const char *cursor, Manager **ret) {
         (void) sd_event_add_signal(m->event, NULL, SIGINT, manager_signal_event_handler, m);
 
         sd_event_set_watchdog(m->event, true);
+
+        r = sd_resolve_default(&m->resolve);
+        if (r < 0)
+                return r;
+
+        r = sd_resolve_attach_event(m->resolve, m->event, 0);
+        if (r < 0)
+                return r;
 
         r = manager_network_monitor_listen(m);
         if (r < 0)
