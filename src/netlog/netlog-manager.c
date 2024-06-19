@@ -524,9 +524,11 @@ int manager_resolve_handler(sd_resolve_query *q, int ret, const struct addrinfo 
                         m->address.sockaddr.in.sin_port = htobe16((uint16_t) m->port);
 
                 sockaddr_pretty(&m->address.sockaddr.sa, m->socklen, true, true, &pretty);
-                m->resolving = false;
 
                 log_debug("Resolved address %s for %s.", pretty, m->server_name);
+
+                /* take the first one */
+                break;
         }
 
         if (!IN_SET(m->address.sockaddr.sa.sa_family, AF_INET, AF_INET6)) {
@@ -536,6 +538,7 @@ int manager_resolve_handler(sd_resolve_query *q, int ret, const struct addrinfo 
                 return manager_connect(m);
         }
 
+        m->resolving = false;
         return manager_connect(m);
 }
 

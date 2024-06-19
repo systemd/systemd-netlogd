@@ -51,7 +51,7 @@ void format_rfc3339_timestamp(const struct timeval *tv, char *header_time, size_
         char gm_buf[sizeof("+0530") + 1];
         struct tm tm;
         time_t t;
-        size_t written;
+        size_t w;
         int r;
 
         assert(header_time);
@@ -59,10 +59,10 @@ void format_rfc3339_timestamp(const struct timeval *tv, char *header_time, size_
         t = tv ? tv->tv_sec : ((time_t) (now(CLOCK_REALTIME) / USEC_PER_SEC));
         localtime_r(&t, &tm);
 
-        written = strftime(header_time, header_size, "%Y-%m-%dT%T", &tm);
-        assert(written != 0);
-        header_time += written;
-        header_size -= written;
+        w = strftime(header_time, header_size, "%Y-%m-%dT%T", &tm);
+        assert(w != 0);
+        header_time += w;
+        header_size -= w;
 
         /* add fractional part */
         if (tv) {
