@@ -132,7 +132,7 @@ LogFormat=rfc5424
 StructuredData=[1ab456b6-90bb-6578-abcd-5b734584aaaa@41058]
 ```
 
-Example 4. Custom syslog structrued data and message ID
+Example 4. Custom syslog structured data and message ID
 
 ``` toml
 [Network]

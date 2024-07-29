@@ -123,7 +123,7 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
         SSL_set_bio(ssl, bio, bio);
         m->bio = TAKE_PTR(bio);
 
-        /* Cerification verification  */
+        /* Certification verification  */
         if (m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_NONE && m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_INVALID) {
                 log_debug("DTLS: enable certificate verification");
 
