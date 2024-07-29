@@ -32,7 +32,7 @@ int is_dir(const char* path, bool follow) {
         return !!S_ISDIR(st.st_mode);
 }
 
-bool null_or_empty(struct stat *st) {
+bool null_or_empty(const struct stat *st) {
         assert(st);
 
         if (S_ISREG(st->st_mode) && st->st_size <= 0)

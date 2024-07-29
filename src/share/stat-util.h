@@ -12,7 +12,7 @@
 
 int is_dir(const char *path, bool follow);
 
-bool null_or_empty(struct stat *st) _pure_;
+bool null_or_empty(const struct stat *st) _pure_;
 
 int files_same(const char *filea, const char *fileb);
 

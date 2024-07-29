@@ -18,7 +18,7 @@ static inline void ratelimit_reset(RateLimit *rl) {
         rl->num = rl->begin = 0;
 }
 
-static inline bool ratelimit_configured(RateLimit *rl) {
+static inline bool ratelimit_configured(const RateLimit *rl) {
         return rl->interval > 0 && rl->burst > 0;
 }
 
