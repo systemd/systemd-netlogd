@@ -651,7 +651,8 @@ int manager_new(const char *state_file, const char *cursor, Manager **ret) {
                 },
             };
 
-        (void) socket_address_parse(&m->address, "239.0.0.1:6000");
+        r = socket_address_parse(&m->address, "239.0.0.1:6000");
+        assert(r == 0);
 
         if (!m->state_file)
                 return log_oom();
