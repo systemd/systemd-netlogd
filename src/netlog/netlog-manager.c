@@ -219,7 +219,9 @@ static int update_cursor_state(Manager *m) {
         if (r < 0)
                 goto finish;
 
-        fchmod(fileno(f), 0644);
+        r = fchmod(fileno(f), 0644);
+        if (r < 0)
+                log_warning_errno(errno, "Failed to set mode of state %s: %m", m->state_file);
 
         fprintf(f,
                 "# This is private data. Do not parse.\n"
