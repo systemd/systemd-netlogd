@@ -37,7 +37,7 @@ int config_parse_netlog_remote_address(const char *unit,
                         .ai_socktype = SOCK_DGRAM,
                         .ai_family = socket_ipv6_is_supported() ? AF_UNSPEC : AF_INET,
                 };
-               uint32_t u;
+                uint32_t u;
 
                 e = strchr(rvalue, ':');
                 if (e) {
