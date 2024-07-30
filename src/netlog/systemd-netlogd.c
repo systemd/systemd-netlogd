@@ -48,8 +48,14 @@ static int setup_cursor_state_file(Manager *m, uid_t uid, gid_t gid) {
 
                 /* Try to fix the access mode, so that we can still
                    touch the file after dropping privileges */
-                fchmod(fd, 0644);
-                fchown(fd, uid, gid);
+                r = fchmod(fd, 0644);
+                if (r < 0)
+                        log_warning_errno(r, "Failed to set mode of state file %s: %m",
+                                          m->state_file);
+                r = fchown(fd, uid, gid);
+                if (r < 0)
+                        log_warning_errno(r, "Failed to set ownership of state file %s: %m",
+                                          m->state_file);
         } else
                 /* create stamp file with the compiled-in date */
                 return touch_file(m->state_file, true, USEC_INFINITY, uid, gid, 0644);

@@ -219,7 +219,9 @@ static int update_cursor_state(Manager *m) {
         if (r < 0)
                 goto finish;
 
-        fchmod(fileno(f), 0644);
+        r = fchmod(fileno(f), 0644);
+        if (r < 0)
+                log_warning_errno(errno, "Failed to set mode of state %s: %m", m->state_file);
 
         fprintf(f,
                 "# This is private data. Do not parse.\n"
@@ -649,7 +651,8 @@ int manager_new(const char *state_file, const char *cursor, Manager **ret) {
                 },
             };
 
-        (void) socket_address_parse(&m->address, "239.0.0.1:6000");
+        r = socket_address_parse(&m->address, "239.0.0.1:6000");
+        assert(r == 0);
 
         if (!m->state_file)
                 return log_oom();
@@ -665,8 +668,12 @@ int manager_new(const char *state_file, const char *cursor, Manager **ret) {
                 return log_error_errno(r, "Failed to allocate event loop: %m");
 
         assert_se(sigprocmask_many(SIG_BLOCK, NULL, SIGTERM, SIGINT, -1) >= 0);
-        (void) sd_event_add_signal(m->event, NULL, SIGTERM, manager_signal_event_handler, m);
-        (void) sd_event_add_signal(m->event, NULL, SIGINT, manager_signal_event_handler, m);
+        r = sd_event_add_signal(m->event, NULL, SIGTERM, manager_signal_event_handler, m);
+        if (r < 0)
+                log_warning_errno(r, "Failed to add SIGTERM event handler: %m");
+        r = sd_event_add_signal(m->event, NULL, SIGINT, manager_signal_event_handler, m);
+        if (r < 0)
+                log_warning_errno(r, "Failed to add SIGTERM event handler: %m");
 
         sd_event_set_watchdog(m->event, true);
 
