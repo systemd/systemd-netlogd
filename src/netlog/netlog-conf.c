@@ -32,7 +32,7 @@ int config_parse_netlog_remote_address(const char *unit,
 
         r = socket_address_parse(&m->address, rvalue);
         if (r < 0) {
-                struct addrinfo hints = {
+                const struct addrinfo hints = {
                         .ai_flags = AI_NUMERICSERV|AI_ADDRCONFIG,
                         .ai_socktype = SOCK_DGRAM,
                         .ai_family = socket_ipv6_is_supported() ? AF_UNSPEC : AF_INET,
