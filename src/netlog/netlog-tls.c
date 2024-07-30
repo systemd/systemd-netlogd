@@ -174,18 +174,18 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
         switch (address->sockaddr.sa.sa_family) {
                 case AF_INET:
                         sa = (union sockaddr_union) {
-                        .in.sin_family = address->sockaddr.sa.sa_family,
-                        .in.sin_port = address->sockaddr.in.sin_port,
-                        .in.sin_addr = address->sockaddr.in.sin_addr,
-                };
+                                .in.sin_family = address->sockaddr.sa.sa_family,
+                                .in.sin_port = address->sockaddr.in.sin_port,
+                                .in.sin_addr = address->sockaddr.in.sin_addr,
+                        };
                         salen = sizeof(sa.in);
                         break;
                 case AF_INET6:
                         sa = (union sockaddr_union) {
-                        .in6.sin6_family = address->sockaddr.sa.sa_family,
-                        .in6.sin6_port = address->sockaddr.in6.sin6_port,
-                        .in6.sin6_addr = address->sockaddr.in6.sin6_addr,
-                };
+                                .in6.sin6_family = address->sockaddr.sa.sa_family,
+                                .in6.sin6_port = address->sockaddr.in6.sin6_port,
+                                .in6.sin6_addr = address->sockaddr.in6.sin6_addr,
+                        };
                         salen = sizeof(sa.in6);
                         break;
                 default:
@@ -221,7 +221,7 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
                 return log_error_errno(SYNTHETIC_ERRNO(EIO),
                                        "TLS: Failed to SSL_set_fd: %s",
                                        ERR_error_string(ERR_get_error(), NULL));
-        /* Cerification verification  */
+        /* Certification verification  */
         if (m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_NONE && m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_INVALID) {
                 log_debug("TLS: enable certificate verification");
 

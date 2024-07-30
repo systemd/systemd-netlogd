@@ -145,18 +145,18 @@ int manager_network_connect_socket(Manager *m) {
         switch (m->address.sockaddr.sa.sa_family) {
                 case AF_INET:
                         sa = (union sockaddr_union) {
-                        .in.sin_family = m->address.sockaddr.sa.sa_family,
-                        .in.sin_port = m->address.sockaddr.in.sin_port,
-                        .in.sin_addr = m->address.sockaddr.in.sin_addr,
-                };
+                                .in.sin_family = m->address.sockaddr.sa.sa_family,
+                                .in.sin_port = m->address.sockaddr.in.sin_port,
+                                .in.sin_addr = m->address.sockaddr.in.sin_addr,
+                        };
                         salen = sizeof(sa.in);
                         break;
                 case AF_INET6:
                         sa = (union sockaddr_union) {
-                        .in6.sin6_family = m->address.sockaddr.sa.sa_family,
-                        .in6.sin6_port = m->address.sockaddr.in6.sin6_port,
-                        .in6.sin6_addr = m->address.sockaddr.in6.sin6_addr,
-                };
+                                .in6.sin6_family = m->address.sockaddr.sa.sa_family,
+                                .in6.sin6_port = m->address.sockaddr.in6.sin6_port,
+                                .in6.sin6_addr = m->address.sockaddr.in6.sin6_addr,
+                        };
                         salen = sizeof(sa.in6);
                         break;
                 default:
