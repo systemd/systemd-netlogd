@@ -110,7 +110,7 @@ const char * in_word_set(const char *, @0@);
 @1@
 '''
 gperf_snippet_format = 'echo foo,bar | @0@ -L ANSI-C'
-gperf_snippet = run_command('sh', '-c', gperf_snippet_format.format(gperf.path()))
+gperf_snippet = run_command('sh', '-c', gperf_snippet_format.format(gperf.path()), check: true)
 gperf_test = gperf_test_format.format('size_t', gperf_snippet.stdout())
 if cc.compiles(gperf_test)
         gperf_len_type = 'size_t'
