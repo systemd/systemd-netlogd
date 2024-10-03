@@ -25,7 +25,6 @@ conf.set_quoted('PKGSYSCONFDIR',   get_option('sysconfdir'))
 cc = meson.get_compiler('c')
 
 c_args = '''
-        -Wextra
         -Werror=undef
         -Werror=format=2
         -Wformat-security
