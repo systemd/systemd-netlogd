@@ -49,7 +49,7 @@ int config_parse_netlog_remote_address(const char *unit,
                                 return -EINVAL;
 
                         m->port = u;
-                        m->server_name = strndupa(rvalue, e-rvalue);
+                        m->server_name = strndup(rvalue, e-rvalue);
                         if (!m->server_name)
                                 return log_oom();
 

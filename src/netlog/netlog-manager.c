@@ -607,6 +607,8 @@ void manager_free(Manager *m) {
         free(m->dtls);
         free(m->tls);
 
+        free(m->server_name);
+
         free(m->last_cursor);
         free(m->current_cursor);
 
