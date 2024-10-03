@@ -54,10 +54,10 @@ typedef struct ParseFieldVec {
 } ParseFieldVec;
 
 #define PARSE_FIELD_VEC_ENTRY(_field, _target, _target_len) {           \
-                .field = _field,                                        \
+                .field = (_field),                                      \
                 .field_len = strlen(_field),                            \
-                .target = _target,                                      \
-                .target_len = _target_len                               \
+                .target = (_target),                                    \
+                .target_len = (_target_len)                             \
         }
 
 static int parse_field(
