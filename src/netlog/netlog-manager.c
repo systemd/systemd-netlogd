@@ -198,8 +198,8 @@ static int manager_read_journal_input(Manager *m) {
                                        message, hostname,
                                        pid,
                                        r >= 0 ? &tv : NULL,
-                                       structured_data,
-                                       msgid);
+                                       m->structured_data ? structured_data : NULL,
+                                       m->syslog_msgid ? msgid : NULL);
 }
 
 static int update_cursor_state(Manager *m) {
