@@ -118,7 +118,7 @@ static int parse_fieldv(
 
 static int manager_read_journal_input(Manager *m) {
         _cleanup_free_ char *facility = NULL, *identifier = NULL, *priority = NULL, *message = NULL, *pid = NULL,
-                *hostname = NULL, *structured_data = NULL, *msgid = NULL;
+                *hostname = NULL, *structured_data = NULL, *msgid = NULL, *cursor = NULL;
         size_t hostname_len = 0, identifier_len = 0, message_len = 0, priority_len = 0, facility_len = 0,
                 structured_data_len = 0, msgid_len = 0, pid_len = 0;
         unsigned sev = JOURNAL_DEFAULT_SEVERITY;
@@ -127,7 +127,6 @@ static int manager_read_journal_input(Manager *m) {
         const void *data;
         usec_t realtime;
         size_t length;
-        char *cursor;
         int r;
         const ParseFieldVec fields[] = {
                 PARSE_FIELD_VEC_ENTRY("_PID=",                        &pid,               &pid_len              ),
