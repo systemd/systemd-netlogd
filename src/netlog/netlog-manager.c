@@ -16,8 +16,6 @@
 #include "string-util.h"
 #include "util.h"
 
-#define JOURNAL_SEND_POLL_TIMEOUT (10 * USEC_PER_SEC)
-
 /* Default severity LOG_NOTICE */
 #define JOURNAL_DEFAULT_SEVERITY LOG_PRI(LOG_NOTICE)
 
@@ -264,6 +262,7 @@ static int load_cursor_state(Manager *m) {
 }
 
 static int process_journal_input(Manager *m) {
+        _cleanup_free_ char *cursor = NULL;
         int r;
 
         assert(m);
@@ -279,7 +278,6 @@ static int process_journal_input(Manager *m) {
 
                 r = manager_read_journal_input(m);
                 if (r < 0) {
-                        m->current_cursor = mfree(m->current_cursor);
                         /* Can't send the message. Seek one entry back. */
                         r = sd_journal_previous(m->journal);
                         if (r < 0)
@@ -289,15 +287,15 @@ static int process_journal_input(Manager *m) {
                 }
         }
 
-        r = sd_journal_get_cursor(m->journal, &m->current_cursor);
+        r = sd_journal_get_cursor(m->journal, &cursor);
         if (r < 0) {
                 log_error_errno(r, "Failed to get cursor: %m");
-                m->current_cursor = mfree(m->current_cursor);
+                cursor = mfree(cursor);
         }
 
         free(m->last_cursor);
-        m->last_cursor = m->current_cursor;
-        m->current_cursor = NULL;
+        m->last_cursor = cursor;
+        cursor = NULL;
 
         return update_cursor_state(m);
 }
@@ -338,8 +336,6 @@ static void close_journal_input(Manager *m) {
                 sd_journal_close(m->journal);
                 m->journal = NULL;
         }
-
-        m->timeout = 0;
 }
 
 static int manager_signal_event_handler(sd_event_source *event, const struct signalfd_siginfo *si, void *userdata) {
@@ -390,13 +386,6 @@ static int manager_journal_monitor_listen(Manager *m) {
                 return log_error_errno(m->journal_watch_fd, "Failed to get journal fd: %m");
 
         events = sd_journal_get_events(m->journal);
-
-        r = sd_journal_reliable_fd(m->journal);
-        assert(r >= 0);
-        if (r > 0)
-                m->timeout = -1;
-        else
-                m->timeout = JOURNAL_SEND_POLL_TIMEOUT;
 
         r = sd_event_add_io(m->event, &m->event_journal_input, m->journal_watch_fd,
                             events, manager_journal_event_handler, m);
@@ -516,7 +505,6 @@ int manager_resolve_handler(sd_resolve_query *q, int ret, const struct addrinfo 
                         continue;
                 }
 
-                m->socklen = ai->ai_addrlen;
                 memcpy(&m->address.sockaddr, (const union sockaddr_union*) ai->ai_addr, ai->ai_addrlen);
 
                 if (ai->ai_addr->sa_family == AF_INET6)
@@ -524,7 +512,7 @@ int manager_resolve_handler(sd_resolve_query *q, int ret, const struct addrinfo 
                 else
                         m->address.sockaddr.in.sin_port = htobe16((uint16_t) m->port);
 
-                sockaddr_pretty(&m->address.sockaddr.sa, m->socklen, true, true, &pretty);
+                sockaddr_pretty(&m->address.sockaddr.sa, ai->ai_addrlen, true, true, &pretty);
 
                 log_debug("Resolved address %s for %s.", pretty, m->server_name);
 
@@ -609,7 +597,6 @@ void manager_free(Manager *m) {
         free(m->server_name);
 
         free(m->last_cursor);
-        free(m->current_cursor);
 
         free(m->state_file);
         free(m->dir);
@@ -619,9 +606,6 @@ void manager_free(Manager *m) {
 
         sd_event_source_unref(m->network_event_source);
         sd_network_monitor_unref(m->network_monitor);
-
-        sd_event_source_unref(m->sigterm_event);
-        sd_event_source_unref(m->sigint_event);
 
         sd_event_source_unref(m->event_retry);
         sd_event_unref(m->event);

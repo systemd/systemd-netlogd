@@ -36,11 +36,7 @@ struct Manager {
         sd_event *event;
 
         sd_event_source *event_journal_input;
-        uint64_t timeout;
-        usec_t retry_interval;
         usec_t connection_retry_usec;
-
-        sd_event_source *sigint_event, *sigterm_event;
 
         /* network */
         sd_event_source *network_event_source;
@@ -53,14 +49,11 @@ struct Manager {
 
         /* peer */
         sd_resolve_query *resolve_query;
-        sd_event_source *event_receive;
-        sd_event_source *event_timeout;
 
         int socket;
 
         /* Multicast UDP address */
         SocketAddress address;
-        socklen_t socklen;
         uint32_t port;
 
         char *server_name;
@@ -73,7 +66,6 @@ struct Manager {
 
         char *state_file;
         char *last_cursor;
-        char *current_cursor;
         char *structured_data;
         char *dir;
         char *namespace;
@@ -97,7 +89,6 @@ struct Manager {
 
         size_t send_buffer;
 
-        usec_t timeout_usec;
         usec_t keep_alive_time;
         usec_t keep_alive_interval;
 };
