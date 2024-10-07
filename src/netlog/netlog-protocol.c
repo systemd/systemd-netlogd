@@ -23,6 +23,7 @@ int protocol_send(Manager *m, struct iovec *iovec, unsigned n_iovec) {
                 case SYSLOG_TRANSMISSION_PROTOCOL_DTLS:
                         r = dtls_datagram_writev(m->dtls, iovec, n_iovec);
                         if (r < 0 && r != -EAGAIN) {
+                                log_debug_errno(r, "Failed to send via DTLS, performing reconnect: %m");
                                 manager_connect(m);
                                 return r;
                         }
@@ -30,6 +31,7 @@ int protocol_send(Manager *m, struct iovec *iovec, unsigned n_iovec) {
                 case SYSLOG_TRANSMISSION_PROTOCOL_TLS:
                         r = tls_stream_writev(m->tls, iovec, n_iovec);
                         if (r < 0 && r != -EAGAIN) {
+                                log_debug_errno(r, "Failed to send via TLS, performing reconnect: %m");
                                 manager_connect(m);
                                 return r;
                         }
@@ -37,6 +39,7 @@ int protocol_send(Manager *m, struct iovec *iovec, unsigned n_iovec) {
                 default:
                        r = network_send(m, iovec, n_iovec);
                         if (r < 0 && r != -EAGAIN) {
+                                log_debug_errno(r, "Failed to send via %s, performing reconnect: %m", protocol_to_string(m->protocol));
                                 manager_connect(m);
                                 return r;
                         }

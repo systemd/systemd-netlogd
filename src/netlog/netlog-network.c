@@ -87,6 +87,7 @@ int manager_push_to_network(Manager *m,
         switch (m->protocol) {
                 case SYSLOG_TRANSMISSION_PROTOCOL_DTLS:
                         if (!m->dtls->connected) {
+                                log_debug("DTLS not connected, performing reconnect");
                                 r = manager_connect(m);
                                 if (r < 0)
                                         return r;
@@ -95,6 +96,7 @@ int manager_push_to_network(Manager *m,
                         break;
                 case SYSLOG_TRANSMISSION_PROTOCOL_TLS:
                         if (!m->tls->connected) {
+                                log_debug("TLS not connected, performing reconnect");
                                 r = manager_connect(m);
                                 if (r < 0)
                                         return r;
@@ -102,6 +104,7 @@ int manager_push_to_network(Manager *m,
                         break;
                 default:
                         if (!m->connected) {
+                                log_debug("%s not connected, performing reconnect", protocol_to_string(m->protocol));
                                 r = manager_connect(m);
                                 if (r < 0)
                                         return r;
