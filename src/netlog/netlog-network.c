@@ -139,6 +139,7 @@ void manager_close_network_socket(Manager *m) {
 int manager_network_connect_socket(Manager *m) {
         _cleanup_free_ char *pretty = NULL;
         union sockaddr_union sa;
+        const char *protocol;
         socklen_t salen;
         int r;
 
@@ -170,16 +171,18 @@ int manager_network_connect_socket(Manager *m) {
         if (r < 0)
                 return r;
 
-        log_debug("Connecting to remote server: '%s'", pretty);
+        protocol = protocol_to_string(m->protocol);
+
+        log_debug("Connecting to remote server: '%s/%s'", pretty, protocol);
 
         r = connect(m->socket, &m->address.sockaddr.sa, salen);
         if (r < 0 && errno != EINPROGRESS)
-                return log_error_errno(errno, "Failed to connect to remote server='%s': %m", pretty);
+                return log_error_errno(errno, "Failed to connect to remote server='%s/%s': %m", pretty, protocol);
 
         if (errno != EINPROGRESS)
-                log_debug("Connected to remote server: '%s'", pretty);
+                log_debug("Connected to remote server: '%s/%s'", pretty, protocol);
         else
-                log_debug("Connection in progress to remote server: '%s'", pretty);
+                log_debug("Connection in progress to remote server: '%s/%s'", pretty, protocol);
 
         return 0;
 }
