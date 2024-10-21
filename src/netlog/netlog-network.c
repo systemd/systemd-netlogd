@@ -251,7 +251,7 @@ int manager_open_network_socket(Manager *m) {
                         return -EPROTONOSUPPORT;
         }
         if (m->socket < 0)
-                return log_error_errno(errno, "Failed to create socket: %m");;
+                return log_error_errno(errno, "Failed to create socket: %m");
 
         log_debug("Successfully created socket with fd='%d'", m->socket);
 

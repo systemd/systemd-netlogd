@@ -90,7 +90,7 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
 
         fd = socket(AF_INET, SOCK_DGRAM, 0);
         if (fd < 0)
-                return log_error_errno(errno, "DTLS: Failed to allocate socket: %m");;
+                return log_error_errno(errno, "DTLS: Failed to allocate socket: %m");
 
         r = sockaddr_pretty(&address->sockaddr.sa, salen, true, true, &pretty);
         if (r < 0)
@@ -98,7 +98,7 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
 
         r = connect(fd, &address->sockaddr.sa, salen);
         if (r < 0 && errno != EINPROGRESS)
-                return log_error_errno(errno, "DTLS: Failed to connect to remote server='%s': %m", pretty);;
+                return log_error_errno(errno, "DTLS: Failed to connect to remote server='%s': %m", pretty);
 
         log_debug("DTLS: Connected to remote server: '%s'", pretty);
 
@@ -185,7 +185,7 @@ void dtls_disconnect(DTLSManager *m) {
         }
 
         m->fd = safe_close(m->fd);
-        m->connected = false;;
+        m->connected = false;
 }
 
 void dtls_manager_free(DTLSManager *m) {
