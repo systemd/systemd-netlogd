@@ -379,7 +379,9 @@ static int manager_journal_monitor_listen(Manager *m) {
         if (r < 0)
                 return r;
 
-        sd_journal_set_data_threshold(m->journal, 0);
+        r = sd_journal_set_data_threshold(m->journal, 0);
+        if (r < 0)
+                log_warning_errno(r, "Failed to set journal data field size threshold");
 
         m->journal_watch_fd = sd_journal_get_fd(m->journal);
         if (m->journal_watch_fd  < 0)
