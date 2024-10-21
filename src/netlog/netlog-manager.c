@@ -304,6 +304,10 @@ static int manager_journal_event_handler(sd_event_source *event, int fd, uint32_
         Manager *m = userp;
         int r;
 
+        assert(m);
+        assert(m->journal);
+        assert(m->journal_watch_fd == fd);
+
         if (revents & EPOLLHUP) {
                 log_debug("Received HUP");
                 return 0;
@@ -335,6 +339,7 @@ static void close_journal_input(Manager *m) {
 
                 sd_journal_close(m->journal);
                 m->journal = NULL;
+                m->journal_watch_fd = -1;
         }
 }
 
@@ -464,14 +469,13 @@ void manager_disconnect(Manager *m) {
 
         m->resolve_query = sd_resolve_query_unref(m->resolve_query);
 
-        close_journal_input(m);
-
         manager_close_network_socket(m);
 
         dtls_disconnect(m->dtls);
         tls_disconnect(m->tls);
 
-        m->event_journal_input = sd_event_source_unref(m->event_journal_input);
+        m->event_journal_input = sd_event_source_disable_unref(m->event_journal_input);
+        close_journal_input(m);
 
         sd_notifyf(false, "STATUS=Idle.");
 }
