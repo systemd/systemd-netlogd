@@ -195,7 +195,7 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
 
         fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
         if (fd < 0)
-                return log_error_errno(errno, "TLS: Failed to allocate socket: %m");;
+                return log_error_errno(errno, "TLS: Failed to allocate socket: %m");
 
         r = sockaddr_pretty(&address->sockaddr.sa, salen, true, true, &pretty);
         if (r < 0)
@@ -203,7 +203,7 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
 
         r = connect(fd, &address->sockaddr.sa, salen);
         if (r < 0 && errno != EINPROGRESS)
-                return log_error_errno(errno, "TLS: Failed to connect to remote server='%s': %m", pretty);;
+                return log_error_errno(errno, "TLS: Failed to connect to remote server='%s': %m", pretty);
 
         log_debug("TLS: Connected to remote server: '%s'", pretty);
 
@@ -286,7 +286,7 @@ void tls_disconnect(TLSManager *m) {
         }
 
         m->fd = safe_close(m->fd);
-        m->connected = false;;
+        m->connected = false;
 }
 
 void tls_manager_free(TLSManager *m) {
