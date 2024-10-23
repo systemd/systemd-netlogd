@@ -164,7 +164,6 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
         _cleanup_(SSL_freep) SSL *ssl = NULL;
         _cleanup_free_ char *pretty = NULL;
         const SSL_CIPHER *cipher;
-        union sockaddr_union sa;
         socklen_t salen;
         SSL_CTX *ctx;
         int fd, r;
@@ -174,20 +173,10 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
 
         switch (address->sockaddr.sa.sa_family) {
                 case AF_INET:
-                        sa = (union sockaddr_union) {
-                                .in.sin_family = address->sockaddr.sa.sa_family,
-                                .in.sin_port = address->sockaddr.in.sin_port,
-                                .in.sin_addr = address->sockaddr.in.sin_addr,
-                        };
-                        salen = sizeof(sa.in);
+                        salen = sizeof(address->sockaddr.in);
                         break;
                 case AF_INET6:
-                        sa = (union sockaddr_union) {
-                                .in6.sin6_family = address->sockaddr.sa.sa_family,
-                                .in6.sin6_port = address->sockaddr.in6.sin6_port,
-                                .in6.sin6_addr = address->sockaddr.in6.sin6_addr,
-                        };
-                        salen = sizeof(sa.in6);
+                        salen = sizeof(address->sockaddr.in6);
                         break;
                 default:
                         return -EAFNOSUPPORT;

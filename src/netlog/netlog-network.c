@@ -138,7 +138,6 @@ void manager_close_network_socket(Manager *m) {
 
 int manager_network_connect_socket(Manager *m) {
         _cleanup_free_ char *pretty = NULL;
-        union sockaddr_union sa;
         const char *protocol;
         socklen_t salen;
         int r;
@@ -148,20 +147,10 @@ int manager_network_connect_socket(Manager *m) {
 
         switch (m->address.sockaddr.sa.sa_family) {
                 case AF_INET:
-                        sa = (union sockaddr_union) {
-                                .in.sin_family = m->address.sockaddr.sa.sa_family,
-                                .in.sin_port = m->address.sockaddr.in.sin_port,
-                                .in.sin_addr = m->address.sockaddr.in.sin_addr,
-                        };
-                        salen = sizeof(sa.in);
+                        salen = sizeof(m->address.sockaddr.in);
                         break;
                 case AF_INET6:
-                        sa = (union sockaddr_union) {
-                                .in6.sin6_family = m->address.sockaddr.sa.sa_family,
-                                .in6.sin6_port = m->address.sockaddr.in6.sin6_port,
-                                .in6.sin6_addr = m->address.sockaddr.in6.sin6_addr,
-                        };
-                        salen = sizeof(sa.in6);
+                        salen = sizeof(m->address.sockaddr.in6);
                         break;
                 default:
                         return -EAFNOSUPPORT;
