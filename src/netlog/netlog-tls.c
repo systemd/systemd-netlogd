@@ -69,7 +69,8 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
         const SSL_CIPHER *cipher;
         socklen_t salen;
         SSL_CTX *ctx;
-        int fd, r;
+        _cleanup_close_ int fd = -1;
+        int r;
 
         assert(m);
         assert(address);
@@ -158,7 +159,7 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
 
         m->ssl = TAKE_PTR(ssl);
         m->ctx = ctx;
-        m->fd = fd;
+        m->fd = TAKE_FD(fd);
 
         m->connected = true;
         return 0;
@@ -199,6 +200,7 @@ int tls_manager_init(OpenSSLCertificateAuthMode auth, TLSManager **ret ) {
 
         *m = (TLSManager) {
            .auth_mode = auth,
+           .fd = -1,
         };
 
         *ret = TAKE_PTR(m);

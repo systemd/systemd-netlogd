@@ -64,7 +64,8 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
                 .tv_sec = 3,
                 .tv_usec = 0,
         };
-        int fd, r;
+        _cleanup_close_ int fd = -1;
+        int r;
 
         assert(m);
         assert(address);
@@ -158,7 +159,7 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
 
         m->ssl = TAKE_PTR(ssl);
         m->ctx = ctx;
-        m->fd = fd;
+        m->fd = TAKE_FD(fd);
 
         m->connected = true;
         return 0;
@@ -199,6 +200,7 @@ int dtls_manager_init(OpenSSLCertificateAuthMode auth_mode, DTLSManager **ret) {
 
         *m = (DTLSManager) {
            .auth_mode = auth_mode,
+           .fd = -1,
         };
 
         *ret = TAKE_PTR(m);
