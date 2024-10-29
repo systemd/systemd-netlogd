@@ -202,6 +202,7 @@ int dtls_manager_init(OpenSSLCertificateAuthMode auth_mode, DTLSManager **ret) {
                                        "DTLS: Failed to allocate memory for SSL CTX: %m");
 
         SSL_CTX_set_default_verify_paths(ctx);
+        SSL_CTX_set_verify_depth(ctx, VERIFICATION_DEPTH + 1);
 
         m = new(DTLSManager, 1);
         if (!m)
