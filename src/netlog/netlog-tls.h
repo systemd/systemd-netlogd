@@ -2,7 +2,6 @@
 #pragma once
 
 #include <openssl/ssl.h>
-#include <openssl/bio.h>
 #include <stdbool.h>
 
 #include "socket-util.h"
@@ -21,7 +20,6 @@ typedef struct TLSManager TLSManager;
 
 struct TLSManager {
         SSL_CTX *ctx;
-        BIO *bio;
         SSL *ssl;
 
         int fd;

@@ -4,7 +4,6 @@
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include <openssl/bio.h>
 #include <openssl/err.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
@@ -65,7 +64,6 @@ int tls_stream_writev(TLSManager *m, const struct iovec *iov, size_t iovcnt) {
 }
 
 int tls_connect(TLSManager *m, SocketAddress *address) {
-        _cleanup_(BIO_freep) BIO *bio = NULL;
         _cleanup_(SSL_freep) SSL *ssl = NULL;
         _cleanup_free_ char *pretty = NULL;
         const SSL_CIPHER *cipher;
@@ -158,7 +156,6 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
 
         }
 
-        m->bio = TAKE_PTR(bio);
         m->ssl = TAKE_PTR(ssl);
         m->ctx = ctx;
         m->fd = fd;

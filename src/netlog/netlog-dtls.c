@@ -113,7 +113,7 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
 
         BIO_ctrl(bio, BIO_CTRL_DGRAM_SET_CONNECTED, 0, &address);
         SSL_set_bio(ssl, bio, bio);
-        m->bio = TAKE_PTR(bio);
+        bio = NULL;
 
         /* Certification verification  */
         if (m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_NONE && m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_INVALID) {
