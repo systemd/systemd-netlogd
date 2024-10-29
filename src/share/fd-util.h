@@ -49,3 +49,12 @@ void cmsg_close_all(struct msghdr *mh);
 /* Hint: ENETUNREACH happens if we try to connect to "non-existing" special IP addresses, such as ::5 */
 #define ERRNO_IS_DISCONNECT(r) \
         IN_SET(r, ENOTCONN, ECONNRESET, ECONNREFUSED, ECONNABORTED, EPIPE, ENETUNREACH)
+
+/* Like TAKE_PTR() but for file descriptors, resetting them to -1 */
+#define TAKE_FD(fd)                             \
+        ({                                      \
+                int *_fd_ = &(fd);              \
+                int _ret_ = *_fd_;              \
+                *_fd_ = -1;                     \
+                _ret_;                          \
+        })
