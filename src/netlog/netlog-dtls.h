@@ -14,6 +14,7 @@ struct DTLSManager {
         SSL_CTX *ctx;
         SSL *ssl;
 
+        char *pretty_address;
         int fd;
         bool connected;
 

@@ -21,6 +21,7 @@ static int dtls_write(DTLSManager *m, const char *buf, size_t count) {
 
         assert(m);
         assert(m->ssl);
+        assert(m->pretty_address);
         assert(buf);
         assert(count > 0);
         assert(count < INT_MAX);
@@ -30,9 +31,9 @@ static int dtls_write(DTLSManager *m, const char *buf, size_t count) {
         if (r <= 0) {
                 int error = SSL_get_error(m->ssl, r);
                 if (IN_SET(error, SSL_ERROR_WANT_READ, SSL_ERROR_WANT_WRITE))
-                        return log_info_errno(SYNTHETIC_ERRNO(EAGAIN), "DTLS: Failed to invoke SSL_write: %s", TLS_ERROR_STRING(error));
+                        return log_info_errno(SYNTHETIC_ERRNO(EAGAIN), "DTLS: Failed to invoke SSL_write to %s: %s", m->pretty_address, TLS_ERROR_STRING(error));
                 else
-                        return log_error_errno(SYNTHETIC_ERRNO(EPIPE), "DTLS: Failed to invoke SSL_write: %s", TLS_ERROR_STRING(error));
+                        return log_error_errno(SYNTHETIC_ERRNO(EPIPE), "DTLS: Failed to invoke SSL_write to %s: %s", m->pretty_address, TLS_ERROR_STRING(error));
         }
 
         return log_debug("DTLS: Successful SSL_write: %d bytes", r);
@@ -120,8 +121,8 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
         if (m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_NONE && m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_INVALID) {
                 log_debug("DTLS: enable certificate verification");
 
-                SSL_set_ex_data(ssl, 0, m);
-                SSL_set_ex_data(ssl, 1, address);
+                SSL_set_ex_data(ssl, EX_DATA_TLSMANAGER, m);
+                SSL_set_ex_data(ssl, EX_DATA_PRETTYADDRESS, pretty);
                 SSL_set_verify(ssl, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, ssl_verify_certificate_validity);
         } else {
                 log_debug("DTLS: disable certificate verification");
@@ -158,6 +159,7 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
 
         m->ssl = TAKE_PTR(ssl);
         m->fd = TAKE_FD(fd);
+        m->pretty_address = TAKE_PTR(pretty);
 
         m->connected = true;
         return 0;
@@ -175,6 +177,7 @@ void dtls_disconnect(DTLSManager *m) {
                 m->ssl = NULL;
         }
 
+        m->pretty_address = mfree(m->pretty_address);
         m->fd = safe_close(m->fd);
         m->connected = false;
 }
