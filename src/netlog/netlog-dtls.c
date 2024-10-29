@@ -27,8 +27,13 @@ static int dtls_write(DTLSManager *m, const char *buf, size_t count) {
 
         ERR_clear_error();
         r = SSL_write(m->ssl, buf, count);
-        if (r <= 0)
-                return log_error_errno(r, "DTLS: Failed to invoke SSL_write: %s", TLS_ERROR_STRING(SSL_get_error(m->ssl, r)));
+        if (r <= 0) {
+                int error = SSL_get_error(m->ssl, r);
+                if (IN_SET(error, SSL_ERROR_WANT_READ, SSL_ERROR_WANT_WRITE))
+                        return log_info_errno(SYNTHETIC_ERRNO(EAGAIN), "DTLS: Failed to invoke SSL_write: %s", TLS_ERROR_STRING(error));
+                else
+                        return log_error_errno(SYNTHETIC_ERRNO(EPIPE), "DTLS: Failed to invoke SSL_write: %s", TLS_ERROR_STRING(error));
+        }
 
         return log_debug("DTLS: Successful SSL_write: %d bytes", r);
 }
