@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 
+#include "netlog-dtls.h"
+
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <openssl/bio.h>
@@ -11,7 +13,8 @@
 #include "fd-util.h"
 #include "io-util.h"
 #include "iovec-util.h"
-#include "netlog-dtls.h"
+
+#include "netlog-ssl.h"
 
 static int dtls_write(DTLSManager *m, const char *buf, size_t count) {
         int r;

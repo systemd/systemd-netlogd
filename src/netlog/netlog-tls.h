@@ -38,8 +38,6 @@ void tls_disconnect(TLSManager *m);
 
 int tls_stream_writev(TLSManager *m, const struct iovec *iov, size_t iovcnt);
 
-int ssl_verify_certificate_validity(int status, X509_STORE_CTX *store);
-
 const char *certificate_auth_mode_to_string(int v) _const_;
 int certificate_auth_mode_from_string(const char *s) _pure_;
 
