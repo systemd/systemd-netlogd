@@ -71,7 +71,7 @@ systemd-netlogd reads configuration files named `/etc/systemd/netlogd.conf` and 
         Specifies the minimum delay before subsequent attempts to contact a Log server are made. Takes a time span value. The default unit is seconds, but other units may be specified, see systemd.time(5). Defaults to 30 seconds and must not be smaller than 1 second.
 
     TLSCertificateAuthMode=
-        Specifies whether to validate the certificate. Takes one of no, allow, deny, warn. Defaults to 'no' which disables certificate validation.
+        Specifies whether to validate the certificate. Takes one of no, allow, deny, warn. Defaults to 'deny' which rejects certificates failed to validate.
 
     KeepAlive=
         Takes a boolean argument. If true, the TCP/IP stack will send a keep alive message after 2h (depending on the configuration of /proc/sys/net/ipv4/tcp_keepalive_time) for all TCP streams accepted on this socket. This controls the SO_KEEPALIVE socket option (see socket(7) and the TCP Keepalive HOWTO for details.) Defaults to false.

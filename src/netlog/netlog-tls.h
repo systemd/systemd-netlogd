@@ -13,7 +13,6 @@ typedef enum OpenSSLCertificateAuthMode {
         OPEN_SSL_CERTIFICATE_AUTH_MODE_DENY     = 1 << 2,
         OPEN_SSL_CERTIFICATE_AUTH_MODE_WARN     = 1 << 3,
         OPEN_SSL_CERTIFICATE_AUTH_MODE_MAX      = 1 << 4,
-        OPEN_SSL_CERTIFICATE_AUTH_MODE_INVALID  = -1,
 } OpenSSLCertificateAuthMode;
 
 typedef struct TLSManager TLSManager;

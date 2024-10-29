@@ -117,8 +117,8 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
                                        "TLS: Failed to SSL_set_fd: %s",
                                        ERR_error_string(ERR_get_error(), NULL));
         /* Certification verification  */
-        if (m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_NONE && m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_INVALID) {
-                log_debug("TLS: enable certificate verification");
+        if (m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_NONE) {
+                log_debug("TLS: enable certificate verification with mode %s", certificate_auth_mode_to_string(m->auth_mode));
 
                 SSL_set_ex_data(ssl, EX_DATA_TLSMANAGER, m);
                 SSL_set_ex_data(ssl, EX_DATA_PRETTYADDRESS, pretty);
