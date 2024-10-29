@@ -68,11 +68,11 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
         _cleanup_free_ char *pretty = NULL;
         const SSL_CIPHER *cipher;
         socklen_t salen;
-        SSL_CTX *ctx;
         _cleanup_close_ int fd = -1;
         int r;
 
         assert(m);
+        assert(m->ctx);
         assert(address);
 
         switch (address->sockaddr.sa.sa_family) {
@@ -100,12 +100,7 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
 
         log_debug("TLS: Connected to remote server: '%s'", pretty);
 
-        ctx = SSL_CTX_new(SSLv23_client_method());
-        if (!ctx)
-                return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
-                                       "TLS: Failed to allocate memory for SSL CTX: %m");
-
-        ssl = SSL_new(ctx);
+        ssl = SSL_new(m->ctx);
         if (!ssl)
                 return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
                                        "TLS: Failed to allocate memory for ssl: %s",
@@ -125,10 +120,9 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
                 SSL_set_verify(ssl, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, ssl_verify_certificate_validity);
         } else {
                 log_debug("TLS: disable certificate verification");
-                SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
+                SSL_set_verify(ssl, SSL_VERIFY_NONE, NULL);
         }
 
-        SSL_CTX_set_default_verify_paths(ctx);
         SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
 
         r = SSL_connect(ssl);
@@ -158,7 +152,6 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
         }
 
         m->ssl = TAKE_PTR(ssl);
-        m->ctx = ctx;
         m->fd = TAKE_FD(fd);
 
         m->connected = true;
@@ -193,6 +186,14 @@ void tls_manager_free(TLSManager *m) {
 
 int tls_manager_init(OpenSSLCertificateAuthMode auth, TLSManager **ret ) {
         _cleanup_(tls_manager_freep) TLSManager *m = NULL;
+        _cleanup_(SSL_CTX_freep) SSL_CTX *ctx = NULL;
+
+        ctx = SSL_CTX_new(TLS_client_method());
+        if (!ctx)
+                return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
+                                       "TLS: Failed to allocate memory for SSL CTX: %m");
+
+        SSL_CTX_set_default_verify_paths(ctx);
 
         m = new(TLSManager, 1);
         if (!m)
@@ -200,6 +201,7 @@ int tls_manager_init(OpenSSLCertificateAuthMode auth, TLSManager **ret ) {
 
         *m = (TLSManager) {
            .auth_mode = auth,
+           .ctx = TAKE_PTR(ctx),
            .fd = -1,
         };
 

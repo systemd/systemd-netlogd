@@ -59,7 +59,6 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
         _cleanup_free_ char *pretty = NULL;
         const SSL_CIPHER *cipher;
         socklen_t salen;
-        SSL_CTX *ctx;
         struct timeval timeout = {
                 .tv_sec = 3,
                 .tv_usec = 0,
@@ -68,6 +67,7 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
         int r;
 
         assert(m);
+        assert(m->ctx);
         assert(address);
 
         switch (address->sockaddr.sa.sa_family) {
@@ -95,12 +95,7 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
 
         log_debug("DTLS: Connected to remote server: '%s'", pretty);
 
-        ctx = SSL_CTX_new(DTLS_method());
-        if (!ctx)
-                return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
-                                       "DTLS: Failed to allocate memory for SSL CTX: %m");
-
-        ssl = SSL_new(ctx);
+        ssl = SSL_new(m->ctx);
         if (!ssl)
                 return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
                                        "DTLS: Failed to allocate memory for ssl: %s",
@@ -125,9 +120,8 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
                 SSL_set_verify(ssl, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, ssl_verify_certificate_validity);
         } else {
                 log_debug("DTLS: disable certificate verification");
-                SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
+                SSL_set_verify(ssl, SSL_VERIFY_NONE, NULL);
         }
-        SSL_CTX_set_default_verify_paths(ctx);
 
         r = SSL_connect(ssl);
         if (r <= 0)
@@ -158,7 +152,6 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
         BIO_ctrl(bio, BIO_CTRL_DGRAM_SET_RECV_TIMEOUT, 0, &timeout);
 
         m->ssl = TAKE_PTR(ssl);
-        m->ctx = ctx;
         m->fd = TAKE_FD(fd);
 
         m->connected = true;
@@ -193,6 +186,14 @@ void dtls_manager_free(DTLSManager *m) {
 
 int dtls_manager_init(OpenSSLCertificateAuthMode auth_mode, DTLSManager **ret) {
         _cleanup_(dtls_manager_freep) DTLSManager *m = NULL;
+        _cleanup_(SSL_CTX_freep) SSL_CTX *ctx = NULL;
+
+        ctx = SSL_CTX_new(DTLS_method());
+        if (!ctx)
+                return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
+                                       "DTLS: Failed to allocate memory for SSL CTX: %m");
+
+        SSL_CTX_set_default_verify_paths(ctx);
 
         m = new(DTLSManager, 1);
         if (!m)
@@ -200,6 +201,7 @@ int dtls_manager_init(OpenSSLCertificateAuthMode auth_mode, DTLSManager **ret) {
 
         *m = (DTLSManager) {
            .auth_mode = auth_mode,
+           .ctx = TAKE_PTR(ctx),
            .fd = -1,
         };
 
