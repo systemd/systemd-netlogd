@@ -44,7 +44,7 @@ int ssl_verify_certificate_validity(int s, X509_STORE_CTX *store) {
         if (r < 0)
                 return r;
 
-        log_debug("TLS: Verifying SSL ceritificates of server: %s", pretty);
+        log_debug("TLS: Verifying SSL certificates of server: %s", pretty);
 
         if (cert) {
                 subject = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
@@ -117,7 +117,7 @@ int ssl_verify_certificate_validity(int s, X509_STORE_CTX *store) {
                 }
         }
 
-        log_debug("TLS: SSL ceritificates verified server=%s: %s", pretty, X509_verify_cert_error_string(rc));
+        log_debug("TLS: SSL certificates verified server=%s: %s", pretty, X509_verify_cert_error_string(rc));
 
         return 1;
 }
