@@ -56,7 +56,7 @@ systemd-netlogd reads configuration files named `/etc/systemd/netlogd.conf` and 
         Controls whether log messages received by the systemd-netlogd daemon shall be forwarded to a unicast UDP address or multicast UDP network group in syslog RFC 5424 format. The the address string format is similar to socket units. See systemd.socket(1)
 
     Protocol=
-        Specifies whether to use udp, tcp, tls or dtls (Datagram Transport Layer Security)  protocol. Defaults to udp.
+        Specifies whether to use udp, tcp, tls or dtls (Datagram Transport Layer Security) protocol. Defaults to udp.
 
     LogFormat=
         Specifies whether to use RFC 5424 format or RFC 3339 format. Takes one of rfc5424 or rfc3339. Defaults to rfc5424.
@@ -65,7 +65,7 @@ systemd-netlogd reads configuration files named `/etc/systemd/netlogd.conf` and 
         Takes a directory path. Specifies whether to operate on the specified journal directory DIR instead of the default runtime and system journal paths.
               
     Namespace=
-        Takes a journal namespace identifier string as argument. If not specified the data collected by the default namespace is shown. If specified shows the log data of the specified namespace instead. If the namespace is specified as "*" data from all namespaces is shown, interleaved. If the namespace identifier is prefixed with "+" data from the specified namespace and the default namespace is shown, interleaved, but no other
+        Takes a journal namespace identifier string as argument. If not specified the data collected by the default namespace is shown. If specified shows the log data of the specified namespace instead. If the namespace is specified as "*" data from all namespaces is shown, interleaved. If the namespace identifier is prefixed with "+" data from the specified namespace and the default namespace is shown, interleaved, but no other.
 
     ConnectionRetrySec=
         Specifies the minimum delay before subsequent attempts to contact a Log server are made. Takes a time span value. The default unit is seconds, but other units may be specified, see systemd.time(5). Defaults to 30 seconds and must not be smaller than 1 second.
