@@ -13,11 +13,8 @@ project('systemd-netlogd', 'c',
 conf = configuration_data()
 conf.set_quoted('PACKAGE_VERSION', meson.project_version())
 conf.set_quoted('PACKAGE_STRING',  meson.project_name() + ' ' + meson.project_version())
-
-substs = configuration_data()
-substs.set('PACKAGE_URL',          'https://github.com/systemd/systemd-netlogd')
-substs.set('PACKAGE_VERSION',      meson.project_version())
-substs.set('PKGPREFIX',   get_option('prefix'))
+conf.set('PACKAGE_URL',          'https://github.com/systemd/systemd-netlogd')
+conf.set('PKGPREFIX',   get_option('prefix'))
 conf.set_quoted('PKGSYSCONFDIR',   get_option('sysconfdir'))
 
 #####################################################################
@@ -159,7 +156,7 @@ endif
 systemd_netlogd_conf = configure_file(
                      input : 'conf/netlogd.conf.in',
                      output : 'netlogd.conf',
-                     configuration : substs)
+                     configuration : conf)
                      install_data(systemd_netlogd_conf,
                      install_dir : get_option('sysconfdir'))
 
