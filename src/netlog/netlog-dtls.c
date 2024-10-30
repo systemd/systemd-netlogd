@@ -101,12 +101,6 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
 
         log_debug("DTLS: Connected to remote server: '%s'", pretty);
 
-        ssl = SSL_new(m->ctx);
-        if (!ssl)
-                return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
-                                       "DTLS: Failed to allocate memory for ssl: %s",
-                                       ERR_error_string(ERR_get_error(), NULL));
-
         /* Create BIO from socket array! */
         bio = BIO_new_dgram(fd, BIO_NOCLOSE);
         if (!bio)
@@ -114,6 +108,15 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
                                        "DTLS: Failed to allocate memory for bio: %m");
 
         BIO_ctrl(bio, BIO_CTRL_DGRAM_SET_CONNECTED, 0, &address);
+        /* Set and activate timeouts */
+        BIO_ctrl(bio, BIO_CTRL_DGRAM_SET_RECV_TIMEOUT, 0, &timeout);
+
+        ssl = SSL_new(m->ctx);
+        if (!ssl)
+                return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
+                                       "DTLS: Failed to allocate memory for ssl: %s",
+                                       ERR_error_string(ERR_get_error(), NULL));
+
         SSL_set_bio(ssl, bio, bio);
         bio = NULL;
 
@@ -153,9 +156,6 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
                 } else
                         log_debug("DTLS: No certificates.");
         }
-
-        /* Set and activate timeouts */
-        BIO_ctrl(bio, BIO_CTRL_DGRAM_SET_RECV_TIMEOUT, 0, &timeout);
 
         m->ssl = TAKE_PTR(ssl);
         m->fd = TAKE_FD(fd);
