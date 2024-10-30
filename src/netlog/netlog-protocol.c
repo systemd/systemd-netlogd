@@ -150,7 +150,7 @@ int format_rfc5424(Manager *m,
         /* Eighth: [structured-data] */
         if (m->structured_data)
                 IOVEC_SET_STRING(iov[n++], m->structured_data);
-        else if (syslog_structured_data)
+        else if (m->syslog_structured_data && syslog_structured_data)
                 IOVEC_SET_STRING(iov[n++], syslog_structured_data);
         else
                 IOVEC_SET_STRING(iov[n++], RFC_5424_NILVALUE);
