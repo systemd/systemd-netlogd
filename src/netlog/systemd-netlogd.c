@@ -105,7 +105,11 @@ static int parse_argv(int argc, char *argv[]) {
 
                 case ARG_VERSION:
                         puts(PACKAGE_STRING);
-                        puts(SYSTEMD_FEATURES);
+#ifdef HAVE_OPENSSL
+                        puts("+OPENSSL");
+#else
+                        puts("-OPENSSL");
+#endif
                         return 0;
 
                 case ARG_CURSOR:
