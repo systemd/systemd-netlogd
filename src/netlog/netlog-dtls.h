@@ -2,7 +2,6 @@
 #pragma once
 
 #include <openssl/ssl.h>
-#include <openssl/bio.h>
 #include <stdbool.h>
 
 #include "socket-util.h"
@@ -13,9 +12,9 @@ typedef struct DTLSManager DTLSManager;
 
 struct DTLSManager {
         SSL_CTX *ctx;
-        BIO *bio;
         SSL *ssl;
 
+        char *pretty_address;
         int fd;
         bool connected;
 

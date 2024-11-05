@@ -1,7 +1,10 @@
 [Network]
 #Address=239.0.0.1:6000
 #Protocol=udp
+#TLSCertificateAuthMode=deny
 #LogFormat=rfc5424
+#Directory=
+#Namespace=
 #StructuredData=
 #UseSysLogStructuredData=no
 #UseSysLogMsgId=no
@@ -10,5 +13,5 @@
 #KeepAliveTimeSec=
 #KeepAliveIntervalSec=
 #KeepAliveProbes=
-#NoDelay=
+#NoDelay=no
 #SendBuffer=

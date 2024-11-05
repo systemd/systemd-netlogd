@@ -120,6 +120,8 @@ systemd_netlogd_sources = files('''
                         netlog/netlog-protocol.h
                         netlog/netlog-dtls.c
                         netlog/netlog-dtls.h
+                        netlog/netlog-ssl.c
+                        netlog/netlog-ssl.h
                         netlog/netlog-tls.c
                         netlog/netlog-tls.h
                         '''.split())
