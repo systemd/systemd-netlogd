@@ -73,6 +73,9 @@ systemd-netlogd reads configuration files named `/etc/systemd/netlogd.conf` and 
     TLSCertificateAuthMode=
         Specifies whether to validate the certificate. Takes one of no, allow, deny, warn. Defaults to 'deny' which rejects certificates failed to validate.
 
+    TLSServerCertificate=
+        Specify a custom certificate to validate the server against. Takes a path to a certificate file in PEM format.
+
     KeepAlive=
         Takes a boolean argument. If true, the TCP/IP stack will send a keep alive message after 2h (depending on the configuration of /proc/sys/net/ipv4/tcp_keepalive_time) for all TCP streams accepted on this socket. This controls the SO_KEEPALIVE socket option (see socket(7) and the TCP Keepalive HOWTO for details.) Defaults to false.
 
