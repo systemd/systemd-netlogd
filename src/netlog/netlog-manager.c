@@ -198,7 +198,7 @@ static int manager_read_journal_input(Manager *m) {
                                        message, hostname,
                                        pid,
                                        r >= 0 ? &tv : NULL,
-                                       m->structured_data ? structured_data : NULL,
+                                       structured_data,
                                        m->syslog_msgid ? msgid : NULL);
 }
 

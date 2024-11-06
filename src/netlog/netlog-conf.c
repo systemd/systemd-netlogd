@@ -216,5 +216,28 @@ int manager_parse_config_file(Manager *m) {
                 m->connection_retry_usec = DEFAULT_CONNECTION_RETRY_USEC;
         }
 
+        if (m->auth_mode != OPEN_SSL_CERTIFICATE_AUTH_MODE_DENY
+                && m->protocol != SYSLOG_TRANSMISSION_PROTOCOL_TLS
+                && m->protocol != SYSLOG_TRANSMISSION_PROTOCOL_DTLS)
+                log_warning("TLSCertificateAuthMode= set but unencrypted %s connection specified.", protocol_to_string(m->protocol));
+
+        if (m->dir && m->namespace)
+                log_warning("Ignoring Namespace= setting since Directory= is set.");
+
+        if (m->structured_data && m->syslog_structured_data)
+                log_warning("Ignoring UseSysLogStructuredData= since StructuredData= is set.");
+
+        if (timestamp_is_set(m->keep_alive_time) && !m->keep_alive)
+                log_warning("Ignoring KeepAliveTimeSec= since KeepAlive= is not set.");
+
+        if (m->keep_alive_interval > 0 && !m->keep_alive)
+                log_warning("Ignoring KeepAliveIntervalSec= since KeepAlive= is not set.");
+
+        if (m->keep_alive_cnt > 0 && !m->keep_alive)
+                log_warning("Ignoring KeepAliveProbes= since KeepAlive= is not set.");
+
+        if (m->send_buffer != 0 && (m->send_buffer < 4096 || m->send_buffer > 128 * 1024 * 1024))
+                log_warning("SendBuffer= set to an suspicious value of %zu.", m->send_buffer);
+
         return 0;
 }
