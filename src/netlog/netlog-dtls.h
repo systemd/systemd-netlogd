@@ -22,7 +22,7 @@ struct DTLSManager {
 };
 
 void dtls_manager_free(DTLSManager *m);
-int dtls_manager_init(OpenSSLCertificateAuthMode auth_mode, DTLSManager **ret);
+int dtls_manager_init(OpenSSLCertificateAuthMode auth_mode, const char *server_cert, DTLSManager **ret);
 
 int dtls_connect(DTLSManager *m, SocketAddress *addr);
 void dtls_disconnect(DTLSManager *m);

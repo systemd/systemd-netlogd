@@ -192,16 +192,28 @@ void dtls_manager_free(DTLSManager *m) {
         free(m);
 }
 
-int dtls_manager_init(OpenSSLCertificateAuthMode auth_mode, DTLSManager **ret) {
+int dtls_manager_init(OpenSSLCertificateAuthMode auth_mode, const char *server_cert, DTLSManager **ret) {
         _cleanup_(dtls_manager_freep) DTLSManager *m = NULL;
         _cleanup_(SSL_CTX_freep) SSL_CTX *ctx = NULL;
+        int r;
 
         ctx = SSL_CTX_new(DTLS_method());
         if (!ctx)
                 return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
                                        "DTLS: Failed to allocate memory for SSL CTX: %m");
 
-        SSL_CTX_set_default_verify_paths(ctx);
+        if (server_cert) {
+                r = SSL_CTX_load_verify_file(ctx, server_cert);
+                if (r != 1)
+                        return log_error_errno(SYNTHETIC_ERRNO(ENOTRECOVERABLE),"DTLS: Failed to load CA certificate from '%s': %s",
+                                               server_cert, ERR_error_string(ERR_get_error(), NULL));
+        } else {
+                r = SSL_CTX_set_default_verify_paths(ctx);
+                if (r != 1)
+                        return log_error_errno(SYNTHETIC_ERRNO(ENOTRECOVERABLE), "DTLS: Failed to load default CA certificates: %s",
+                                               ERR_error_string(ERR_get_error(), NULL));
+        }
+
         SSL_CTX_set_verify_depth(ctx, VERIFICATION_DEPTH + 1);
 
         m = new(DTLSManager, 1);

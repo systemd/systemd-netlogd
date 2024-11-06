@@ -599,6 +599,7 @@ void manager_free(Manager *m) {
 
         free(m->dtls);
         free(m->tls);
+        free(m->server_cert);
 
         free(m->server_name);
 

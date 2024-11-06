@@ -2,6 +2,7 @@
 #Address=239.0.0.1:6000
 #Protocol=udp
 #TLSCertificateAuthMode=deny
+#TLSServerCertificate=
 #LogFormat=rfc5424
 #Directory=
 #Namespace=

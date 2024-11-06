@@ -221,6 +221,11 @@ int manager_parse_config_file(Manager *m) {
                 && m->protocol != SYSLOG_TRANSMISSION_PROTOCOL_DTLS)
                 log_warning("TLSCertificateAuthMode= set but unencrypted %s connection specified.", protocol_to_string(m->protocol));
 
+        if (m->server_cert
+                && m->protocol != SYSLOG_TRANSMISSION_PROTOCOL_TLS
+                && m->protocol != SYSLOG_TRANSMISSION_PROTOCOL_DTLS)
+                log_warning("TLSServerCertificate= set but unencrypted %s connection specified.", protocol_to_string(m->protocol));
+
         if (m->dir && m->namespace)
                 log_warning("Ignoring Namespace= setting since Directory= is set.");
 
