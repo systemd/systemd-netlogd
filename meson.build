@@ -1,5 +1,5 @@
 project('systemd-netlogd', 'c',
-        version : '1.4.2',
+        version : '1.4.3',
         license : 'LGPL-2.1-or-later',
         default_options: [
                 'c_std=gnu11',
