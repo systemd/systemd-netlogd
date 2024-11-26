@@ -35,14 +35,14 @@ static const char *const protocol_table[_SYSLOG_TRANSMISSION_PROTOCOL_MAX] = {
         [SYSLOG_TRANSMISSION_PROTOCOL_TLS]  = "tls",
 };
 
-DEFINE_STRING_TABLE_LOOKUP(protocol, int);
+DEFINE_STRING_TABLE_LOOKUP(protocol, SysLogTransmissionProtocol);
 
 static const char *const log_format_table[_SYSLOG_TRANSMISSION_LOG_FORMAT_MAX] = {
         [SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424] = "rfc5424",
         [SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_3339] = "rfc3339",
 };
 
-DEFINE_STRING_TABLE_LOOKUP(log_format, int);
+DEFINE_STRING_TABLE_LOOKUP(log_format, SysLogTransmissionLogFormat);
 
 static const char *const syslog_facility_table[_SYSLOG_FACILITY_MAX] = {
         [SYSLOG_FACILITY_KERN]         = "kern",

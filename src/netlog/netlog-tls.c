@@ -17,14 +17,14 @@
 
 #include "netlog-ssl.h"
 
-static const char *const certificate_auth_mode_table[OPEN_SSL_CERTIFICATE_AUTH_MODE_MAX] = {
+static const char *const certificate_auth_mode_table[_OPEN_SSL_CERTIFICATE_AUTH_MODE_MAX] = {
         [OPEN_SSL_CERTIFICATE_AUTH_MODE_NONE]  = "no",
         [OPEN_SSL_CERTIFICATE_AUTH_MODE_ALLOW] = "allow",
         [OPEN_SSL_CERTIFICATE_AUTH_MODE_DENY]  = "deny",
         [OPEN_SSL_CERTIFICATE_AUTH_MODE_WARN]  = "warn",
 };
 
-DEFINE_STRING_TABLE_LOOKUP(certificate_auth_mode, int);
+DEFINE_STRING_TABLE_LOOKUP(certificate_auth_mode, OpenSSLCertificateAuthMode);
 
 static int tls_write(TLSManager *m, const char *buf, size_t count) {
         int r;

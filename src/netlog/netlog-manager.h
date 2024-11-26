@@ -166,11 +166,11 @@ int manager_push_to_network(Manager *m,
                             const char *syslog_structured_data,
                             const char *syslog_msgid);
 
-const char *protocol_to_string(int v) _const_;
-int protocol_from_string(const char *s) _pure_;
+const char *protocol_to_string(SysLogTransmissionProtocol v) _const_;
+SysLogTransmissionProtocol protocol_from_string(const char *s) _pure_;
 
-const char *log_format_to_string(int v) _const_;
-int log_format_from_string(const char *s) _pure_;
+const char *log_format_to_string(SysLogTransmissionLogFormat v) _const_;
+SysLogTransmissionLogFormat log_format_from_string(const char *s) _pure_;
 
 const char *syslog_facility_to_string(SysLogFacility v) _const_;
 SysLogFacility syslog_facility_from_string(const char *s) _pure_;
