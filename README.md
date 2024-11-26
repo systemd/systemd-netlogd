@@ -103,7 +103,10 @@ Optional settings
         A boolean. Specifies whether to extract SYSLOG_STRUCTURED_DATA= from journal. Defaults to false.
 
     UseSysLogMsgId=
-          A boolean. Specifies whether to extract SYSLOG_MSGID= from journal. Defaults to false.
+        A boolean. Specifies whether to extract SYSLOG_MSGID= from journal. Defaults to false.
+
+    ExcludeSyslogFacility=
+        A list of strings. Specifies the syslog facilities to skip forwarding. Possible values are: "kern", "user", "mail", "daemon", "auth", "syslog", "lpr", "news", "uucp", "cron", "authpriv", "ftp", "ntp", "security", "console", "solaris-cron", "local0", "local1", "local2", "local3", "local4", "local5", "local6" and "local7".
 
 **EXAMPLE**
 
@@ -146,7 +149,17 @@ UseSysLogStructuredData=yes
 UseSysLogMsgId=yes
 ```
 
-Example 5. TLS with certificate authentocation mode
+Example 5. Skipping messages with facility AUTH or AUTHPRIV
+
+``` toml
+[Network]
+Address=192.168.8.101:514
+#Protocol=udp
+LogFormat=rfc3339
+ExcludeSyslogFacility=auth authpriv
+```
+
+Example 6. TLS with certificate authentocation mode
 
 ``` toml
 [Network]
@@ -156,7 +169,7 @@ Protocol=tls
 TLSCertificateAuthMode=warn
 ```
 
-Example 6. DTLS with certificate authentocation mode
+Example 7. DTLS with certificate authentocation mode
 
 ``` toml
 [Network]

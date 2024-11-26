@@ -4,6 +4,7 @@
 
 #include "conf-parser.h"
 #include "def.h"
+#include "extract-word.h"
 #include "in-addr-util.h"
 #include "netlog-conf.h"
 #include "parse-util.h"
@@ -194,6 +195,48 @@ int config_parse_namespace(const char *unit,
                          return log_oom();
          }
 
+        return 0;
+}
+
+int config_parse_syslog_facility(const char *unit,
+                                 const char *filename,
+                                 unsigned line,
+                                 const char *section,
+                                 unsigned section_line,
+                                 const char *lvalue,
+                                 int ltype,
+                                 const char *rvalue,
+                                 void *data,
+                                 void *userdata) {
+        Manager *m = userdata;
+        uint32_t val = 0;
+        int r;
+
+        assert(filename);
+        assert(lvalue);
+        assert(rvalue);
+        assert(data);
+        assert(m);
+
+        for (const char *p = rvalue;;) {
+                _cleanup_free_ char *word = NULL;
+
+                r = extract_first_word(&p, &word, NULL, EXTRACT_QUOTES|EXTRACT_RELAX);
+                if (r < 0) {
+                        log_syntax(unit, LOG_WARNING, filename, line, r, "Failed to parse %s= specifier '%s', ignoring: %m", lvalue, rvalue);
+                        return 0;
+                }
+                if (r == 0)
+                        break;
+
+                r = syslog_facility_from_string(word);
+                if (r < 0) {
+                        log_syntax(unit, LOG_WARNING, filename, line, r, "Failed to parse syslog facility '%s', ignoring", word);
+                } else
+                        val |= UINT32_C(1) << r;
+        }
+
+        m->excluded_syslog_facilities = val;
         return 0;
 }
 

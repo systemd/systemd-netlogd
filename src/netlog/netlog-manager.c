@@ -44,6 +44,35 @@ static const char *const log_format_table[_SYSLOG_TRANSMISSION_LOG_FORMAT_MAX] =
 
 DEFINE_STRING_TABLE_LOOKUP(log_format, int);
 
+static const char *const syslog_facility_table[_SYSLOG_FACILITY_MAX] = {
+        [SYSLOG_FACILITY_KERN]         = "kern",
+        [SYSLOG_FACILITY_USER]         = "user",
+        [SYSLOG_FACILITY_MAIL]         = "mail",
+        [SYSLOG_FACILITY_DAEMON]       = "daemon",
+        [SYSLOG_FACILITY_AUTH]         = "auth",
+        [SYSLOG_FACILITY_SYSLOG]       = "syslog",
+        [SYSLOG_FACILITY_LPR]          = "lpr",
+        [SYSLOG_FACILITY_NEWS]         = "news",
+        [SYSLOG_FACILITY_UUCP]         = "uucp",
+        [SYSLOG_FACILITY_CRON]         = "cron",
+        [SYSLOG_FACILITY_AUTHPRIV]     = "authpriv",
+        [SYSLOG_FACILITY_FTP]          = "ftp",
+        [SYSLOG_FACILITY_NTP]          = "ntp",
+        [SYSLOG_FACILITY_SECURITY]     = "security",
+        [SYSLOG_FACILITY_CONSOLE]      = "console",
+        [SYSLOG_FACILITY_SOLARIS_CRON] = "solaris-cron",
+        [SYSLOG_FACILITY_LOCAL0]       = "local0",
+        [SYSLOG_FACILITY_LOCAL1]       = "local1",
+        [SYSLOG_FACILITY_LOCAL2]       = "local2",
+        [SYSLOG_FACILITY_LOCAL3]       = "local3",
+        [SYSLOG_FACILITY_LOCAL4]       = "local4",
+        [SYSLOG_FACILITY_LOCAL5]       = "local5",
+        [SYSLOG_FACILITY_LOCAL6]       = "local6",
+        [SYSLOG_FACILITY_LOCAL7]       = "local7",
+};
+
+DEFINE_STRING_TABLE_LOOKUP(syslog_facility, SysLogFacility);
+
 typedef struct ParseFieldVec {
         const char *field;
         size_t field_len;
@@ -180,6 +209,10 @@ static int manager_read_journal_input(Manager *m) {
                 r = safe_atou(facility, &fac);
                 if (r < 0)
                         log_debug("Failed to parse syslog facility: %s", facility);
+                else if (fac < _SYSLOG_FACILITY_MAX && ((UINT32_C(1) << fac) & m->excluded_syslog_facilities)) {
+                        log_debug("Skipping message with excluded syslog facility %s.", syslog_facility_to_string(fac));
+                        return 0;
+                }
 
                 if (fac >= LOG_NFACILITIES)
                         fac = JOURNAL_DEFAULT_FACILITY;
