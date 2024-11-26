@@ -121,7 +121,7 @@ static int manager_read_journal_input(Manager *m) {
                 structured_data_len = 0, msgid_len = 0, pid_len = 0;
         unsigned sev = JOURNAL_DEFAULT_SEVERITY;
         unsigned fac = JOURNAL_DEFAULT_FACILITY;
-        struct timeval tv;
+        struct timeval tv, *tvp = NULL;
         const void *data;
         usec_t realtime;
         size_t length;
@@ -169,8 +169,11 @@ static int manager_read_journal_input(Manager *m) {
         if (r < 0)
                 log_warning_errno(r, "Failed to rerieve realtime from journal: %m");
         else {
-                tv.tv_sec = realtime / USEC_PER_SEC;
-                tv.tv_usec = realtime % USEC_PER_SEC;
+                tv = (struct timeval) {
+                        .tv_sec = realtime / USEC_PER_SEC,
+                        .tv_usec = realtime % USEC_PER_SEC,
+                };
+                tvp = &tv;
         }
 
         if (facility) {
@@ -197,7 +200,7 @@ static int manager_read_journal_input(Manager *m) {
                                        identifier,
                                        message, hostname,
                                        pid,
-                                       r >= 0 ? &tv : NULL,
+                                       tvp,
                                        structured_data,
                                        m->syslog_msgid ? msgid : NULL);
 }
