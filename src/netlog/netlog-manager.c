@@ -73,6 +73,19 @@ static const char *const syslog_facility_table[_SYSLOG_FACILITY_MAX] = {
 
 DEFINE_STRING_TABLE_LOOKUP(syslog_facility, SysLogFacility);
 
+static const char *const syslog_level_table[_SYSLOG_LEVEL_MAX] = {
+        [SYSLOG_LEVEL_EMERGENCY]     = "emerg",
+        [SYSLOG_LEVEL_ALERT]         = "alert",
+        [SYSLOG_LEVEL_CRITICAL]      = "crit",
+        [SYSLOG_LEVEL_ERROR]         = "err",
+        [SYSLOG_LEVEL_WARNING]       = "warning",
+        [SYSLOG_LEVEL_NOTICE]        = "notice",
+        [SYSLOG_LEVEL_INFORMATIONAL] = "info",
+        [SYSLOG_LEVEL_DEBUG]         = "debug",
+};
+
+DEFINE_STRING_TABLE_LOOKUP(syslog_level, SysLogLevel);
+
 typedef struct ParseFieldVec {
         const char *field;
         size_t field_len;
@@ -222,6 +235,10 @@ static int manager_read_journal_input(Manager *m) {
                 r = safe_atou(priority, &sev);
                 if (r < 0)
                         log_debug("Failed to parse syslog priority: %s", priority);
+                else if (sev < _SYSLOG_LEVEL_MAX && ((UINT8_C(1) << sev) & m->excluded_syslog_levels)) {
+                        log_debug("Skipping message with excluded syslog level %s.", syslog_level_to_string(sev));
+                        return 0;
+                }
 
                 if (sev > LOG_DEBUG)
                         sev = JOURNAL_DEFAULT_SEVERITY;

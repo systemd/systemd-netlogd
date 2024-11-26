@@ -59,6 +59,20 @@ typedef enum SysLogFacility {
         _SYSLOG_FACILITY_INVALID     = -EINVAL,
 } SysLogFacility;
 
+/* RFC 5424 Section 6.2.1 */
+typedef enum SysLogLevel {
+        SYSLOG_LEVEL_EMERGENCY     = 0,
+        SYSLOG_LEVEL_ALERT         = 1,
+        SYSLOG_LEVEL_CRITICAL      = 2,
+        SYSLOG_LEVEL_ERROR         = 3,
+        SYSLOG_LEVEL_WARNING       = 4,
+        SYSLOG_LEVEL_NOTICE        = 5,
+        SYSLOG_LEVEL_INFORMATIONAL = 6,
+        SYSLOG_LEVEL_DEBUG         = 7,
+        _SYSLOG_LEVEL_MAX,
+        _SYSLOG_LEVEL_INVALID      = -EINVAL,
+} SysLogLevel;
+
 typedef struct Manager Manager;
 
 struct Manager {
@@ -89,6 +103,7 @@ struct Manager {
         char *server_name;
 
         uint32_t excluded_syslog_facilities;
+        uint8_t excluded_syslog_levels;
 
         /* journal  */
         int journal_watch_fd;
@@ -159,3 +174,6 @@ int log_format_from_string(const char *s) _pure_;
 
 const char *syslog_facility_to_string(SysLogFacility v) _const_;
 SysLogFacility syslog_facility_from_string(const char *s) _pure_;
+
+const char *syslog_level_to_string(SysLogLevel v) _const_;
+SysLogLevel syslog_level_from_string(const char *s) _pure_;
