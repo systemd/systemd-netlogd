@@ -32,3 +32,5 @@ Network.KeepAliveIntervalSec,     config_parse_sec,                       0, off
 Network.KeepAliveProbes,          config_parse_unsigned,                  0, offsetof(Manager, keep_alive_cnt)
 Network.NoDelay,                  config_parse_bool,                      0, offsetof(Manager, no_delay)
 Network.SendBuffer,               config_parse_iec_size,                  0, offsetof(Manager, send_buffer)
+Network.ExcludeSyslogFacility,    config_parse_syslog_facility,           0, offsetof(Manager, excluded_syslog_facilities)
+Network.ExcludeSyslogLevel,       config_parse_syslog_level,              0, offsetof(Manager, excluded_syslog_levels)

@@ -16,3 +16,5 @@
 #KeepAliveProbes=
 #NoDelay=no
 #SendBuffer=
+#ExcludeSyslogFacility=
+#ExcludeSyslogLevel=

@@ -29,6 +29,50 @@ typedef enum SysLogTransmissionLogFormat {
         _SYSLOG_TRANSMISSION_LOG_FORMAT_INVALID = -EINVAL,
 } SysLogTransmissionLogFormat;
 
+/* RFC 5424 Section 6.2.1 */
+typedef enum SysLogFacility {
+        SYSLOG_FACILITY_KERN         =  0,
+        SYSLOG_FACILITY_USER         =  1,
+        SYSLOG_FACILITY_MAIL         =  2,
+        SYSLOG_FACILITY_DAEMON       =  3,
+        SYSLOG_FACILITY_AUTH         =  4,
+        SYSLOG_FACILITY_SYSLOG       =  5,
+        SYSLOG_FACILITY_LPR          =  6,
+        SYSLOG_FACILITY_NEWS         =  7,
+        SYSLOG_FACILITY_UUCP         =  8,
+        SYSLOG_FACILITY_CRON         =  9,
+        SYSLOG_FACILITY_AUTHPRIV     = 10,
+        SYSLOG_FACILITY_FTP          = 11,
+        SYSLOG_FACILITY_NTP          = 12,
+        SYSLOG_FACILITY_SECURITY     = 13,
+        SYSLOG_FACILITY_CONSOLE      = 14,
+        SYSLOG_FACILITY_SOLARIS_CRON = 15,
+        SYSLOG_FACILITY_LOCAL0       = 16,
+        SYSLOG_FACILITY_LOCAL1       = 17,
+        SYSLOG_FACILITY_LOCAL2       = 18,
+        SYSLOG_FACILITY_LOCAL3       = 19,
+        SYSLOG_FACILITY_LOCAL4       = 20,
+        SYSLOG_FACILITY_LOCAL5       = 21,
+        SYSLOG_FACILITY_LOCAL6       = 22,
+        SYSLOG_FACILITY_LOCAL7       = 23,
+        _SYSLOG_FACILITY_MAX,
+        _SYSLOG_FACILITY_INVALID     = -EINVAL,
+} SysLogFacility;
+
+/* RFC 5424 Section 6.2.1 */
+typedef enum SysLogLevel {
+        SYSLOG_LEVEL_EMERGENCY     = 0,
+        SYSLOG_LEVEL_ALERT         = 1,
+        SYSLOG_LEVEL_CRITICAL      = 2,
+        SYSLOG_LEVEL_ERROR         = 3,
+        SYSLOG_LEVEL_WARNING       = 4,
+        SYSLOG_LEVEL_NOTICE        = 5,
+        SYSLOG_LEVEL_INFORMATIONAL = 6,
+        SYSLOG_LEVEL_DEBUG         = 7,
+        _SYSLOG_LEVEL_MAX,
+        _SYSLOG_LEVEL_INVALID      = -EINVAL,
+} SysLogLevel;
+
 typedef struct Manager Manager;
 
 struct Manager {
@@ -57,6 +101,9 @@ struct Manager {
         uint32_t port;
 
         char *server_name;
+
+        uint32_t excluded_syslog_facilities;
+        uint8_t excluded_syslog_levels;
 
         /* journal  */
         int journal_watch_fd;
@@ -119,8 +166,14 @@ int manager_push_to_network(Manager *m,
                             const char *syslog_structured_data,
                             const char *syslog_msgid);
 
-const char *protocol_to_string(int v) _const_;
-int protocol_from_string(const char *s) _pure_;
+const char *protocol_to_string(SysLogTransmissionProtocol v) _const_;
+SysLogTransmissionProtocol protocol_from_string(const char *s) _pure_;
 
-const char *log_format_to_string(int v) _const_;
-int log_format_from_string(const char *s) _pure_;
+const char *log_format_to_string(SysLogTransmissionLogFormat v) _const_;
+SysLogTransmissionLogFormat log_format_from_string(const char *s) _pure_;
+
+const char *syslog_facility_to_string(SysLogFacility v) _const_;
+SysLogFacility syslog_facility_from_string(const char *s) _pure_;
+
+const char *syslog_level_to_string(SysLogLevel v) _const_;
+SysLogLevel syslog_level_from_string(const char *s) _pure_;

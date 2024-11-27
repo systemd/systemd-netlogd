@@ -35,14 +35,56 @@ static const char *const protocol_table[_SYSLOG_TRANSMISSION_PROTOCOL_MAX] = {
         [SYSLOG_TRANSMISSION_PROTOCOL_TLS]  = "tls",
 };
 
-DEFINE_STRING_TABLE_LOOKUP(protocol, int);
+DEFINE_STRING_TABLE_LOOKUP(protocol, SysLogTransmissionProtocol);
 
 static const char *const log_format_table[_SYSLOG_TRANSMISSION_LOG_FORMAT_MAX] = {
         [SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424] = "rfc5424",
         [SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_3339] = "rfc3339",
 };
 
-DEFINE_STRING_TABLE_LOOKUP(log_format, int);
+DEFINE_STRING_TABLE_LOOKUP(log_format, SysLogTransmissionLogFormat);
+
+static const char *const syslog_facility_table[_SYSLOG_FACILITY_MAX] = {
+        [SYSLOG_FACILITY_KERN]         = "kern",
+        [SYSLOG_FACILITY_USER]         = "user",
+        [SYSLOG_FACILITY_MAIL]         = "mail",
+        [SYSLOG_FACILITY_DAEMON]       = "daemon",
+        [SYSLOG_FACILITY_AUTH]         = "auth",
+        [SYSLOG_FACILITY_SYSLOG]       = "syslog",
+        [SYSLOG_FACILITY_LPR]          = "lpr",
+        [SYSLOG_FACILITY_NEWS]         = "news",
+        [SYSLOG_FACILITY_UUCP]         = "uucp",
+        [SYSLOG_FACILITY_CRON]         = "cron",
+        [SYSLOG_FACILITY_AUTHPRIV]     = "authpriv",
+        [SYSLOG_FACILITY_FTP]          = "ftp",
+        [SYSLOG_FACILITY_NTP]          = "ntp",
+        [SYSLOG_FACILITY_SECURITY]     = "security",
+        [SYSLOG_FACILITY_CONSOLE]      = "console",
+        [SYSLOG_FACILITY_SOLARIS_CRON] = "solaris-cron",
+        [SYSLOG_FACILITY_LOCAL0]       = "local0",
+        [SYSLOG_FACILITY_LOCAL1]       = "local1",
+        [SYSLOG_FACILITY_LOCAL2]       = "local2",
+        [SYSLOG_FACILITY_LOCAL3]       = "local3",
+        [SYSLOG_FACILITY_LOCAL4]       = "local4",
+        [SYSLOG_FACILITY_LOCAL5]       = "local5",
+        [SYSLOG_FACILITY_LOCAL6]       = "local6",
+        [SYSLOG_FACILITY_LOCAL7]       = "local7",
+};
+
+DEFINE_STRING_TABLE_LOOKUP(syslog_facility, SysLogFacility);
+
+static const char *const syslog_level_table[_SYSLOG_LEVEL_MAX] = {
+        [SYSLOG_LEVEL_EMERGENCY]     = "emerg",
+        [SYSLOG_LEVEL_ALERT]         = "alert",
+        [SYSLOG_LEVEL_CRITICAL]      = "crit",
+        [SYSLOG_LEVEL_ERROR]         = "err",
+        [SYSLOG_LEVEL_WARNING]       = "warning",
+        [SYSLOG_LEVEL_NOTICE]        = "notice",
+        [SYSLOG_LEVEL_INFORMATIONAL] = "info",
+        [SYSLOG_LEVEL_DEBUG]         = "debug",
+};
+
+DEFINE_STRING_TABLE_LOOKUP(syslog_level, SysLogLevel);
 
 typedef struct ParseFieldVec {
         const char *field;
@@ -121,7 +163,7 @@ static int manager_read_journal_input(Manager *m) {
                 structured_data_len = 0, msgid_len = 0, pid_len = 0;
         unsigned sev = JOURNAL_DEFAULT_SEVERITY;
         unsigned fac = JOURNAL_DEFAULT_FACILITY;
-        struct timeval tv;
+        struct timeval tv, *tvp = NULL;
         const void *data;
         usec_t realtime;
         size_t length;
@@ -169,14 +211,21 @@ static int manager_read_journal_input(Manager *m) {
         if (r < 0)
                 log_warning_errno(r, "Failed to rerieve realtime from journal: %m");
         else {
-                tv.tv_sec = realtime / USEC_PER_SEC;
-                tv.tv_usec = realtime % USEC_PER_SEC;
+                tv = (struct timeval) {
+                        .tv_sec = realtime / USEC_PER_SEC,
+                        .tv_usec = realtime % USEC_PER_SEC,
+                };
+                tvp = &tv;
         }
 
         if (facility) {
                 r = safe_atou(facility, &fac);
                 if (r < 0)
                         log_debug("Failed to parse syslog facility: %s", facility);
+                else if (fac < _SYSLOG_FACILITY_MAX && ((UINT32_C(1) << fac) & m->excluded_syslog_facilities)) {
+                        log_debug("Skipping message with excluded syslog facility %s.", syslog_facility_to_string(fac));
+                        return 0;
+                }
 
                 if (fac >= LOG_NFACILITIES)
                         fac = JOURNAL_DEFAULT_FACILITY;
@@ -186,6 +235,10 @@ static int manager_read_journal_input(Manager *m) {
                 r = safe_atou(priority, &sev);
                 if (r < 0)
                         log_debug("Failed to parse syslog priority: %s", priority);
+                else if (sev < _SYSLOG_LEVEL_MAX && ((UINT8_C(1) << sev) & m->excluded_syslog_levels)) {
+                        log_debug("Skipping message with excluded syslog level %s.", syslog_level_to_string(sev));
+                        return 0;
+                }
 
                 if (sev > LOG_DEBUG)
                         sev = JOURNAL_DEFAULT_SEVERITY;
@@ -197,7 +250,7 @@ static int manager_read_journal_input(Manager *m) {
                                        identifier,
                                        message, hostname,
                                        pid,
-                                       r >= 0 ? &tv : NULL,
+                                       tvp,
                                        structured_data,
                                        m->syslog_msgid ? msgid : NULL);
 }
