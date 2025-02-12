@@ -69,7 +69,7 @@ void format_rfc3339_timestamp(const struct timeval *tv, char *header_time, size_
 
         /* add fractional part */
         if (tv) {
-                r = snprintf(header_time, header_size, ".%06ld", tv->tv_usec);
+                r = snprintf(header_time, header_size, ".%06lld", (long long)tv->tv_usec);
                 assert(r > 0 && (size_t)r < header_size);
                 header_time += r;
                 header_size -= r;
