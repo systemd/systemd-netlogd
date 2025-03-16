@@ -48,7 +48,6 @@ c_args = '''
         -Wwrite-strings
         -Wno-unused-parameter
         -Wno-missing-field-initializers
-        -Wno-unused-result
         -Werror=overflow
         -Werror=sign-compare
         -Wdate-time
