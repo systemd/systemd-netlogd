@@ -35,6 +35,7 @@ int undecchar(char c) {
 }
 
 char hexchar(int x) {
+        __attribute__ ((nonstring))
         static const char table[16] = "0123456789abcdef";
 
         return table[x & 15];
