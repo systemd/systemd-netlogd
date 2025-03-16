@@ -147,10 +147,10 @@ int tls_connect(TLSManager *m, SocketAddress *address) {
                 if (cert) {
                         _cleanup_(OPENSSL_freep) void *subject = NULL, *issuer = NULL;
 
-                        subject = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
+                        subject = X509_NAME_oneline(X509_get_subject_name(cert), NULL, 0);
                         log_debug("TLS: SSL Subject: %s", (char *) subject);
 
-                        issuer = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
+                        issuer = X509_NAME_oneline(X509_get_issuer_name(cert), NULL, 0);
                         log_debug("TLS: SSL Issuer: %s", (char *) issuer);
                 } else
                         log_debug("TLS: SSL No certificates.");

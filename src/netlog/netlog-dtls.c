@@ -148,10 +148,10 @@ int dtls_connect(DTLSManager *m, SocketAddress *address) {
                 if (cert) {
                         _cleanup_(OPENSSL_freep) void *subject = NULL, *issuer = NULL;
 
-                        subject = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
+                        subject = X509_NAME_oneline(X509_get_subject_name(cert), NULL, 0);
                         log_debug("DTLS: Subject: %s", (char *) subject);
 
-                        issuer = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
+                        issuer = X509_NAME_oneline(X509_get_issuer_name(cert), NULL, 0);
                         log_debug("DTLS: Issuer: %s", (char *) issuer);
                 } else
                         log_debug("DTLS: No certificates.");
