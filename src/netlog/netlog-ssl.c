@@ -9,7 +9,7 @@
 #include "netlog-dtls.h"
 #include "netlog-tls.h"
 
-static_assert(offsetof(TLSManager, auth_mode) == offsetof(DTLSManager, auth_mode));
+static_assert(offsetof(TLSManager, auth_mode) == offsetof(DTLSManager, auth_mode), "TLSManager and DTLSManager must be similar");
 
 /* inspired by SSL_set_verify(3) */
 int ssl_verify_certificate_validity(int preverify_ok, X509_STORE_CTX *store) {
