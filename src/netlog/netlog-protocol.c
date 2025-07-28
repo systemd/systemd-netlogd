@@ -163,7 +163,7 @@ int format_rfc5424(Manager *m,
         /* Last Optional newline message separator, if not implicitly terminated by end of UDP frame
          * De facto standard: separate messages by a newline
          */
-        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP)
+        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP || m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TLS)
                 IOVEC_SET_STRING(iov[n++], "\n");
 
         return protocol_send(m, iov, n);
@@ -232,7 +232,7 @@ int format_rfc3339(Manager *m,
         /* Last Optional newline message separator, if not implicitly terminated by end of UDP frame
          * De facto standard: separate messages by a newline
          */
-        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP)
+        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP || m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TLS)
                 IOVEC_SET_STRING(iov[n++], "\n");
 
         return protocol_send(m, iov, n);
