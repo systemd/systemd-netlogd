@@ -97,14 +97,22 @@ int format_rfc5424(Manager *m,
 
         char header_time[FORMAT_TIMESTAMP_MAX];
         char header_priority[sizeof("<   >1 ")];
-        struct iovec iov[14];
+        char header_msglen[1 + sizeof("99999 ")];
+        struct iovec iov[15];
         uint8_t makepri;
-        int n = 0, r;
+        int n = 0, r, msglen_idx;
+        size_t msglen_len;
 
         assert(m);
         assert(message);
 
         makepri = (facility << 3) + severity;
+
+        /* Zeroth: for RFC5425, the message length (octet count). Will be filled below */
+        if (m->log_format == SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5425) {
+            msglen_idx = n;
+            IOVEC_SET_STRING(iov[n++], "");
+        }
 
         /* First: priority field Second: Version  '<pri>version' */
         r = snprintf(header_priority, sizeof(header_priority), "<%i>%i ", makepri, RFC_5424_PROTOCOL);
@@ -161,10 +169,22 @@ int format_rfc5424(Manager *m,
         IOVEC_SET_STRING(iov[n++], message);
 
         /* Last Optional newline message separator, if not implicitly terminated by end of UDP frame
-         * De facto standard: separate messages by a newline
+         * De facto standard: separate messages by a newline (alternative is RFC 5425, with explicit
+         * lengths)
          */
-        if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP || m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TLS)
+        if (m->log_format == SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424
+            && (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP || m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TLS))
                 IOVEC_SET_STRING(iov[n++], "\n");
+
+        /* Finally, for RFC5425 format, compute the length field which goes at the start, before the
+         * message. This is what we left space for above. */
+        if (m->log_format == SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5425) {
+            msglen_len = snprintf(header_msglen, sizeof(header_msglen), "%zi ", IOVEC_TOTAL_SIZE(iov, n));
+            if (msglen_len >= sizeof(header_msglen))
+                return -EMSGSIZE;
+            iov[msglen_idx].iov_base = header_msglen;
+            iov[msglen_idx].iov_len = msglen_len;
+        }
 
         return protocol_send(m, iov, n);
 }

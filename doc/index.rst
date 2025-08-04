@@ -34,7 +34,7 @@ This will create a user systemd-journal-netlog
         Specifies whether to use udp, tcp, tls or dtls (Datagram Transport Layer Security) protocol. Defaults to udp.
 
 | ``LogFormat=``
-        Specifies whether to use RFC 5424 format or RFC 3339 format. Takes one of rfc5424 or rfc3339. Defaults to rfc5424.
+        Specifies whether to use RFC 5424, RFC 5425, or RFC 3339 format. Takes one of rfc5424, rfc5425, or rfc3339. Defaults to rfc5424. RFC 5425 is mainly useful for sending over TLS; it prepends a message length field to the RFC 5424 format.
 
 | ``Directory=``
         Takes a directory path. Specifies whether to operate on the specified journal directory DIR instead of the default runtime and system journal paths.

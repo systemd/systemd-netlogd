@@ -25,6 +25,7 @@ typedef enum SysLogTransmissionProtocol {
 typedef enum SysLogTransmissionLogFormat {
         SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424      = 1 << 0,
         SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_3339      = 1 << 1,
+        SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5425      = 1 << 2,
         _SYSLOG_TRANSMISSION_LOG_FORMAT_MAX,
         _SYSLOG_TRANSMISSION_LOG_FORMAT_INVALID = -EINVAL,
 } SysLogTransmissionLogFormat;

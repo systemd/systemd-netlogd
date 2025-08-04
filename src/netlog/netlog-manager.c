@@ -39,6 +39,7 @@ DEFINE_STRING_TABLE_LOOKUP(protocol, SysLogTransmissionProtocol);
 
 static const char *const log_format_table[_SYSLOG_TRANSMISSION_LOG_FORMAT_MAX] = {
         [SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424] = "rfc5424",
+        [SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5425] = "rfc5425",
         [SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_3339] = "rfc3339",
 };
 
