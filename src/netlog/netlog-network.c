@@ -112,7 +112,7 @@ int manager_push_to_network(Manager *m,
                         break;
         }
 
-        if (m->log_format == SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424)
+        if (m->log_format == SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424 || m->log_format == SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5425)
                r = format_rfc5424(m, severity, facility, identifier, message, hostname, pid, tv, syslog_structured_data, syslog_msgid);
         else
                r = format_rfc3339(m, severity, facility, identifier, message, hostname, pid, tv);
