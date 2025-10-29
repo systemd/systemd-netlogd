@@ -96,7 +96,7 @@ journalctl -u systemd-netlogd.service -f
 
 Manual test:
 ```bash
-sudo systemd-netlogd --debug
+SYSTEMD_LOG_LEVEL=debug /usr/lib/systemd-netlogd 
 ```
 
 ---
