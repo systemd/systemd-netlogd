@@ -125,8 +125,8 @@ Reload: `sudo systemctl reload systemd-netlogd.service`
 | `StructuredData=` | Custom SD-ID | None | `[app@12345]` |
 | `UseSysLogStructuredData=` | Extract from journal | `false` | `yes` |
 | `UseSysLogMsgId=` | Extract MSGID | `false` | `yes` |
-| `ExcludeSyslogFacility=` | Skip facilities | None | `auth,authpriv` |
-| `ExcludeSyslogLevel=` | Skip levels | None | `debug,info` |
+| `ExcludeSyslogFacility=` | Skip facilities | None | `auth authpriv` |
+| `ExcludeSyslogLevel=` | Skip levels | None | `debug info` |
 
 ---
 
@@ -167,7 +167,7 @@ UseSysLogMsgId=yes
 ```ini
 [Network]
 Address=192.168.1.100:514
-ExcludeSyslogFacility=auth,authpriv
+ExcludeSyslogFacility=auth authpriv
 ExcludeSyslogLevel=debug
 ```
 
