@@ -136,7 +136,7 @@ Options are in the ``[Network]`` section. Reload changes:
 +--------------------+----------+-------------+-------------------------------------------------------------+
 | ``UseSysLogMsgId=``| bool     | ``false``   | Extract ``SYSLOG_MSGID`` from journal.                      |
 +--------------------+----------+-------------+-------------------------------------------------------------+
-| ``ExcludeSyslogFacility=`` | list | –     | Skip facilities (e.g., ``auth,authpriv``).                  |
+| ``ExcludeSyslogFacility=`` | list | –     | Skip facilities (e.g., ``auth authpriv``).                  |
 +--------------------+----------+-------------+-------------------------------------------------------------+
 | ``ExcludeSyslogLevel=`` | list | –       | Skip levels (e.g., ``debug``).                              |
 +--------------------+----------+-------------+-------------------------------------------------------------+
@@ -214,7 +214,7 @@ TCP with Filtering
    [Network]
    Address=192.168.8.101:514
    Protocol=tcp
-   ExcludeSyslogFacility=auth,authpriv
+   ExcludeSyslogFacility=auth authpriv
    ExcludeSyslogLevel=debug
 
 Using Structured Data and Message IDs
