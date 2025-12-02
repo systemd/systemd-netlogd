@@ -275,4 +275,4 @@ Susant Sahani <ssahani@gmail.com>
 Colophon
 --------
 
-This page is part of systemd-netlogd (version 1.4.4, October 27, 2025).
+This page is part of systemd-netlogd (version 1.4.5, December 1, 2025).
