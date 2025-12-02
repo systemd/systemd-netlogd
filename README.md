@@ -2,7 +2,7 @@
 
 [![Build Status](https://github.com/systemd/systemd-netlogd/actions/workflows/ci.yml/badge.svg)](https://github.com/systemd/systemd-netlogd/actions)
 
-**`systemd-netlogd`** is a **lightweight, battle-tested daemon** that **forwards systemd journal logs to remote hosts** over the network using the **Syslog protocol (RFC 5424 & RFC 3339)**.  
+**`systemd-netlogd`** is a **lightweight, battle-tested daemon** that **forwards systemd journal logs to remote hosts** over the network using the **Syslog protocol (RFC 5424 & RFC 3339)**.
 It supports **unicast** and **multicast**, with **zero disk buffering** — perfect for **edge devices, servers, and cloud fleets**.
 
 ---
@@ -96,14 +96,14 @@ journalctl -u systemd-netlogd.service -f
 
 Manual test:
 ```bash
-SYSTEMD_LOG_LEVEL=debug /usr/lib/systemd-netlogd 
+SYSTEMD_LOG_LEVEL=debug /usr/lib/systemd-netlogd
 ```
 
 ---
 
 ## Configuration
 
-Config: `/etc/systemd/netlogd.conf`  
+Config: `/etc/systemd/netlogd.conf`
 Drop-ins: `/etc/systemd/netlogd.conf.d/*.conf` (INI format)
 
 Reload: `sudo systemctl reload systemd-netlogd.service`
@@ -256,10 +256,10 @@ See `CONTRIBUTING.md`
 
 ## License
 
-**LGPL-2.1-or-later** — same as systemd.  
+**LGPL-2.1-or-later** — same as systemd.
 See `LICENSE`.
 
 ---
 
-> **Questions?** Open an issue on GitHub!  
+> **Questions?** Open an issue on GitHub!
 > **Star this repo if you love centralized logging!**
