@@ -99,47 +99,29 @@ Options are in the ``[Network]`` section. Reload changes:
 
 .. tabularcolumns:: |p{3cm}|p{1.5cm}|p{1.5cm}|p{7cm}|
 
-+--------------------+----------+-------------+-------------------------------------------------------------+
-| Option             | Type     | Default     | Description                                                  |
-+====================+==========+=============+=============================================================+
-| ``Address=``       | string   | *(required)*| Destination (unicast ``IP:PORT`` or multicast ``GROUP:PORT``). See :manpage:`systemd.socket(5)`. |
-+--------------------+----------+-------------+-------------------------------------------------------------+
-| ``Protocol=``      | enum     | ``udp``     | ``udp``, ``tcp``, ``tls``, ``dtls``.                        |
-+--------------------+----------+-------------+-------------------------------------------------------------+
-| ``LogFormat=``     | enum     | ``rfc5424``| ``rfc5424``, ``rfc5425`` (TLS-friendly), ``rfc3339``.       |
-+--------------------+----------+-------------+-------------------------------------------------------------+
-| ``Directory=``     | path     | *system*    | Custom journal directory.                                    |
-+--------------------+----------+-------------+-------------------------------------------------------------+
-| ``Namespace=``     | string   | *default*   | Filter: ID, ``*`` (all), ``+ID`` (ID + default).            |
-+--------------------+----------+-------------+-------------------------------------------------------------+
-| ``ConnectionRetrySec=`` | time | ``30s`` | Reconnect delay (≥1s). See :manpage:`systemd.time(5)`.     |
-+--------------------+----------+-------------+-------------------------------------------------------------+
-| ``TLSCertificateAuthMode=`` | enum | ``no`` | ``no``, ``allow``, ``deny``, ``warn`` (validation modes). |
-+--------------------+----------+-------------+-------------------------------------------------------------+
-| ``TLSServerCertificate=`` | path | – | PEM CA/server cert for validation.                         |
-+--------------------+----------+-------------+-------------------------------------------------------------+
-| ``KeepAlive=``     | bool     | ``false``   | Enable TCP keepalives (``SO_KEEPALIVE``). See :manpage:`socket(7)`. |
-+--------------------+----------+-------------+-------------------------------------------------------------+
-| ``KeepAliveTimeSec=`` | sec | ``7200`` | Idle before probes (``TCP_KEEPIDLE``).                      |
-+--------------------+----------+-------------+-------------------------------------------------------------+
-| ``KeepAliveIntervalSec=`` | sec | ``75`` | Probe interval (``TCP_KEEPINTVL``).                         |
-+--------------------+----------+-------------+-------------------------------------------------------------+
-| ``KeepAliveProbes=`` | int  | ``9``     | Probes before close (``TCP_KEEPCNT``).                      |
-+--------------------+----------+-------------+-------------------------------------------------------------+
-| ``SendBuffer=``    | size     | *system*    | Send buffer (``SO_SNDBUF``; K/M/G suffixes).                |
-+--------------------+----------+-------------+-------------------------------------------------------------+
-| ``NoDelay=``       | bool     | ``false``   | Disable Nagle (``TCP_NODELAY``). See :manpage:`tcp(7)`.     |
-+--------------------+----------+-------------+-------------------------------------------------------------+
-| ``StructuredData=``| string   | –           | Fixed SD-ID (e.g., for Loggly).                              |
-+--------------------+----------+-------------+-------------------------------------------------------------+
-| ``UseSysLogStructuredData=`` | bool | ``false`` | Extract ``SYSLOG_STRUCTURED_DATA`` from journal.           |
-+--------------------+----------+-------------+-------------------------------------------------------------+
-| ``UseSysLogMsgId=``| bool     | ``false``   | Extract ``SYSLOG_MSGID`` from journal.                      |
-+--------------------+----------+-------------+-------------------------------------------------------------+
-| ``ExcludeSyslogFacility=`` | list | –     | Skip facilities (e.g., ``auth authpriv``).                  |
-+--------------------+----------+-------------+-------------------------------------------------------------+
-| ``ExcludeSyslogLevel=`` | list | –       | Skip levels (e.g., ``debug``).                              |
-+--------------------+----------+-------------+-------------------------------------------------------------+
+============================  ======  ============  ================================================================================================
+Option                        Type    Default       Description
+============================  ======  ============  ================================================================================================
+``Address=``                  string  *(required)*  Destination (unicast ``IP:PORT`` or multicast ``GROUP:PORT``). See :manpage:`systemd.socket(5)`.
+``Protocol=``                 enum    ``udp``       ``udp``, ``tcp``, ``tls``, ``dtls``.
+``LogFormat=``                enum    ``rfc5424``   ``rfc5424``, ``rfc5425`` (TLS-friendly), ``rfc3339``.
+``Directory=``                path    *system*      Custom journal directory.
+``Namespace=``                string  *default*     Filter: ID, ``*`` (all), ``+ID`` (ID + default).
+``ConnectionRetrySec=``       time    ``30s``       Reconnect delay (≥1s). See :manpage:`systemd.time(5)`.
+``TLSCertificateAuthMode=``   enum    ``no``        ``no``, ``allow``, ``deny``, ``warn`` (validation modes).
+``TLSServerCertificate=``     path    –             PEM CA/server cert for validation.
+``KeepAlive=``                bool    ``false``     Enable TCP keepalives (``SO_KEEPALIVE``). See :manpage:`socket(7)`.
+``KeepAliveTimeSec=``         sec     ``7200``      Idle before probes (``TCP_KEEPIDLE``).
+``KeepAliveIntervalSec=``     sec     ``75``        Probe interval (``TCP_KEEPINTVL``).
+``KeepAliveProbes=``          int     ``9``         Probes before close (``TCP_KEEPCNT``).
+``SendBuffer=``               size    *system*      Send buffer (``SO_SNDBUF``; K/M/G suffixes).
+``NoDelay=``                  bool    ``false``     Disable Nagle (``TCP_NODELAY``). See :manpage:`tcp(7)`.
+``StructuredData=``           string  –             Fixed SD-ID (e.g., for Loggly).
+``UseSysLogStructuredData=``  bool    ``false``     Extract ``SYSLOG_STRUCTURED_DATA`` from journal.
+``UseSysLogMsgId=``           bool    ``false``     Extract ``SYSLOG_MSGID`` from journal.
+``ExcludeSyslogFacility=``    list    –             Skip facilities (e.g., ``auth authpriv``).
+``ExcludeSyslogLevel=``       list    –             Skip levels (e.g., ``debug``).
+============================  ======  ============  ================================================================================================
 
 **Facilities**: ``kern``, ``user``, ``mail``, ``daemon``, ``auth``, ``syslog``, ``lpr``, ``news``, ``uucp``, ``cron``, ``authpriv``, ``ftp``, ``ntp``, ``security``, ``console``, ``solaris-cron``, ``local0``–``local7``.
 
@@ -157,7 +139,7 @@ UDP Multicast
    Address=239.0.0.1:6000
 
 Unicast UDP (RFC 3339)
-^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: ini
 
@@ -166,7 +148,7 @@ Unicast UDP (RFC 3339)
    LogFormat=rfc3339
 
 Custom Structured Data
-^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: ini
 
@@ -245,7 +227,7 @@ Files
 /etc/systemd/netlogd.conf
    Main configuration.
 
-/etc/systemd/netlogd.conf.d/*.conf
+/etc/systemd/netlogd.conf.d/\*.conf
    Drop-in snippets.
 
 /lib/systemd/system/systemd-netlogd.service
