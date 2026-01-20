@@ -81,6 +81,56 @@ void format_rfc3339_timestamp(const struct timeval *tv, char *header_time, size_
         assert(r > 0 && (size_t)r < header_size);
 }
 
+static void set_priority_version_field(int severity, int facility, char *header_priority, size_t size, struct iovec *iov, int *n) {
+        uint8_t makepri = (facility << 3) + severity;
+        int r;
+
+        r = snprintf(header_priority, size, "<%i>%i ", makepri, RFC_5424_PROTOCOL);
+        assert(r > 0 && (size_t)r < size);
+        IOVEC_SET_STRING(iov[(*n)++], header_priority);
+}
+
+static void set_timestamp_field(const struct timeval *tv, char *header_time, size_t size, struct iovec *iov, int *n) {
+        format_rfc3339_timestamp(tv, header_time, size);
+        IOVEC_SET_STRING(iov[(*n)++], header_time);
+}
+
+static void set_string_field_with_separator(const char *value, struct iovec *iov, int *n) {
+        if (value)
+                IOVEC_SET_STRING(iov[(*n)++], value);
+        else
+                IOVEC_SET_STRING(iov[(*n)++], RFC_5424_NILVALUE);
+
+        IOVEC_SET_STRING(iov[(*n)++], " ");
+}
+
+static void set_structured_data_field(Manager *m, const char *syslog_structured_data, struct iovec *iov, int *n) {
+        if (m->structured_data)
+                IOVEC_SET_STRING(iov[(*n)++], m->structured_data);
+        else if (m->syslog_structured_data && syslog_structured_data)
+                IOVEC_SET_STRING(iov[(*n)++], syslog_structured_data);
+        else
+                IOVEC_SET_STRING(iov[(*n)++], RFC_5424_NILVALUE);
+
+        IOVEC_SET_STRING(iov[(*n)++], " ");
+}
+
+static int set_message_length_field(Manager *m, char *header_msglen, size_t size, struct iovec *iov, int n, int msglen_idx) {
+        size_t msglen_len;
+
+        if (m->log_format != SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5425)
+                return 0;
+
+        msglen_len = snprintf(header_msglen, size, "%zi ", IOVEC_TOTAL_SIZE(iov, n));
+        if (msglen_len >= size)
+                return -EMSGSIZE;
+
+        iov[msglen_idx].iov_base = header_msglen;
+        iov[msglen_idx].iov_len = msglen_len;
+
+        return 0;
+}
+
 /* The Syslog Protocol RFC5424 format :
  * <pri>version sp timestamp sp hostname sp app-name sp procid sp msgid sp [sd-id]s sp msg
  */
@@ -99,94 +149,49 @@ int format_rfc5424(Manager *m,
         char header_priority[sizeof("<   >1 ")];
         char header_msglen[1 + sizeof("99999 ")];
         struct iovec iov[15];
-        uint8_t makepri;
-        int n = 0, r, msglen_idx;
-        size_t msglen_len;
+        int n = 0, msglen_idx = 0, r;
 
         assert(m);
         assert(message);
 
-        makepri = (facility << 3) + severity;
-
-        /* Zeroth: for RFC5425, the message length (octet count). Will be filled below */
+        /* Reserve space for RFC5425 message length (will be filled at the end) */
         if (m->log_format == SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5425) {
-            msglen_idx = n;
-            IOVEC_SET_STRING(iov[n++], "");
+                msglen_idx = n;
+                IOVEC_SET_STRING(iov[n++], "");
         }
 
-        /* First: priority field Second: Version  '<pri>version' */
-        r = snprintf(header_priority, sizeof(header_priority), "<%i>%i ", makepri, RFC_5424_PROTOCOL);
-        assert(r > 0 && (size_t)r < sizeof(header_priority));
-        IOVEC_SET_STRING(iov[n++], header_priority);
+        /* Build RFC5424 message components */
+        set_priority_version_field(severity, facility, header_priority, sizeof(header_priority), iov, &n);
+        set_timestamp_field(tv, header_time, sizeof(header_time), iov, &n);
+        set_string_field_with_separator(hostname, iov, &n);
+        set_string_field_with_separator(identifier, iov, &n);
+        set_string_field_with_separator(pid, iov, &n);
+        set_string_field_with_separator(syslog_msgid, iov, &n);
+        set_structured_data_field(m, syslog_structured_data, iov, &n);
 
-        /* Third: timestamp */
-        format_rfc3339_timestamp(tv, header_time, sizeof(header_time));
-        IOVEC_SET_STRING(iov[n++], header_time);
-
-        /* Fourth: hostname */
-        if (hostname)
-                IOVEC_SET_STRING(iov[n++], hostname);
-        else
-                IOVEC_SET_STRING(iov[n++], RFC_5424_NILVALUE);
-
-        IOVEC_SET_STRING(iov[n++], " ");
-
-        /* Fifth: identifier */
-        if (identifier)
-                IOVEC_SET_STRING(iov[n++], identifier);
-        else
-                IOVEC_SET_STRING(iov[n++], RFC_5424_NILVALUE);
-
-        IOVEC_SET_STRING(iov[n++], " ");
-
-        /* Sixth: procid */
-        if (pid)
-                IOVEC_SET_STRING(iov[n++], pid);
-        else
-                IOVEC_SET_STRING(iov[n++], RFC_5424_NILVALUE);
-
-        IOVEC_SET_STRING(iov[n++], " ");
-
-        /* Seventh: msgid */
-        if (syslog_msgid)
-                IOVEC_SET_STRING(iov[n++], syslog_msgid);
-        else
-                IOVEC_SET_STRING(iov[n++], RFC_5424_NILVALUE);
-
-        IOVEC_SET_STRING(iov[n++], " ");
-
-        /* Eighth: [structured-data] */
-        if (m->structured_data)
-                IOVEC_SET_STRING(iov[n++], m->structured_data);
-        else if (m->syslog_structured_data && syslog_structured_data)
-                IOVEC_SET_STRING(iov[n++], syslog_structured_data);
-        else
-                IOVEC_SET_STRING(iov[n++], RFC_5424_NILVALUE);
-
-        IOVEC_SET_STRING(iov[n++], " ");
-
-        /* Ninth: message */
+        /* Add message payload */
         IOVEC_SET_STRING(iov[n++], message);
 
-        /* Last Optional newline message separator, if not implicitly terminated by end of UDP frame
-         * De facto standard: separate messages by a newline (alternative is RFC 5425, with explicit
-         * lengths)
-         */
-        if (m->log_format == SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424
-            && (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP || m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TLS))
+        /* Add newline separator for TCP/TLS (not needed for UDP) */
+        if (m->log_format == SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424 &&
+            (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP || m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TLS))
                 IOVEC_SET_STRING(iov[n++], "\n");
 
-        /* Finally, for RFC5425 format, compute the length field which goes at the start, before the
-         * message. This is what we left space for above. */
-        if (m->log_format == SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5425) {
-            msglen_len = snprintf(header_msglen, sizeof(header_msglen), "%zi ", IOVEC_TOTAL_SIZE(iov, n));
-            if (msglen_len >= sizeof(header_msglen))
-                return -EMSGSIZE;
-            iov[msglen_idx].iov_base = header_msglen;
-            iov[msglen_idx].iov_len = msglen_len;
-        }
+        /* Compute message length for RFC5425 framing */
+        r = set_message_length_field(m, header_msglen, sizeof(header_msglen), iov, n, msglen_idx);
+        if (r < 0)
+                return r;
 
         return protocol_send(m, iov, n);
+}
+
+static void set_priority_field(int severity, int facility, char *header_priority, size_t size, struct iovec *iov, int *n) {
+        uint8_t makepri = (facility << 3) + severity;
+        int r;
+
+        r = snprintf(header_priority, size, "<%i>", makepri);
+        assert(r > 0 && (size_t)r < size);
+        IOVEC_SET_STRING(iov[(*n)++], header_priority);
 }
 
 int format_rfc3339(Manager *m,
@@ -201,28 +206,16 @@ int format_rfc3339(Manager *m,
         char header_priority[sizeof("<   >1 ")];
         char header_time[FORMAT_TIMESTAMP_MAX];
         struct iovec iov[14];
-        uint8_t makepri;
-        int n = 0, r;
+        int n = 0;
 
         assert(m);
         assert(message);
 
-        makepri = (facility << 3) + severity;
+        /* RFC3339 format: <pri>timestamp hostname identifier[pid]: message */
+        set_priority_field(severity, facility, header_priority, sizeof(header_priority), iov, &n);
+        set_timestamp_field(tv, header_time, sizeof(header_time), iov, &n);
 
-        /* rfc3339
-         * <35>Oct 12 22:14:15 client_machine su: 'su root' failed for joe on /dev/pts/2
-         */
-
-        /* First: priority field '<pri>' */
-        r = snprintf(header_priority, sizeof(header_priority), "<%i>", makepri);
-        assert(r > 0 && (size_t)r < sizeof(header_priority));
-        IOVEC_SET_STRING(iov[n++], header_priority);
-
-        /* Third: timestamp */
-        format_rfc3339_timestamp(tv, header_time, sizeof(header_time));
-        IOVEC_SET_STRING(iov[n++], header_time);
-
-        /* Fourth: hostname */
+        /* Hostname */
         if (hostname)
                 IOVEC_SET_STRING(iov[n++], hostname);
         else
@@ -230,7 +223,7 @@ int format_rfc3339(Manager *m,
 
         IOVEC_SET_STRING(iov[n++], " ");
 
-        /* Fifth: identifier */
+        /* Identifier[pid]: */
         if (identifier)
                 IOVEC_SET_STRING(iov[n++], identifier);
         else
@@ -238,7 +231,6 @@ int format_rfc3339(Manager *m,
 
         IOVEC_SET_STRING(iov[n++], "[");
 
-        /* Sixth: procid */
         if (pid)
                 IOVEC_SET_STRING(iov[n++], pid);
         else
@@ -246,12 +238,10 @@ int format_rfc3339(Manager *m,
 
         IOVEC_SET_STRING(iov[n++], "]: ");
 
-        /* Ninth: message */
+        /* Message payload */
         IOVEC_SET_STRING(iov[n++], message);
 
-        /* Last Optional newline message separator, if not implicitly terminated by end of UDP frame
-         * De facto standard: separate messages by a newline
-         */
+        /* Add newline separator for TCP/TLS (not needed for UDP) */
         if (m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TCP || m->protocol == SYSLOG_TRANSMISSION_PROTOCOL_TLS)
                 IOVEC_SET_STRING(iov[n++], "\n");
 

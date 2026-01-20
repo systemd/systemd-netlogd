@@ -88,37 +88,30 @@ static int parse_fieldv(
         return 0;
 }
 
-static int journal_read_input(Manager *m) {
-        _cleanup_free_ char *facility = NULL, *identifier = NULL, *priority = NULL, *message = NULL, *pid = NULL,
-                *hostname = NULL, *structured_data = NULL, *msgid = NULL, *cursor = NULL;
-        size_t hostname_len = 0, identifier_len = 0, message_len = 0, priority_len = 0, facility_len = 0,
-                structured_data_len = 0, msgid_len = 0, pid_len = 0;
-        unsigned sev = JOURNAL_DEFAULT_SEVERITY;
-        unsigned fac = JOURNAL_DEFAULT_FACILITY;
-        struct timeval tv, *tvp = NULL;
+static int parse_journal_fields(Manager *m,
+                                char **message,
+                                char **identifier,
+                                char **hostname,
+                                char **pid,
+                                char **facility,
+                                char **priority,
+                                char **structured_data,
+                                char **msgid) {
         const void *data;
-        usec_t realtime;
         size_t length;
         int r;
+        size_t hostname_len = 0, identifier_len = 0, message_len = 0, priority_len = 0, facility_len = 0,
+                structured_data_len = 0, msgid_len = 0, pid_len = 0;
         const ParseFieldVec fields[] = {
-                PARSE_FIELD_VEC_ENTRY("_PID=",                        &pid,               &pid_len              ),
-                PARSE_FIELD_VEC_ENTRY("MESSAGE=",                     &message,           &message_len          ),
-                PARSE_FIELD_VEC_ENTRY("PRIORITY=",                    &priority,          &priority_len         ),
-                PARSE_FIELD_VEC_ENTRY("_HOSTNAME=",                   &hostname,          &hostname_len         ),
-                PARSE_FIELD_VEC_ENTRY("SYSLOG_FACILITY=",             &facility,          &facility_len         ),
-                PARSE_FIELD_VEC_ENTRY("SYSLOG_IDENTIFIER=",           &identifier,        &identifier_len       ),
-                PARSE_FIELD_VEC_ENTRY("SYSLOG_STRUCTURED_DATA=",      &structured_data,   &structured_data_len  ),
-                PARSE_FIELD_VEC_ENTRY("SYSLOG_MSGID",                 &msgid,             &msgid_len            ),
+                PARSE_FIELD_VEC_ENTRY("_PID=",                        pid,               &pid_len              ),
+                PARSE_FIELD_VEC_ENTRY("MESSAGE=",                     message,           &message_len          ),
+                PARSE_FIELD_VEC_ENTRY("PRIORITY=",                    priority,          &priority_len         ),
+                PARSE_FIELD_VEC_ENTRY("_HOSTNAME=",                   hostname,          &hostname_len         ),
+                PARSE_FIELD_VEC_ENTRY("SYSLOG_FACILITY=",             facility,          &facility_len         ),
+                PARSE_FIELD_VEC_ENTRY("SYSLOG_IDENTIFIER=",           identifier,        &identifier_len       ),
+                PARSE_FIELD_VEC_ENTRY("SYSLOG_STRUCTURED_DATA=",      structured_data,   &structured_data_len  ),
+                PARSE_FIELD_VEC_ENTRY("SYSLOG_MSGID",                 msgid,             &msgid_len            ),
         };
-
-        assert(m);
-        assert(m->journal);
-
-        r = sd_journal_get_cursor(m->journal, &cursor);
-        if (r < 0)
-                return log_error_errno(r, "Failed to get cursor: %m");
-
-        log_debug("Reading from journal cursor=%s", cursor);
 
         JOURNAL_FOREACH_DATA_RETVAL(m->journal, data, length, r) {
                 r = parse_fieldv(data, length, fields, ELEMENTSOF(fields));
@@ -130,14 +123,90 @@ static int journal_read_input(Manager *m) {
                 log_debug_errno(r, "Skipping message we can't read: %m");
                 return 0;
         }
+
+        return r;
+}
+
+static int parse_syslog_severity(Manager *m, const char *priority, unsigned *sev) {
+        int r;
+
+        assert(sev);
+
+        if (!priority)
+                return 0;
+
+        r = safe_atou(priority, sev);
+        if (r < 0) {
+                log_debug("Failed to parse syslog priority: %s", priority);
+                return r;
+        }
+
+        if (*sev < _SYSLOG_LEVEL_MAX && ((UINT8_C(1) << *sev) & m->excluded_syslog_levels)) {
+                log_debug("Skipping message with excluded syslog level %s.", syslog_level_to_string(*sev));
+                return 1; /* filtered */
+        }
+
+        if (*sev > LOG_DEBUG)
+                *sev = JOURNAL_DEFAULT_SEVERITY;
+
+        return 0;
+}
+
+static int parse_syslog_facility(Manager *m, const char *facility, unsigned *fac) {
+        int r;
+
+        assert(fac);
+
+        if (!facility)
+                return 0;
+
+        r = safe_atou(facility, fac);
+        if (r < 0) {
+                log_debug("Failed to parse syslog facility: %s", facility);
+                return r;
+        }
+
+        if (*fac < _SYSLOG_FACILITY_MAX && ((UINT32_C(1) << *fac) & m->excluded_syslog_facilities)) {
+                log_debug("Skipping message with excluded syslog facility %s.", syslog_facility_to_string(*fac));
+                return 1; /* filtered */
+        }
+
+        if (*fac >= LOG_NFACILITIES)
+                *fac = JOURNAL_DEFAULT_FACILITY;
+
+        return 0;
+}
+
+static int journal_read_input(Manager *m) {
+        _cleanup_free_ char *facility = NULL, *identifier = NULL, *priority = NULL, *message = NULL, *pid = NULL,
+                *hostname = NULL, *structured_data = NULL, *msgid = NULL, *cursor = NULL;
+        unsigned sev = JOURNAL_DEFAULT_SEVERITY;
+        unsigned fac = JOURNAL_DEFAULT_FACILITY;
+        struct timeval tv, *tvp = NULL;
+        usec_t realtime;
+        int r;
+
+        assert(m);
+        assert(m->journal);
+
+        r = sd_journal_get_cursor(m->journal, &cursor);
+        if (r < 0)
+                return log_error_errno(r, "Failed to get cursor: %m");
+
+        log_debug("Reading from journal cursor=%s", cursor);
+
+        r = parse_journal_fields(m, &message, &identifier, &hostname, &pid, &facility, &priority, &structured_data, &msgid);
         if (r < 0)
                 return log_error_errno(r, "Failed to get journal fields: %m");
+        if (r == 0)
+                return 0;
 
         if (!message) {
                 log_debug("Skipping message without MESSAGE= field.");
                 return 0;
-        } else
-                log_debug("Received from journal MESSAGE='%s'", message);
+        }
+
+        log_debug("Received from journal MESSAGE='%s'", message);
 
         r = sd_journal_get_realtime_usec(m->journal, &realtime);
         if (r < 0)
@@ -150,31 +219,13 @@ static int journal_read_input(Manager *m) {
                 tvp = &tv;
         }
 
-        if (facility) {
-                r = safe_atou(facility, &fac);
-                if (r < 0)
-                        log_debug("Failed to parse syslog facility: %s", facility);
-                else if (fac < _SYSLOG_FACILITY_MAX && ((UINT32_C(1) << fac) & m->excluded_syslog_facilities)) {
-                        log_debug("Skipping message with excluded syslog facility %s.", syslog_facility_to_string(fac));
-                        return 0;
-                }
+        r = parse_syslog_facility(m, facility, &fac);
+        if (r > 0) /* filtered */
+                return 0;
 
-                if (fac >= LOG_NFACILITIES)
-                        fac = JOURNAL_DEFAULT_FACILITY;
-        }
-
-        if (priority) {
-                r = safe_atou(priority, &sev);
-                if (r < 0)
-                        log_debug("Failed to parse syslog priority: %s", priority);
-                else if (sev < _SYSLOG_LEVEL_MAX && ((UINT8_C(1) << sev) & m->excluded_syslog_levels)) {
-                        log_debug("Skipping message with excluded syslog level %s.", syslog_level_to_string(sev));
-                        return 0;
-                }
-
-                if (sev > LOG_DEBUG)
-                        sev = JOURNAL_DEFAULT_SEVERITY;
-        }
+        r = parse_syslog_severity(m, priority, &sev);
+        if (r > 0) /* filtered */
+                return 0;
 
         return manager_push_to_network(m,
                                        sev,

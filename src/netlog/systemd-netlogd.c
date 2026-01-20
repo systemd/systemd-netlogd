@@ -145,17 +145,69 @@ static int parse_argv(int argc, char *argv[]) {
         return 1;
 }
 
-int main(int argc, char **argv) {
-        _cleanup_(manager_freep) Manager *m = NULL;
-        const char *user = "systemd-journal-netlog";
-        uid_t uid;
-        gid_t gid;
-        int r;
-
+static void initialize_logging(void) {
         log_show_color(true);
         log_set_target(LOG_TARGET_AUTO);
         log_parse_environment();
         log_open();
+}
+
+static int resolve_user_credentials(uid_t *uid, gid_t *gid) {
+        const char *user = "systemd-journal-netlog";
+        int r;
+
+        r = get_user_creds(&user, uid, gid, NULL, NULL);
+        if (r < 0)
+                return log_error_errno(r, "Cannot resolve user name %s: %m", user);
+
+        return 0;
+}
+
+static int initialize_ssl_manager(Manager *m) {
+        int r = 0;
+
+        switch (m->protocol) {
+                case SYSLOG_TRANSMISSION_PROTOCOL_DTLS:
+                        r = dtls_manager_init(m->auth_mode, m->server_cert, &m->dtls);
+                        break;
+                case SYSLOG_TRANSMISSION_PROTOCOL_TLS:
+                        r = tls_manager_init(m->auth_mode, m->server_cert, &m->tls);
+                        break;
+                default:
+                        break;
+        }
+
+        return r;
+}
+
+static int run_event_loop(Manager *m) {
+        int r;
+
+        log_debug("%s running as pid "PID_FMT, program_invocation_short_name, getpid());
+
+        sd_notify(false,
+                  "READY=1\n"
+                  "STATUS=Processing input...");
+
+        if (network_is_online())
+               manager_connect(m);
+
+        r = sd_event_loop(m->event);
+        if (r < 0)
+                return log_error_errno(r, "Failed to run event loop: %m");
+
+        sd_event_get_exit_code(m->event, &r);
+
+        return r;
+}
+
+int main(int argc, char **argv) {
+        _cleanup_(manager_freep) Manager *m = NULL;
+        uid_t uid;
+        gid_t gid;
+        int r;
+
+        initialize_logging();
 
         r = parse_argv(argc, argv);
         if (r <= 0)
@@ -163,11 +215,9 @@ int main(int argc, char **argv) {
 
         umask(0022);
 
-        r = get_user_creds(&user, &uid, &gid, NULL, NULL);
-        if (r < 0) {
-                log_error_errno(r, "Cannot resolve user name %s: %m", user);
+        r = resolve_user_credentials(&uid, &gid);
+        if (r < 0)
                 goto finish;
-        }
 
         r = manager_new(arg_save_state, arg_cursor, &m);
         if (r < 0) {
@@ -181,19 +231,9 @@ int main(int argc, char **argv) {
                 goto finish;
         }
 
-        switch (m->protocol) {
-                case SYSLOG_TRANSMISSION_PROTOCOL_DTLS:
-                        r = dtls_manager_init(m->auth_mode, m->server_cert, &m->dtls);
-                        break;
-                case SYSLOG_TRANSMISSION_PROTOCOL_TLS:
-                        r = tls_manager_init(m->auth_mode, m->server_cert, &m->tls);
-                        break;
-                default:
-                        break;
-        }
-
+        r = initialize_ssl_manager(m);
         if (r < 0)
-                return r;
+                goto finish;
 
         r = setup_cursor_state_file(m, uid, gid);
         if (r < 0)
@@ -206,23 +246,7 @@ int main(int argc, char **argv) {
         if (r < 0)
                 goto finish;
 
-        log_debug("%s running as pid "PID_FMT,
-                  program_invocation_short_name, getpid());
-
-        sd_notify(false,
-                  "READY=1\n"
-                  "STATUS=Processing input...");
-
-        if (network_is_online())
-               manager_connect(m);
-
-        r = sd_event_loop(m->event);
-        if (r < 0) {
-                log_error_errno(r, "Failed to run event loop: %m");
-                goto finish;
-        }
-
-        sd_event_get_exit_code(m->event, &r);
+        r = run_event_loop(m);
 
  cleanup:
         sd_notify(false,
