@@ -245,12 +245,47 @@ gcc tag.c -lsystemd -o tag && ./tag
 
 ## Contributing
 
-1. Fork it
-2. Create your feature branch
-3. Commit with clear messages
-4. Open a PR!
+We welcome contributions! Please see our comprehensive contribution guide:
 
-See `CONTRIBUTING.md`
+📖 **[CONTRIBUTING.md](CONTRIBUTING.md)** - Development setup, coding standards, and PR guidelines
+
+Quick start:
+1. Fork the repository
+2. Create your feature branch
+3. Add tests for new functionality
+4. Submit a pull request
+
+---
+
+## Documentation
+
+Comprehensive documentation is available:
+
+| Document | Description |
+|----------|-------------|
+| **[README.md](README.md)** | This file - Quick start and configuration guide |
+| **[ARCHITECTURE.md](ARCHITECTURE.md)** | Internal architecture and design decisions |
+| **[CONTRIBUTING.md](CONTRIBUTING.md)** | Development setup and contribution guidelines |
+| **[TESTING.md](TESTING.md)** | Testing guide with examples |
+| **[FAQ.md](FAQ.md)** | Frequently asked questions |
+| **[examples/](examples/)** | Sample configuration files for common scenarios |
+
+---
+
+## Configuration Examples
+
+See the [examples/](examples/) directory for ready-to-use configurations:
+
+- **[basic-udp.conf](examples/basic-udp.conf)** - Simple UDP multicast
+- **[basic-tcp.conf](examples/basic-tcp.conf)** - Reliable TCP delivery
+- **[tls-secure.conf](examples/tls-secure.conf)** - Encrypted TLS with certificate validation
+- **[dtls-encrypted.conf](examples/dtls-encrypted.conf)** - Encrypted DTLS datagrams
+- **[cloud-papertrail.conf](examples/cloud-papertrail.conf)** - Papertrail cloud service
+- **[cloud-loggly.conf](examples/cloud-loggly.conf)** - Loggly cloud service
+- **[filtering.conf](examples/filtering.conf)** - Filter sensitive logs
+- **[structured-data.conf](examples/structured-data.conf)** - Use structured data
+- **[high-performance.conf](examples/high-performance.conf)** - Optimized for high volume
+- **[development.conf](examples/development.conf)** - Development/testing setup
 
 ---
 
@@ -261,5 +296,11 @@ See `LICENSE`.
 
 ---
 
-> **Questions?** Open an issue on GitHub!
-> **Star this repo if you love centralized logging!**
+## Getting Help
+
+- 📖 **[FAQ](FAQ.md)** - Frequently asked questions
+- 🐛 **[Issues](https://github.com/systemd/systemd-netlogd/issues)** - Report bugs or request features
+- 💬 **[Discussions](https://github.com/systemd/systemd-netlogd/discussions)** - Community Q&A
+- 📚 **[Documentation](ARCHITECTURE.md)** - Deep dive into internals
+
+> **Star this repo if you find it useful!**
