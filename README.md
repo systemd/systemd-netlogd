@@ -1,160 +1,285 @@
-# systemd-netlogd 🚀
+# systemd-netlogd
 
 [![Build Status](https://github.com/systemd/systemd-netlogd/actions/workflows/ci.yml/badge.svg)](https://github.com/systemd/systemd-netlogd/actions)
+[![License: LGPL v2.1+](https://img.shields.io/badge/License-LGPL%20v2.1+-blue.svg)](https://www.gnu.org/licenses/lgpl-2.1)
+[![Version](https://img.shields.io/badge/version-1.4.5-green.svg)](https://github.com/systemd/systemd-netlogd/releases)
 
-**`systemd-netlogd`** is a **lightweight, battle-tested daemon** that **forwards systemd journal logs to remote hosts** over the network using the **Syslog protocol (RFC 5424 & RFC 3339)**.
-It supports **unicast** and **multicast**, with **zero disk buffering** — perfect for **edge devices, servers, and cloud fleets**.
+> **Lightweight, network-aware daemon for forwarding systemd journal logs to remote syslog servers**
 
----
-
-## Overview ✨
-
-### Key Features 🔥
-| Feature | Description |
-|--------|-------------|
-| **Network-Aware** | Auto-starts when network is up, pauses when down (`sd-network` integration) |
-| **Zero Buffering** | Reads journal **sequentially**, forwards **one-by-one** — no disk, no bloat |
-| **Full Protocol Support** | `UDP`, `TCP`, **TLS**, **DTLS** (RFC 6012) |
-| **Flexible Formatting** | **RFC 5424** (default), **RFC 3339**, length-prefixed for TLS |
-| **Security First** | TLS cert validation, keepalives, sensitive log filtering |
-| **Namespace Aware** | Target specific journals or aggregate all |
-| **Isolated Execution** | Runs as `systemd-journal-netlog` system user |
-
-> **Ideal for**: Centralized logging without local storage impact
+Forward your systemd journal to centralized logging infrastructure with zero local buffering, automatic network detection, and secure transport options (UDP, TCP, TLS, DTLS).
 
 ---
 
-## Installation 🛠️
+## ⚡ Quick Start
 
-### Prerequisites
-Requires **systemd v255+** for full features.
-
-#### Debian / Ubuntu
 ```bash
-sudo apt update
-sudo apt install build-essential gperf libcap-dev libsystemd-dev pkg-config meson python3-sphinx
+# Install (Ubuntu/Debian)
+sudo apt install systemd-netlogd
+
+# Or build from source
+git clone https://github.com/systemd/systemd-netlogd.git
+cd systemd-netlogd && make && sudo make install
+
+# Configure
+sudo tee /etc/systemd/netlogd.conf <<EOF
+[Network]
+Address=logs.example.com:514
+Protocol=tcp
+EOF
+
+# Create system user
+sudo useradd -r -d / -s /usr/sbin/nologin -g systemd-journal systemd-journal-netlog
+
+# Start
+sudo systemctl enable --now systemd-netlogd
 ```
 
-#### CentOS / RHEL / Fedora
+**That's it!** Your logs are now being forwarded. View status with:
 ```bash
-sudo dnf group install 'Development Tools'
-sudo dnf install gperf libcap-devel pkg-config systemd-devel meson python3-sphinx
+journalctl -u systemd-netlogd -f
 ```
 
 ---
+
+## 🎯 Why systemd-netlogd?
+
+<table>
+<tr>
+<td width="50%">
+
+### ✅ What You Get
+- **Zero disk buffering** - No local storage impact
+- **Network-aware** - Auto-start/pause with network
+- **Secure by default** - TLS/DTLS encryption support
+- **Battle-tested** - Production-ready since 2016
+- **Resource efficient** - ~2-5 MB memory, <1% CPU
+- **Native integration** - Direct systemd journal access
+
+</td>
+<td width="50%">
+
+### ❌ What You Don't Need
+- No rsyslog/syslog-ng complexity
+- No local log buffering/queuing
+- No heavy dependencies
+- No manual journal export setup
+- No root privileges required
+- No configuration headaches
+
+</td>
+</tr>
+</table>
+
+### 🚀 Key Features
+
+- **🌐 Network-Aware**: Automatically detects network state changes via `sd-network`
+- **⚡ Zero Buffering**: Sequential journal reading without local caching
+- **🔒 Secure Transport**: UDP, TCP, TLS (RFC 5425), DTLS (RFC 6012)
+- **📋 Standard Formats**: RFC 5424 (recommended), RFC 3339 (legacy BSD syslog)
+- **🎯 Smart Filtering**: Exclude sensitive facilities (auth/authpriv) and log levels
+- **📦 Namespace Support**: Forward from specific namespaces or aggregate all
+- **🛡️ Hardened**: Runs as unprivileged `systemd-journal-netlog` user with restricted capabilities
+- **🔄 Fault Tolerant**: Automatic reconnection with cursor persistence ensures no message loss
+
+### 💡 Use Cases
+
+```
+✓ Centralized logging for distributed systems     ✓ Security monitoring & SIEM integration
+✓ Cloud log aggregation (AWS, Azure, GCP)         ✓ Compliance & audit log forwarding
+✓ Edge device telemetry collection                ✓ Multi-region log consolidation
+✓ Container/Kubernetes cluster logging            ✓ IoT fleet management
+```
+
+---
+
+## 📦 Installation
+
+### Package Installation (Recommended)
+
+<table>
+<tr>
+<td><b>Ubuntu/Debian</b></td>
+<td><code>sudo apt install systemd-netlogd</code></td>
+</tr>
+<tr>
+<td><b>Fedora</b></td>
+<td>Search COPR repositories</td>
+</tr>
+<tr>
+<td><b>Arch Linux</b></td>
+<td>AUR: <code>yay -S systemd-netlogd-git</code></td>
+</tr>
+</table>
 
 ### Build from Source
+
+<details>
+<summary><b>Click to expand build instructions</b></summary>
+
+**Prerequisites**: systemd v230+ (v255+ recommended)
+
+**Install dependencies:**
+```bash
+# Debian/Ubuntu
+sudo apt install build-essential meson gperf libcap-dev libsystemd-dev libssl-dev libcmocka-dev
+
+# Fedora/RHEL
+sudo dnf install gcc meson gperf libcap-devel systemd-devel openssl-devel libcmocka-devel
+```
+
+**Build and install:**
 ```bash
 git clone https://github.com/systemd/systemd-netlogd.git
 cd systemd-netlogd
-meson setup build
-meson compile -C build
-sudo meson install -C build
+make                    # or: meson setup build && meson compile -C build
+sudo make install       # or: sudo meson install -C build
 ```
 
-> *Tip*: Prefer `meson`. `make` still works but is legacy.
-
----
-
-### Create System User (Required)
-#### Option 1: Sysusers (Recommended)
-```bash
-# Copy provided file or create:
-sudo tee /etc/sysusers.d/systemd-netlogd.conf > /dev/null <<EOF
-u systemd-journal-netlog - - / /bin/nologin
-EOF
-sudo systemd-sysusers
-```
-
-#### Option 2: Manual
+**Create system user:**
 ```bash
 sudo useradd -r -d / -s /usr/sbin/nologin -g systemd-journal systemd-journal-netlog
 ```
 
----
-
-### Package Managers
-| Distro | Command |
-|-------|--------|
-| **Ubuntu** (Plucky+, Quokka+, Raccoon+) | `sudo apt install systemd-netlogd` |
-| **Fedora** | Search COPR: `systemd-netlogd` |
-| **Arch Linux** | AUR: `systemd-netlogd-git` |
-
----
-
-## Running the Service
-
+**Enable and start:**
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable --now systemd-netlogd.service
+sudo systemctl enable --now systemd-netlogd
 ```
 
-Check logs:
-```bash
-journalctl -u systemd-netlogd.service -f
-```
-
-Manual test:
-```bash
-SYSTEMD_LOG_LEVEL=debug /usr/lib/systemd-netlogd
-```
+</details>
 
 ---
 
-## Configuration
+## ⚙️ Configuration
 
-Config: `/etc/systemd/netlogd.conf`
-Drop-ins: `/etc/systemd/netlogd.conf.d/*.conf` (INI format)
+### Quick Configuration
 
-Reload: `sudo systemctl reload systemd-netlogd.service`
+**File:** `/etc/systemd/netlogd.conf` (or `/etc/systemd/netlogd.conf.d/*.conf` for drop-ins)
 
-### `[Network]` Options
+**Reload:** `sudo systemctl reload systemd-netlogd`
 
-| Option | Description | Default | Example |
-|-------|-------------|--------|--------|
-| `Address=` | Destination (IP:port or multicast) | **Required** | `239.0.0.1:6000` |
-| `Protocol=` | `udp` \| `tcp` \| `tls` \| `dtls` | `udp` | `tls` |
-| `LogFormat=` | `rfc5424` \| `rfc3339` | `rfc5424` | `rfc3339` |
-| `Directory=` | Custom journal path | System default | `/var/log/journal` |
-| `Namespace=` | `*`, `+id`, or `id` | Default | `*` |
-| `ConnectionRetrySec=` | Retry delay | `30s` | `1min` |
-| `TLSCertificateAuthMode=` | `deny` \| `warn` \| `allow` \| `no` | `deny` | `warn` |
-| `TLSServerCertificate=` | CA/server PEM path | None | `/etc/ssl/ca.pem` |
-| `KeepAlive=` | TCP keepalive | `false` | `true` |
-| `NoDelay=` | Disable Nagle (low latency) | `false` | `true` |
-| `StructuredData=` | Custom SD-ID | None | `[app@12345]` |
-| `UseSysLogStructuredData=` | Extract from journal | `false` | `yes` |
-| `UseSysLogMsgId=` | Extract MSGID | `false` | `yes` |
-| `ExcludeSyslogFacility=` | Skip facilities | None | `auth authpriv` |
-| `ExcludeSyslogLevel=` | Skip levels | None | `debug info` |
+### Common Configuration Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| **`Address=`** | Destination server (IP:port or multicast) | *Required* |
+| **`Protocol=`** | Transport: `udp`, `tcp`, `tls`, `dtls` | `udp` |
+| **`LogFormat=`** | Format: `rfc5424`, `rfc5425`, `rfc3339` | `rfc5424` |
+| `ConnectionRetrySec=` | Retry interval on failure | `30s` |
+| `TLSCertificateAuthMode=` | TLS validation: `deny`, `warn`, `allow`, `no` | `deny` |
+| `TLSServerCertificate=` | Path to CA certificate PEM file | System CA |
+| `ExcludeSyslogFacility=` | Filter out facilities (e.g., `auth authpriv`) | None |
+| `ExcludeSyslogLevel=` | Filter out levels (e.g., `debug info`) | None |
+
+<details>
+<summary><b>📋 View all configuration options</b></summary>
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `Address=` | Destination (IP:port or multicast group) | **Required** |
+| `Protocol=` | `udp`, `tcp`, `tls`, `dtls` | `udp` |
+| `LogFormat=` | `rfc5424`, `rfc5425` (TLS), `rfc3339` (legacy) | `rfc5424` |
+| `Directory=` | Custom journal directory path | System default |
+| `Namespace=` | Journal namespace: `*` (all), `+id` (id+default), `id` | Default |
+| `ConnectionRetrySec=` | Reconnect delay after failure | `30s` |
+| `TLSCertificateAuthMode=` | Certificate validation mode | `deny` |
+| `TLSServerCertificate=` | CA/server certificate PEM path | System CA store |
+| `KeepAlive=` | Enable TCP keepalive probes | `false` |
+| `KeepAliveTimeSec=` | Keepalive idle timeout | `7200` |
+| `KeepAliveIntervalSec=` | Keepalive probe interval | `75` |
+| `KeepAliveProbes=` | Keepalive probe count | `9` |
+| `SendBuffer=` | Socket send buffer size (bytes, K, M, G) | System default |
+| `NoDelay=` | Disable Nagle's algorithm (lower latency) | `false` |
+| `StructuredData=` | Static structured data `[SD-ID@PEN ...]` | None |
+| `UseSysLogStructuredData=` | Extract `SYSLOG_STRUCTURED_DATA` from journal | `false` |
+| `UseSysLogMsgId=` | Extract `SYSLOG_MSGID` from journal | `false` |
+| `ExcludeSyslogFacility=` | Space-separated facility list | None |
+| `ExcludeSyslogLevel=` | Space-separated level list | None |
+
+**Facilities:** `kern`, `user`, `mail`, `daemon`, `auth`, `syslog`, `lpr`, `news`, `uucp`, `cron`, `authpriv`, `ftp`, `ntp`, `security`, `console`, `solaris-cron`, `local0-7`
+
+**Levels:** `emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`
+
+</details>
 
 ---
 
-## Configuration Examples
+## 📝 Configuration Examples
 
-### 1. UDP Multicast
-```ini
-[Network]
-Address=239.0.0.1:6000
-# Protocol=udp (default)
-```
-
-### 2. Unicast + RFC 3339
+### Basic UDP
 ```ini
 [Network]
 Address=192.168.1.100:514
-LogFormat=rfc3339
 ```
 
-### 3. Cloud-Ready RFC 5424
+### Production TLS (Recommended)
 ```ini
 [Network]
-Address=logs.papertrailapp.com:12345
-LogFormat=rfc5424
-StructuredData=[1ab456b6-90bb-6578-abcd-5b734584aaaa@41058]
+Address=logs.example.com:6514
+Protocol=tls
+LogFormat=rfc5425
+TLSCertificateAuthMode=deny
+TLSServerCertificate=/etc/pki/tls/certs/ca-bundle.crt
+KeepAlive=yes
+NoDelay=yes
+ExcludeSyslogFacility=auth authpriv
 ```
 
-### 4. Extract Journal Metadata
+### Cloud Service (Papertrail)
+```ini
+[Network]
+Address=logs7.papertrailapp.com:12345
+Protocol=tls
+```
+
+### High-Performance Local Network
+```ini
+[Network]
+Address=192.168.1.100:514
+Protocol=udp
+ExcludeSyslogLevel=debug info
+ConnectionRetrySec=5
+```
+
+### With Structured Data
+```ini
+[Network]
+Address=192.168.1.100:514
+Protocol=tcp
+LogFormat=rfc5424
+StructuredData=[app@12345 env="production" region="us-east"]
+```
+
+**📁 More examples:** See [`examples/`](examples/) directory for 10+ production-ready configurations
+
+---
+
+## 🔧 Advanced Usage
+
+### Tag Journal Entries with Structured Data
+
+<details>
+<summary><b>Click to see C example</b></summary>
+
+```c
+#include <systemd/sd-journal.h>
+
+int main() {
+    sd_journal_send(
+        "MESSAGE=User login successful",
+        "PRIORITY=6",                    // info
+        "SYSLOG_FACILITY=10",           // authpriv
+        "SYSLOG_MSGID=LOGIN001",
+        "SYSLOG_STRUCTURED_DATA=[auth@12345 user=\"alice\" ip=\"1.2.3.4\"]",
+        NULL
+    );
+    return 0;
+}
+```
+
+Compile: `gcc example.c -lsystemd -o example && ./example`
+
+Configure netlogd to extract structured data:
 ```ini
 [Network]
 Address=192.168.1.100:514
@@ -163,144 +288,288 @@ UseSysLogStructuredData=yes
 UseSysLogMsgId=yes
 ```
 
-### 5. Filter Sensitive Logs
-```ini
-[Network]
-Address=192.168.1.100:514
-ExcludeSyslogFacility=auth authpriv
-ExcludeSyslogLevel=debug
-```
+</details>
 
-### 6. Secure TLS (Recommended)
-```ini
-[Network]
-Address=secure-logger.example.com:6514
-Protocol=tls
-LogFormat=rfc5424
-TLSCertificateAuthMode=deny
-TLSServerCertificate=/etc/ssl/ca-bundle.pem
-KeepAlive=true
-NoDelay=true
-```
+### Testing and Validation
 
-### 7. DTLS (UDP + Encryption)
-```ini
-[Network]
-Address=192.168.1.100:4433
-Protocol=dtls
-TLSCertificateAuthMode=allow
-```
-
----
-
-## Tag Journal Entries (C Example)
-
-```c
-#include <systemd/sd-journal.h>
-
-int main() {
-    sd_journal_send(
-        "MESSAGE=Login attempt",
-        "PRIORITY=4",
-        "SYSLOG_FACILITY=10",  // authpriv
-        "SYSLOG_MSGID=LOGIN001",
-        "SYSLOG_STRUCTURED_DATA=[auth@12345 user=\"alice\" ip=\"1.2.3.4\" result=\"success\"]",
-        NULL
-    );
-    return 0;
-}
-```
-
-Compile:
 ```bash
-gcc tag.c -lsystemd -o tag && ./tag
+# Start a test receiver
+nc -ul 514                    # UDP
+nc -l 514                     # TCP
+
+# Generate test logs
+logger -p user.info "Test message"
+logger -p user.warning "Warning test"
+
+# Monitor systemd-netlogd
+journalctl -u systemd-netlogd -f
+
+# Enable debug logging
+sudo systemctl edit systemd-netlogd
+# Add: Environment=SYSTEMD_LOG_LEVEL=debug
+
+# Test TLS connectivity
+openssl s_client -connect server:6514 -CAfile /path/to/ca.pem
 ```
 
 ---
 
-## Security Best Practices
+## 🔒 Security
 
-| Action | Why |
-|------|-----|
-| **Use TLS/DTLS** | Encrypt logs in transit |
-| **Set `TLSCertificateAuthMode=deny`** | Reject invalid certs |
-| **Filter `authpriv`, `auth`** | Prevent credential leaks |
-| **Restrict multicast** | Only trusted networks |
-| **Audit service** | `systemd-analyze security systemd-netlogd.service` |
+**systemd-netlogd runs with minimal privileges:**
+- Dedicated `systemd-journal-netlog` system user (not root)
+- Capability restrictions via systemd hardening
+- Filesystem isolation and protection
 
----
+**Best Practices:**
 
-## Troubleshooting
+```ini
+# ✅ DO: Use TLS for remote logging
+Protocol=tls
+TLSCertificateAuthMode=deny
 
-| Issue | Fix |
-|------|-----|
-| No logs forwarded | `journalctl -u systemd-netlogd` |
-| Connection refused | Check firewall, `ConnectionRetrySec` |
-| TLS errors | `openssl s_client -connect host:port` |
-| Test receiver | `nc -ul 514` |
-| Generate test log | `logger -p user.info "Hello from netlogd!"` |
-| Debug mode | Add override: `StandardOutput=journal+console` |
+# ✅ DO: Filter sensitive logs
+ExcludeSyslogFacility=auth authpriv
 
----
+# ✅ DO: Use strong certificate validation
+TLSServerCertificate=/etc/pki/tls/certs/ca-bundle.crt
 
-## Contributing
+# ❌ DON'T: Use UDP/TCP over the internet (unencrypted)
+# ❌ DON'T: Disable certificate validation in production
+```
 
-We welcome contributions! Please see our comprehensive contribution guide:
-
-📖 **[CONTRIBUTING.md](CONTRIBUTING.md)** - Development setup, coding standards, and PR guidelines
-
-Quick start:
-1. Fork the repository
-2. Create your feature branch
-3. Add tests for new functionality
-4. Submit a pull request
+**Audit security posture:**
+```bash
+sudo systemd-analyze security systemd-netlogd.service
+```
 
 ---
 
-## Documentation
+## 🐛 Troubleshooting
 
-Comprehensive documentation is available:
+<details>
+<summary><b>❓ No logs being forwarded</b></summary>
 
-| Document | Description |
-|----------|-------------|
-| **[README.md](README.md)** | This file - Quick start and configuration guide |
-| **[ARCHITECTURE.md](ARCHITECTURE.md)** | Internal architecture and design decisions |
-| **[CONTRIBUTING.md](CONTRIBUTING.md)** | Development setup and contribution guidelines |
-| **[TESTING.md](TESTING.md)** | Testing guide with examples |
-| **[FAQ.md](FAQ.md)** | Frequently asked questions |
-| **[examples/](examples/)** | Sample configuration files for common scenarios |
+1. Check service status:
+   ```bash
+   sudo systemctl status systemd-netlogd
+   journalctl -u systemd-netlogd -n 50
+   ```
+
+2. Verify configuration:
+   ```bash
+   cat /etc/systemd/netlogd.conf
+   ```
+
+3. Test network connectivity:
+   ```bash
+   nc -vz remote-server 514    # TCP
+   ping remote-server
+   ```
+
+4. Check user exists:
+   ```bash
+   id systemd-journal-netlog
+   ```
+
+</details>
+
+<details>
+<summary><b>🔐 TLS connection failures</b></summary>
+
+1. Test TLS manually:
+   ```bash
+   openssl s_client -connect server:6514 -CAfile /path/to/ca.pem
+   ```
+
+2. Check certificate validity:
+   ```bash
+   openssl x509 -in /path/to/ca.pem -noout -dates
+   ```
+
+3. Try relaxed validation (testing only):
+   ```ini
+   TLSCertificateAuthMode=warn
+   ```
+
+4. View SSL errors:
+   ```bash
+   journalctl -u systemd-netlogd | grep -i ssl
+   ```
+
+</details>
+
+<details>
+<summary><b>🚫 Connection refused</b></summary>
+
+1. Check firewall on remote server
+2. Verify remote syslog server is running:
+   ```bash
+   sudo netstat -tuln | grep 514
+   ```
+3. Test with netcat as simple receiver:
+   ```bash
+   nc -ul 514  # UDP
+   nc -l 514   # TCP
+   ```
+
+</details>
+
+<details>
+<summary><b>⚡ Performance issues / lag</b></summary>
+
+1. Check network latency: `ping remote-server`
+2. Use UDP for highest throughput
+3. Filter debug messages: `ExcludeSyslogLevel=debug info`
+4. Increase send buffer: `SendBuffer=262144`
+5. Check dropped packets: `netstat -su | grep drop`
+
+</details>
+
+**💡 Quick fixes:**
+```bash
+# Generate test log
+logger -p user.info "Test from systemd-netlogd"
+
+# Enable debug mode
+sudo kill -SIGUSR1 $(pidof systemd-netlogd)
+
+# Reset state (start from scratch)
+sudo systemctl stop systemd-netlogd
+sudo rm /var/lib/systemd-netlogd/state
+sudo systemctl start systemd-netlogd
+```
 
 ---
 
-## Configuration Examples
+## 📚 Documentation
 
-See the [examples/](examples/) directory for ready-to-use configurations:
+<table>
+<tr>
+<td width="33%">
 
-- **[basic-udp.conf](examples/basic-udp.conf)** - Simple UDP multicast
-- **[basic-tcp.conf](examples/basic-tcp.conf)** - Reliable TCP delivery
-- **[tls-secure.conf](examples/tls-secure.conf)** - Encrypted TLS with certificate validation
-- **[dtls-encrypted.conf](examples/dtls-encrypted.conf)** - Encrypted DTLS datagrams
-- **[cloud-papertrail.conf](examples/cloud-papertrail.conf)** - Papertrail cloud service
-- **[cloud-loggly.conf](examples/cloud-loggly.conf)** - Loggly cloud service
-- **[filtering.conf](examples/filtering.conf)** - Filter sensitive logs
-- **[structured-data.conf](examples/structured-data.conf)** - Use structured data
-- **[high-performance.conf](examples/high-performance.conf)** - Optimized for high volume
-- **[development.conf](examples/development.conf)** - Development/testing setup
+### 📖 User Guides
+- **[README.md](README.md)** *(this file)*
+- **[FAQ.md](FAQ.md)** - Common questions
+- **[examples/](examples/)** - 10+ configs
+- **[Man Page](doc/index.rst)** - Full reference
+
+</td>
+<td width="33%">
+
+### 🔧 Developer Guides
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Internal design
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Dev setup
+- **[TESTING.md](TESTING.md)** - Test guide
+
+</td>
+<td width="33%">
+
+### 📦 Example Configs
+- [Basic UDP/TCP](examples/basic-udp.conf)
+- [Production TLS](examples/tls-secure.conf)
+- [Cloud Services](examples/cloud-papertrail.conf)
+- [High Performance](examples/high-performance.conf)
+
+</td>
+</tr>
+</table>
 
 ---
 
-## License
+## 🤝 Contributing
 
-**LGPL-2.1-or-later** — same as systemd.
-See `LICENSE`.
+We welcome contributions!
+
+**Quick Start:**
+1. 🍴 Fork the repository
+2. 🌿 Create feature branch: `git checkout -b feature/amazing-feature`
+3. ✅ Add tests for new functionality
+4. 💬 Commit with clear messages
+5. 📫 Submit a pull request
+
+**Resources:**
+- 📖 [CONTRIBUTING.md](CONTRIBUTING.md) - Full contribution guide
+- 🏗️ [ARCHITECTURE.md](ARCHITECTURE.md) - Understand the codebase
+- 🧪 [TESTING.md](TESTING.md) - Testing guide
+
+**Development:**
+```bash
+# Clone and setup
+git clone https://github.com/systemd/systemd-netlogd.git
+cd systemd-netlogd
+make
+
+# Run tests
+meson test -C build -v
+
+# Build documentation
+make -C doc
+```
 
 ---
 
-## Getting Help
+## 💬 Getting Help
 
-- 📖 **[FAQ](FAQ.md)** - Frequently asked questions
-- 🐛 **[Issues](https://github.com/systemd/systemd-netlogd/issues)** - Report bugs or request features
-- 💬 **[Discussions](https://github.com/systemd/systemd-netlogd/discussions)** - Community Q&A
-- 📚 **[Documentation](ARCHITECTURE.md)** - Deep dive into internals
+<table>
+<tr>
+<td align="center">
 
-> **Star this repo if you find it useful!**
+### 📖 [FAQ](FAQ.md)
+50+ questions answered
+
+</td>
+<td align="center">
+
+### 🐛 [Issues](https://github.com/systemd/systemd-netlogd/issues)
+Report bugs & request features
+
+</td>
+<td align="center">
+
+### 💬 [Discussions](https://github.com/systemd/systemd-netlogd/discussions)
+Ask questions & share tips
+
+</td>
+<td align="center">
+
+### 📚 [Man Page](doc/index.rst)
+Complete reference
+
+</td>
+</tr>
+</table>
+
+**Before asking for help:**
+1. ✅ Check the [FAQ](FAQ.md)
+2. ✅ Search [existing issues](https://github.com/systemd/systemd-netlogd/issues)
+3. ✅ Try [troubleshooting](#-troubleshooting) steps above
+4. ✅ Enable debug logging: `Environment=SYSTEMD_LOG_LEVEL=debug`
+
+---
+
+## 📄 License
+
+**LGPL-2.1-or-later** — Same license as systemd
+
+See [LICENSE](LICENSE) file for details.
+
+---
+
+## 🌟 Acknowledgments
+
+- **Author**: [Susant Sahani](https://github.com/ssahani)
+- **Contributors**: [See all contributors](https://github.com/systemd/systemd-netlogd/graphs/contributors)
+- **Project**: Part of the systemd ecosystem
+
+---
+
+<div align="center">
+
+### ⭐ If you find systemd-netlogd useful, please star the repository!
+
+[![GitHub stars](https://img.shields.io/github/stars/systemd/systemd-netlogd?style=social)](https://github.com/systemd/systemd-netlogd/stargazers)
+
+**[Documentation](ARCHITECTURE.md)** • **[Examples](examples/)** • **[FAQ](FAQ.md)** • **[Contributing](CONTRIBUTING.md)**
+
+</div>
