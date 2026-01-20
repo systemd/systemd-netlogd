@@ -114,6 +114,10 @@ systemd_netlogd_sources = files('''
                         netlog/netlog-conf.c
                         netlog/netlog-manager.c
                         netlog/netlog-manager.h
+                        netlog/netlog-journal.c
+                        netlog/netlog-journal.h
+                        netlog/netlog-state.c
+                        netlog/netlog-state.h
                         netlog/netlog-network.c
                         netlog/netlog-network.h
                         netlog/netlog-protocol.c
