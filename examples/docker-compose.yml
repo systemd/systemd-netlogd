@@ -1,0 +1,101 @@
+# Docker Compose Test Environment for systemd-netlogd
+# Provides rsyslog receiver for testing log forwarding
+
+version: '3.8'
+
+services:
+  syslog-receiver:
+    image: rsyslog/syslog_appliance_alpine:latest
+    container_name: systemd-netlogd-test-receiver
+    ports:
+      # UDP syslog
+      - "10514:514/udp"
+      # TCP syslog
+      - "10514:514/tcp"
+      # TLS syslog
+      - "10601:6514/tcp"
+    volumes:
+      - ./rsyslog.conf:/etc/rsyslog.conf:ro
+      - syslog-data:/var/log
+    environment:
+      - TZ=UTC
+    restart: unless-stopped
+
+  # Optional: Splunk for log aggregation and search
+  splunk:
+    image: splunk/splunk:latest
+    container_name: systemd-netlogd-test-splunk
+    ports:
+      - "8000:8000"   # Web UI
+      - "8088:8088"   # HEC
+      - "10515:514"   # Syslog TCP
+    environment:
+      - SPLUNK_START_ARGS=--accept-license
+      - SPLUNK_PASSWORD=changeme123
+    volumes:
+      - splunk-data:/opt/splunk/var
+    restart: unless-stopped
+    profiles:
+      - full
+
+  # Optional: Grafana Loki for log aggregation
+  loki:
+    image: grafana/loki:latest
+    container_name: systemd-netlogd-test-loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - loki-data:/loki
+    restart: unless-stopped
+    profiles:
+      - full
+
+  # Optional: Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: systemd-netlogd-test-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+    restart: unless-stopped
+    profiles:
+      - full
+
+volumes:
+  syslog-data:
+  splunk-data:
+  loki-data:
+  grafana-data:
+
+# Usage:
+#
+# Start basic rsyslog receiver:
+#   docker-compose up -d
+#
+# Start full stack with Splunk, Loki, and Grafana:
+#   docker-compose --profile full up -d
+#
+# View logs from rsyslog:
+#   docker-compose logs -f syslog-receiver
+#
+# Execute commands in rsyslog container:
+#   docker-compose exec syslog-receiver sh
+#
+# View received syslog messages:
+#   docker-compose exec syslog-receiver tail -f /var/log/messages
+#
+# Stop all services:
+#   docker-compose down
+#
+# Configuration for systemd-netlogd to use this receiver:
+#
+# /etc/systemd/netlogd.conf.d/docker-test.conf:
+# [Network]
+# Address=localhost:10514
+# Protocol=tcp
+# LogFormat=rfc5424

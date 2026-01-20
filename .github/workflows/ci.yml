@@ -5,27 +5,189 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
-  build:
-
+  build-ubuntu:
+    name: Build and Test on Ubuntu
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
-    - name: update
+
+    - name: Update package index
       run: sudo apt-get update
-    - name: install build essentials
-      run: sudo apt-get install -y python3-sphinx ninja-build meson glib-2.0-dev libudev-dev libsystemd-dev clang gperf libcap-dev build-essential libcmocka-dev
-    - name: build
+
+    - name: Install build dependencies
+      run: |
+        sudo apt-get install -y \
+          python3-sphinx \
+          ninja-build \
+          meson \
+          glib-2.0-dev \
+          libudev-dev \
+          libsystemd-dev \
+          clang \
+          gperf \
+          libcap-dev \
+          build-essential \
+          libcmocka-dev \
+          libssl-dev
+
+    - name: Build project
       run: make
-    - name: run tests
+
+    - name: Run tests
       run: meson test -C build -v
-    - name: install
+
+    - name: Install
       run: sudo make install
-    - name: add systemd-journal-netlog user
-      run: sudo useradd -r -d / -s /usr/sbin/nologin -g systemd-journal systemd-journal-netlog
-    - name: start systemd-netlogd
-      run: sudo systemctl daemon-reload; sudo systemctl start systemd-netlogd
-    - name: show status systemd-netlogd
+
+    - name: Create systemd-journal-netlog user
+      run: sudo useradd -r -d / -s /usr/sbin/nologin -g systemd-journal systemd-journal-netlog || true
+
+    - name: Start systemd-netlogd
+      run: |
+        sudo systemctl daemon-reload
+        sudo systemctl start systemd-netlogd
+
+    - name: Show service status
       run: sudo systemctl status systemd-netlogd
+
+  build-rpm:
+    name: Build RPM on ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [fedora:latest, fedora:39, rockylinux:9, rockylinux:8]
+
+    container:
+      image: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install RPM build dependencies (Fedora)
+      if: startsWith(matrix.os, 'fedora')
+      run: |
+        dnf install -y \
+          rpm-build \
+          rpmdevtools \
+          meson \
+          ninja-build \
+          gcc \
+          glib2-devel \
+          systemd-devel \
+          libcap-devel \
+          gperf \
+          openssl-devel \
+          libcmocka-devel \
+          python3-sphinx \
+          git
+
+    - name: Install RPM build dependencies (Rocky/RHEL)
+      if: startsWith(matrix.os, 'rockylinux')
+      run: |
+        dnf install -y epel-release
+        dnf install -y \
+          rpm-build \
+          rpmdevtools \
+          meson \
+          ninja-build \
+          gcc \
+          glib2-devel \
+          systemd-devel \
+          libcap-devel \
+          gperf \
+          openssl-devel \
+          libcmocka-devel \
+          python3-sphinx \
+          git
+
+    - name: Set up RPM build tree
+      run: rpmdev-setuptree
+
+    - name: Create source tarball
+      run: |
+        VERSION=$(grep "version:" meson.build | head -1 | sed "s/.*'\(.*\)'.*/\1/")
+        echo "Building version $VERSION"
+        git archive --format=tar.gz --prefix=systemd-netlogd-$VERSION/ -o ~/rpmbuild/SOURCES/systemd-netlogd-$VERSION.tar.gz HEAD
+
+    - name: Copy spec file
+      run: cp systemd-netlogd.spec ~/rpmbuild/SPECS/
+
+    - name: Build source RPM
+      run: rpmbuild -bs ~/rpmbuild/SPECS/systemd-netlogd.spec
+
+    - name: Build binary RPM
+      run: rpmbuild -bb ~/rpmbuild/SPECS/systemd-netlogd.spec
+
+    - name: List built RPMs
+      run: |
+        echo "Source RPMs:"
+        ls -lh ~/rpmbuild/SRPMS/
+        echo "Binary RPMs:"
+        ls -lh ~/rpmbuild/RPMS/*/
+
+    - name: Test install RPM
+      run: |
+        dnf install -y ~/rpmbuild/RPMS/*/systemd-netlogd-*.rpm
+        rpm -qi systemd-netlogd
+        systemctl status systemd-netlogd || true
+
+    - name: Upload RPM artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: rpms-${{ matrix.os }}
+        path: |
+          ~/rpmbuild/RPMS/*/*.rpm
+          ~/rpmbuild/SRPMS/*.rpm
+        retention-days: 30
+
+  build-deb:
+    name: Build DEB on ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu:24.04, ubuntu:22.04, debian:12, debian:11]
+
+    container:
+      image: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install build dependencies
+      run: |
+        apt-get update
+        apt-get install -y \
+          build-essential \
+          debhelper \
+          meson \
+          ninja-build \
+          pkg-config \
+          libglib2.0-dev \
+          libsystemd-dev \
+          libcap-dev \
+          gperf \
+          libssl-dev \
+          libcmocka-dev \
+          python3-sphinx \
+          git
+
+    - name: Build DEB package
+      run: |
+        # Create simple debian package structure
+        mkdir -p debian
+
+        # Note: This is a basic build. For production, create proper debian/ directory
+        # with control, rules, changelog, etc.
+        make
+        meson test -C build -v
+        DESTDIR=$(pwd)/debian/tmp make install
+
+        echo "DEB packaging would continue here with proper debian/ directory structure"
+        echo "For now, verifying build and install locations:"
+        find debian/tmp -type f
