@@ -16,9 +16,11 @@ jobs:
     - name: update
       run: sudo apt-get update
     - name: install build essentials
-      run: sudo apt-get install -y python3-sphinx ninja-build meson glib-2.0-dev libudev-dev libsystemd-dev clang gperf libcap-dev build-essential
+      run: sudo apt-get install -y python3-sphinx ninja-build meson glib-2.0-dev libudev-dev libsystemd-dev clang gperf libcap-dev build-essential libcmocka-dev
     - name: build
       run: make
+    - name: run tests
+      run: meson test -C build -v
     - name: install
       run: sudo make install
     - name: add systemd-journal-netlog user

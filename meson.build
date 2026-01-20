@@ -140,6 +140,7 @@ includes = include_directories('src/share',
 
 subdir('units')
 subdir('doc')
+subdir('tests')
 
 ############################################################
 
