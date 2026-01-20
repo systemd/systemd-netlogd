@@ -6,16 +6,13 @@
 #include "openssl-util.h"
 #include "socket-util.h"
 
-#include "netlog-dtls.h"
-#include "netlog-tls.h"
-
-static_assert(offsetof(TLSManager, auth_mode) == offsetof(DTLSManager, auth_mode), "TLSManager and DTLSManager must be similar");
+#include "netlog-ssl-common.h"
 
 /* inspired by SSL_set_verify(3) */
 int ssl_verify_certificate_validity(int preverify_ok, X509_STORE_CTX *store) {
         const SSL* ssl = X509_STORE_CTX_get_ex_data(store, SSL_get_ex_data_X509_STORE_CTX_idx());
         const char *pretty = (const char *) SSL_get_ex_data(ssl, EX_DATA_PRETTYADDRESS);
-        const TLSManager *m = (const TLSManager *) SSL_get_ex_data(ssl, EX_DATA_TLSMANAGER);
+        const SSLManager *m = (const SSLManager *) SSL_get_ex_data(ssl, EX_DATA_TLSMANAGER);
         const X509 *error_cert = X509_STORE_CTX_get_current_cert(store);
         int depth = X509_STORE_CTX_get_error_depth(store);
         int error = X509_STORE_CTX_get_error(store);

@@ -118,6 +118,8 @@ systemd_netlogd_sources = files('''
                         netlog/netlog-network.h
                         netlog/netlog-protocol.c
                         netlog/netlog-protocol.h
+                        netlog/netlog-ssl-common.c
+                        netlog/netlog-ssl-common.h
                         netlog/netlog-dtls.c
                         netlog/netlog-dtls.h
                         netlog/netlog-ssl.c

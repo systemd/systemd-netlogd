@@ -1,32 +1,29 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 #pragma once
 
-#include <openssl/ssl.h>
-#include <stdbool.h>
+#include "netlog-ssl-common.h"
 
-#include "socket-util.h"
-#include "openssl-util.h"
-#include "netlog-tls.h"
+/* DTLSManager is now an alias for SSLManager for backwards compatibility */
+typedef SSLManager DTLSManager;
 
-typedef struct DTLSManager DTLSManager;
+static inline void dtls_manager_free(DTLSManager *m) {
+        ssl_manager_free(m);
+}
 
-struct DTLSManager {
-        SSL_CTX *ctx;
-        SSL *ssl;
+static inline int dtls_manager_init(OpenSSLCertificateAuthMode auth_mode, const char *server_cert, DTLSManager **ret) {
+        return ssl_manager_init(SSL_TRANSPORT_DTLS, auth_mode, server_cert, ret);
+}
 
-        char *pretty_address;
-        int fd;
-        bool connected;
+static inline int dtls_connect(DTLSManager *m, SocketAddress *addr) {
+        return ssl_connect(m, addr);
+}
 
-        OpenSSLCertificateAuthMode auth_mode;
-};
+static inline void dtls_disconnect(DTLSManager *m) {
+        ssl_disconnect(m);
+}
 
-void dtls_manager_free(DTLSManager *m);
-int dtls_manager_init(OpenSSLCertificateAuthMode auth_mode, const char *server_cert, DTLSManager **ret);
-
-int dtls_connect(DTLSManager *m, SocketAddress *addr);
-void dtls_disconnect(DTLSManager *m);
-
-int dtls_datagram_writev(DTLSManager *m, const struct iovec *iov, size_t iovcnt);
+static inline int dtls_datagram_writev(DTLSManager *m, const struct iovec *iov, size_t iovcnt) {
+        return ssl_writev(m, iov, iovcnt);
+}
 
 DEFINE_TRIVIAL_CLEANUP_FUNC(DTLSManager*, dtls_manager_free);
