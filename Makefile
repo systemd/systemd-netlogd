@@ -4,24 +4,30 @@ all: build
 
 build:
 	meson setup build
+.PHONY: build
 
 clean:
 	rm -rf build/
 .PHONY: clean
 
-install: build
+install: all
 	ninja -C build install
 .PHONY: install
 
-format:
-	@for f in lib/*.[ch] tool/*.[ch]; do \
-		echo $$f; \
-		astyle --quiet --options=.astylerc $$f; \
-	done
-.PHONY: format
+uninstall:
+	ninja -C build uninstall
+.PHONY: uninstall
 
-install-tree: build
+test: all
+	meson test -C build -v
+.PHONY: test
+
+install-tree: all
 	rm -rf build/install-tree
 	DESTDIR=install-tree ninja -C build install
 	tree build/install-tree
 .PHONY: install-tree
+
+rpm: all
+	rpmbuild -ba systemd-netlogd.spec
+.PHONY: rpm

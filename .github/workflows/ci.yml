@@ -60,7 +60,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [fedora:latest, fedora:41]
+        include:
+          - os: fedora:latest
+            artifact: fedora-latest
+          - os: fedora:41
+            artifact: fedora-41
 
     container:
       image: ${{ matrix.os }}
@@ -86,36 +90,33 @@ jobs:
           python3-lxml
 
     - name: Set up RPM build tree
-      run: rpmdev-setuptree
+      run: rpmdev-setuptree || mkdir -p $HOME/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
     - name: Create source tarball
       run: |
-        VERSION=$(grep "version:" meson.build | head -1 | sed "s/.*'\(.*\)'.*/\1/")
+        VERSION=$(grep -oP "version\s*:\s*'\K[^']+" meson.build | head -1)
         echo "Building version $VERSION"
-        tar czf ~/rpmbuild/SOURCES/systemd-netlogd-$VERSION.tar.gz \
-          --transform "s,^\.,systemd-netlogd-$VERSION," \
-          --exclude='.git' --exclude='builddir' \
-          .
+        mkdir -p /tmp/systemd-netlogd-$VERSION
+        cp -a $(ls -A | grep -v '^\.\(git\)$' | grep -v '^builddir$') /tmp/systemd-netlogd-$VERSION/
+        tar czf $HOME/rpmbuild/SOURCES/systemd-netlogd-$VERSION.tar.gz -C /tmp systemd-netlogd-$VERSION
+        ls -lh $HOME/rpmbuild/SOURCES/
 
     - name: Copy spec file
-      run: cp systemd-netlogd.spec ~/rpmbuild/SPECS/
+      run: cp systemd-netlogd.spec $HOME/rpmbuild/SPECS/
 
     - name: Build RPMs
-      run: rpmbuild -ba ~/rpmbuild/SPECS/systemd-netlogd.spec
+      run: rpmbuild -ba $HOME/rpmbuild/SPECS/systemd-netlogd.spec
 
     - name: Test install RPM
       run: |
-        dnf install -y ~/rpmbuild/RPMS/*/systemd-netlogd-*.rpm
+        rpm -ivh --nodeps $HOME/rpmbuild/RPMS/*/systemd-netlogd-*.rpm
         rpm -qi systemd-netlogd
-        systemctl status systemd-netlogd || true
 
     - name: Upload RPM artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: rpms-${{ matrix.os }}
-        path: |
-          ~/rpmbuild/RPMS/*/*.rpm
-          ~/rpmbuild/SRPMS/*.rpm
+        name: rpms-${{ matrix.artifact }}
+        path: /github/home/rpmbuild/RPMS/
         retention-days: 30
 
   build-rpm-rocky:
@@ -148,39 +149,36 @@ jobs:
           python3-sphinx \
           python3-devel \
           python3-lxml
-        pip3 install meson ninja
+        pip3 install --prefix=/usr meson ninja
 
     - name: Set up RPM build tree
-      run: rpmdev-setuptree
+      run: rpmdev-setuptree || mkdir -p $HOME/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
     - name: Create source tarball
       run: |
-        VERSION=$(grep "version:" meson.build | head -1 | sed "s/.*'\(.*\)'.*/\1/")
+        VERSION=$(grep -oP "version\s*:\s*'\K[^']+" meson.build | head -1)
         echo "Building version $VERSION"
-        tar czf ~/rpmbuild/SOURCES/systemd-netlogd-$VERSION.tar.gz \
-          --transform "s,^\.,systemd-netlogd-$VERSION," \
-          --exclude='.git' --exclude='builddir' \
-          .
+        mkdir -p /tmp/systemd-netlogd-$VERSION
+        cp -a $(ls -A | grep -v '^\.\(git\)$' | grep -v '^builddir$') /tmp/systemd-netlogd-$VERSION/
+        tar czf $HOME/rpmbuild/SOURCES/systemd-netlogd-$VERSION.tar.gz -C /tmp systemd-netlogd-$VERSION
+        ls -lh $HOME/rpmbuild/SOURCES/
 
     - name: Copy spec file
-      run: cp systemd-netlogd.spec ~/rpmbuild/SPECS/
+      run: cp systemd-netlogd.spec $HOME/rpmbuild/SPECS/
 
     - name: Build RPMs
-      run: rpmbuild -ba ~/rpmbuild/SPECS/systemd-netlogd.spec
+      run: rpmbuild -ba --nodeps $HOME/rpmbuild/SPECS/systemd-netlogd.spec
 
     - name: Test install RPM
       run: |
-        dnf install -y ~/rpmbuild/RPMS/*/systemd-netlogd-*.rpm
+        rpm -ivh --nodeps $HOME/rpmbuild/RPMS/*/systemd-netlogd-*.rpm
         rpm -qi systemd-netlogd
-        systemctl status systemd-netlogd || true
 
     - name: Upload RPM artifacts
       uses: actions/upload-artifact@v4
       with:
         name: rpms-rockylinux-9
-        path: |
-          ~/rpmbuild/RPMS/*/*.rpm
-          ~/rpmbuild/SRPMS/*.rpm
+        path: /github/home/rpmbuild/RPMS/
         retention-days: 30
 
   build-deb:
@@ -189,7 +187,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu:24.04, ubuntu:22.04, debian:12]
+        include:
+          - os: ubuntu:24.04
+            artifact: ubuntu-24.04
+          - os: ubuntu:22.04
+            artifact: ubuntu-22.04
+          - os: debian:12
+            artifact: debian-12
 
     container:
       image: ${{ matrix.os }}
@@ -220,17 +224,24 @@ jobs:
     - name: Build DEB package
       run: dpkg-buildpackage -us -uc -b
 
+    - name: Collect DEB packages
+      run: |
+        mkdir -p debs
+        cp ../*.deb debs/ || true
+        ls -lh debs/
+
     - name: Test install DEB
       run: |
-        dpkg -i ../systemd-netlogd_*.deb || apt-get install -f -y
+        dpkg -i debs/systemd-netlogd_*.deb || apt-get install -f -y
         dpkg -s systemd-netlogd
         systemctl status systemd-netlogd || true
 
     - name: Upload DEB artifacts
       uses: actions/upload-artifact@v4
+      if: always()
       with:
-        name: debs-${{ matrix.os }}
-        path: ../*.deb
+        name: debs-${{ matrix.artifact }}
+        path: debs/
         retention-days: 30
 
   build-archlinux:
