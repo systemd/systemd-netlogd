@@ -60,35 +60,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [fedora:latest, fedora:41, rockylinux:9]
+        os: [fedora:latest, fedora:41]
 
     container:
       image: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-    - name: Install RPM build dependencies (Fedora)
-      if: startsWith(matrix.os, 'fedora')
-      run: |
-        dnf install -y \
-          rpm-build \
-          rpmdevtools \
-          meson \
-          ninja-build \
-          gcc \
-          systemd-devel \
-          libcap-devel \
-          gperf \
-          openssl-devel \
-          libcmocka-devel \
-          python3-sphinx \
-          git
+    - name: Mark directory as safe for git
+      run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
-    - name: Install RPM build dependencies (Rocky/RHEL)
-      if: startsWith(matrix.os, 'rockylinux')
+    - name: Install RPM build dependencies
       run: |
-        dnf install -y epel-release
         dnf install -y \
           rpm-build \
           rpmdevtools \
@@ -110,7 +96,10 @@ jobs:
       run: |
         VERSION=$(grep "version:" meson.build | head -1 | sed "s/.*'\(.*\)'.*/\1/")
         echo "Building version $VERSION"
-        git archive --format=tar.gz --prefix=systemd-netlogd-$VERSION/ -o ~/rpmbuild/SOURCES/systemd-netlogd-$VERSION.tar.gz HEAD
+        tar czf ~/rpmbuild/SOURCES/systemd-netlogd-$VERSION.tar.gz \
+          --transform "s,^,systemd-netlogd-$VERSION/," \
+          --exclude='.git' --exclude='builddir' \
+          .
 
     - name: Copy spec file
       run: cp systemd-netlogd.spec ~/rpmbuild/SPECS/
@@ -128,6 +117,75 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: rpms-${{ matrix.os }}
+        path: |
+          ~/rpmbuild/RPMS/*/*.rpm
+          ~/rpmbuild/SRPMS/*.rpm
+        retention-days: 30
+
+  build-rpm-rocky:
+    name: Build RPM (rockylinux:9)
+    runs-on: ubuntu-latest
+
+    container:
+      image: rockylinux:9
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Mark directory as safe for git
+      run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+    - name: Enable CRB and install EPEL
+      run: |
+        dnf install -y epel-release
+        /usr/bin/crb enable
+
+    - name: Install RPM build dependencies
+      run: |
+        dnf install -y \
+          rpm-build \
+          rpmdevtools \
+          gcc \
+          systemd-devel \
+          libcap-devel \
+          gperf \
+          openssl-devel \
+          libcmocka-devel \
+          python3-pip \
+          python3-sphinx \
+          git
+        pip3 install meson ninja
+
+    - name: Set up RPM build tree
+      run: rpmdev-setuptree
+
+    - name: Create source tarball
+      run: |
+        VERSION=$(grep "version:" meson.build | head -1 | sed "s/.*'\(.*\)'.*/\1/")
+        echo "Building version $VERSION"
+        tar czf ~/rpmbuild/SOURCES/systemd-netlogd-$VERSION.tar.gz \
+          --transform "s,^,systemd-netlogd-$VERSION/," \
+          --exclude='.git' --exclude='builddir' \
+          .
+
+    - name: Copy spec file
+      run: cp systemd-netlogd.spec ~/rpmbuild/SPECS/
+
+    - name: Build RPMs
+      run: rpmbuild -ba ~/rpmbuild/SPECS/systemd-netlogd.spec
+
+    - name: Test install RPM
+      run: |
+        dnf install -y ~/rpmbuild/RPMS/*/systemd-netlogd-*.rpm
+        rpm -qi systemd-netlogd
+        systemctl status systemd-netlogd || true
+
+    - name: Upload RPM artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: rpms-rockylinux-9
         path: |
           ~/rpmbuild/RPMS/*/*.rpm
           ~/rpmbuild/SRPMS/*.rpm
