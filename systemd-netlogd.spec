@@ -5,7 +5,7 @@ Summary:        Forwards messages from the journal to other hosts over the netwo
 
 License:        LGPL-2.1-or-later AND GPL-2.0-only
 URL:            https://github.com/systemd/systemd-netlogd
-Source0:        %{URL}/archive/v%{version}.tar.gz
+Source0:        %{URL}/archive/v%{version}/systemd-netlogd-%{version}.tar.gz
 
 BuildRequires:  gcc
 BuildRequires:  meson >= 0.51
