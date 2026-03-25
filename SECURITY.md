@@ -61,9 +61,9 @@ We will credit security researchers in our release notes unless they prefer to r
 
 When using TLS or DTLS for log transmission:
 
-- **Always use certificate verification** in production (`CertificateAuthentication=deny`)
-- Use `CertificateAuthentication=warn` only for testing
-- Never use `CertificateAuthentication=allow` in production
+- **Always use certificate verification** in production (`TLSCertificateAuthMode=deny`)
+- Use `TLSCertificateAuthMode=warn` only for testing
+- Never use `TLSCertificateAuthMode=allow` in production
 - Keep OpenSSL libraries up to date
 - Use certificates from trusted CAs
 
