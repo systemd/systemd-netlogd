@@ -194,7 +194,7 @@ static void set_priority_field(int severity, int facility, char *header_priority
         IOVEC_SET_STRING(iov[(*n)++], header_priority);
 }
 
-int format_rfc3339(Manager *m,
+int format_rfc3164(Manager *m,
                    int severity,
                    int facility,
                    const char *identifier,
@@ -211,7 +211,7 @@ int format_rfc3339(Manager *m,
         assert(m);
         assert(message);
 
-        /* RFC3339 format: <pri>timestamp hostname identifier[pid]: message */
+        /* RFC3164 format: <pri>timestamp hostname identifier[pid]: message */
         set_priority_field(severity, facility, header_priority, sizeof(header_priority), iov, &n);
         set_timestamp_field(tv, header_time, sizeof(header_time), iov, &n);
 

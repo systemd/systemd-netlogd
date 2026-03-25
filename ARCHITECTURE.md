@@ -47,7 +47,7 @@ systemd-netlogd is a network logging daemon that reads from the systemd journal 
 │         │                                                   │
 │         ├──────► Protocol Layer                            │
 │         │         ├─► RFC 5424 Formatter                   │
-│         │         ├─► RFC 3339 Formatter                   │
+│         │         ├─► RFC 3164 Formatter                   │
 │         │         └─► RFC 5425 Formatter                   │
 │         │                                                   │
 │         └──────► Transport Layer                           │
@@ -77,8 +77,8 @@ systemd-netlogd is a network logging daemon that reads from the systemd journal 
    │    └─► Extract timestamp
    │
    ├─► manager_push_to_network()
-   │    ├─► Select formatter (RFC 5424/3339)
-   │    ├─► format_rfc5424() or format_rfc3339()
+   │    ├─► Select formatter (RFC 5424/3164)
+   │    ├─► format_rfc5424() or format_rfc3164()
    │    │    ├─► Build priority field: <PRI> = (facility * 8) + severity
    │    │    ├─► Format timestamp (RFC 3339)
    │    │    ├─► Add hostname, identifier, pid
@@ -198,7 +198,7 @@ Example:
 <34>1 2024-01-20T10:30:15.123456+00:00 hostname myapp 1234 LOGIN001 [auth@12345] User logged in
 ```
 
-**RFC 3339 Format (Legacy):**
+**RFC 3164 Format (Legacy):**
 ```
 <PRI>TIMESTAMP HOSTNAME APP-NAME[PROCID]: MSG
 ```
@@ -489,6 +489,7 @@ Facilities that may contain credentials:
 
 - [RFC 5424](https://tools.ietf.org/html/rfc5424) - The Syslog Protocol
 - [RFC 5425](https://tools.ietf.org/html/rfc5425) - Transport Layer Security (TLS) Transport Mapping for Syslog
+- [RFC 3164](https://tools.ietf.org/html/rfc3164) - The BSD Syslog Protocol
 - [RFC 3339](https://tools.ietf.org/html/rfc3339) - Date and Time on the Internet: Timestamps
 - [RFC 6012](https://tools.ietf.org/html/rfc6012) - Datagram Transport Layer Security (DTLS) Transport Mapping for Syslog
 - [systemd Journal](https://www.freedesktop.org/software/systemd/man/sd-journal.html)

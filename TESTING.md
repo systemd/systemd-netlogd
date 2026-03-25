@@ -43,7 +43,7 @@ Tests RFC 3339 timestamp formatting:
 #### test-string-tables
 Tests string table conversions:
 - Protocol names (udp, tcp, tls, dtls)
-- Log formats (rfc5424, rfc3339, rfc5425)
+- Log formats (rfc5424, rfc3164, rfc5425)
 - Syslog facilities (kern, user, mail, etc.)
 - Syslog levels (emerg, alert, crit, etc.)
 

@@ -66,7 +66,7 @@ static int setup_cursor_state_file(Manager *m, uid_t uid, gid_t gid) {
 static void help(void) {
         printf("%s ..\n\n"
                "Forwards messages from the journal to other hosts over the network using the syslog\n"
-               "RFC 5424 or RFC3339 format in both unicast and multicast addresses.\n\n"
+               "RFC 5424 or RFC 3164 format in both unicast and multicast addresses.\n\n"
                "  -h --help                 Show this help\n"
                "     --version              Show package version\n"
                "     --cursor=CURSOR        Start at the specified cursor\n"

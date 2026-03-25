@@ -73,7 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial release
 - UDP transport for syslog messages
-- RFC 3339 timestamp format
+- RFC 3164 message format
 - systemd journal integration
 - Multicast support
 

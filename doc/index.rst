@@ -23,14 +23,14 @@ Synopsis
 Description
 -----------
 
-**systemd-netlogd** is a lightweight, network-aware daemon for forwarding log messages from the **systemd journal** to remote hosts over the network using the **Syslog protocol** (RFC 5424 and RFC 3339). It supports unicast and multicast destinations, ensuring efficient log aggregation in distributed environments.
+**systemd-netlogd** is a lightweight, network-aware daemon for forwarding log messages from the **systemd journal** to remote hosts over the network using the **Syslog protocol** (RFC 5424 and RFC 3164). It supports unicast and multicast destinations, ensuring efficient log aggregation in distributed environments.
 
 Key features:
 
 - **Efficient forwarding**: Reads journal entries sequentially and transmits them one-by-one without buffering or additional disk usage.
 - **Network integration**: Leverages ``sd-network`` to start forwarding when the network is up and pause when it's down.
 - **Secure transports**: Supports UDP (default), TCP, TLS, and DTLS (RFC 6012 for datagram security).
-- **Flexible output**: Formats logs as RFC 5424 (default), RFC 5425 (length-prefixed for TLS), or RFC 3339.
+- **Flexible output**: Formats logs as RFC 5424 (default), RFC 5425 (length-prefixed for TLS), or RFC 3164.
 - **Isolation**: Runs as the dedicated system user ``systemd-journal-netlog`` with minimal privileges.
 - **Filtering**: Exclude specific syslog facilities or levels; target specific journal namespaces.
 - **Fault tolerant**: Automatic reconnection with cursor persistence ensures no message loss.
@@ -113,7 +113,7 @@ Option                        Type    Default       Description
 ============================  ======  ============  ================================================================================================
 ``Address=``                  string  *(required)*  Destination (unicast ``IP:PORT`` or multicast ``GROUP:PORT``). See :manpage:`systemd.socket(5)`.
 ``Protocol=``                 enum    ``udp``       Transport protocol: ``udp``, ``tcp``, ``tls``, ``dtls``.
-``LogFormat=``                enum    ``rfc5424``   Message format: ``rfc5424`` (recommended), ``rfc5425`` (length-prefixed for TLS), ``rfc3339`` (legacy BSD syslog).
+``LogFormat=``                enum    ``rfc5424``   Message format: ``rfc5424`` (recommended), ``rfc5425`` (length-prefixed for TLS), ``rfc3164`` (legacy BSD syslog).
 ``Directory=``                path    *system*      Custom journal directory. Mutually exclusive with ``Namespace=``.
 ``Namespace=``                string  *default*     Journal namespace filter: specific ID, ``*`` (all namespaces), or ``+ID`` (ID plus default namespace).
 ``ConnectionRetrySec=``       time    ``30s``       Reconnect delay after connection failure (minimum 1s). See :manpage:`systemd.time(5)`.
@@ -147,14 +147,14 @@ UDP Multicast
    [Network]
    Address=239.0.0.1:6000
 
-Unicast UDP (RFC 3339)
+Unicast UDP (RFC 3164)
 ^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: ini
 
    [Network]
    Address=192.168.8.101:514
-   LogFormat=rfc3339
+   LogFormat=rfc3164
 
 Custom Structured Data
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -717,6 +717,7 @@ See Also
 **RFCs and Standards:**
    - `RFC 5424 <https://tools.ietf.org/html/rfc5424>`_ - The Syslog Protocol
    - `RFC 5425 <https://tools.ietf.org/html/rfc5425>`_ - Transport Layer Security (TLS) Transport Mapping for Syslog
+   - `RFC 3164 <https://tools.ietf.org/html/rfc3164>`_ - The BSD Syslog Protocol
    - `RFC 3339 <https://tools.ietf.org/html/rfc3339>`_ - Date and Time on the Internet: Timestamps
    - `RFC 6012 <https://tools.ietf.org/html/rfc6012>`_ - Datagram Transport Layer Security (DTLS) Transport Mapping for Syslog
 

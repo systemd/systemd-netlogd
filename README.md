@@ -75,7 +75,7 @@ journalctl -u systemd-netlogd -f
 - **🌐 Network-Aware**: Automatically detects network state changes via `sd-network`
 - **⚡ Zero Buffering**: Sequential journal reading without local caching
 - **🔒 Secure Transport**: UDP, TCP, TLS (RFC 5425), DTLS (RFC 6012)
-- **📋 Standard Formats**: RFC 5424 (recommended), RFC 3339 (legacy BSD syslog)
+- **📋 Standard Formats**: RFC 5424 (recommended), RFC 3164 (legacy BSD syslog)
 - **🎯 Smart Filtering**: Exclude sensitive facilities (auth/authpriv) and log levels
 - **📦 Namespace Support**: Forward from specific namespaces or aggregate all
 - **🛡️ Hardened**: Runs as unprivileged `systemd-journal-netlog` user with restricted capabilities
@@ -164,7 +164,7 @@ sudo systemctl enable --now systemd-netlogd
 |--------|-------------|---------|
 | **`Address=`** | Destination server (IP:port or multicast) | *Required* |
 | **`Protocol=`** | Transport: `udp`, `tcp`, `tls`, `dtls` | `udp` |
-| **`LogFormat=`** | Format: `rfc5424`, `rfc5425`, `rfc3339` | `rfc5424` |
+| **`LogFormat=`** | Format: `rfc5424`, `rfc5425`, `rfc3164` | `rfc5424` |
 | `ConnectionRetrySec=` | Retry interval on failure | `30s` |
 | `TLSCertificateAuthMode=` | TLS validation: `deny`, `warn`, `allow`, `no` | `deny` |
 | `TLSServerCertificate=` | Path to CA certificate PEM file | System CA |
@@ -178,7 +178,7 @@ sudo systemctl enable --now systemd-netlogd
 |--------|-------------|---------|
 | `Address=` | Destination (IP:port or multicast group) | **Required** |
 | `Protocol=` | `udp`, `tcp`, `tls`, `dtls` | `udp` |
-| `LogFormat=` | `rfc5424`, `rfc5425` (TLS), `rfc3339` (legacy) | `rfc5424` |
+| `LogFormat=` | `rfc5424`, `rfc5425` (TLS), `rfc3164` (legacy) | `rfc5424` |
 | `Directory=` | Custom journal directory path | System default |
 | `Namespace=` | Journal namespace: `*` (all), `+id` (id+default), `id` | Default |
 | `ConnectionRetrySec=` | Reconnect delay after failure | `30s` |

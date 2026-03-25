@@ -27,7 +27,7 @@ Requires(postun): systemd
 
 %description
 Forwards messages from the journal to other hosts over the network
-using the Syslog Protocol (RFC 5424 and RFC 3339). It can be configured
+using the Syslog Protocol (RFC 5424 and RFC 3164). It can be configured
 to send messages to both unicast and multicast addresses.
 
 systemd-netlogd runs with its own user systemd-journal-netlog. It starts
