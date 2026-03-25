@@ -5,10 +5,10 @@ Summary:        Forwards messages from the journal to other hosts over the netwo
 
 License:        LGPL-2.1-or-later AND GPL-2.0-only
 URL:            https://github.com/systemd/systemd-netlogd
-Source0:        %{URL}/archive/v%{version}.tar.gz
+Source0:        %{URL}/archive/v%{version}/systemd-netlogd-%{version}.tar.gz
 
 BuildRequires:  gcc
-BuildRequires:  meson >= 0.43
+BuildRequires:  meson >= 0.51
 BuildRequires:  ninja-build
 BuildRequires:  gperf
 BuildRequires:  libcap-devel
@@ -27,7 +27,7 @@ Requires(postun): systemd
 
 %description
 Forwards messages from the journal to other hosts over the network
-using the Syslog Protocol (RFC 5424 and RFC 3339). It can be configured
+using the Syslog Protocol (RFC 5424 and RFC 3164). It can be configured
 to send messages to both unicast and multicast addresses.
 
 systemd-netlogd runs with its own user systemd-journal-netlog. It starts
@@ -67,7 +67,7 @@ getent passwd systemd-journal-netlog >/dev/null || \
 
 %files
 %license LICENSE.LGPL2.1 LICENSE.GPL2
-%doc README.md CONTRIBUTING.md ARCHITECTURE.md TESTING.md FAQ.md
+%doc README.md CONTRIBUTING.md ARCHITECTURE.md TESTING.md FAQ.md CHANGELOG.md SECURITY.md
 %doc examples/
 %config(noreplace) %{_sysconfdir}/systemd/netlogd.conf
 %{_prefix}/lib/systemd/systemd-netlogd

@@ -24,8 +24,6 @@ jobs:
           python3-sphinx \
           ninja-build \
           meson \
-          glib-2.0-dev \
-          libudev-dev \
           libsystemd-dev \
           clang \
           gperf \
@@ -35,13 +33,15 @@ jobs:
           libssl-dev
 
     - name: Build project
-      run: make
+      run: |
+        meson setup build
+        meson compile -C build
 
     - name: Run tests
       run: meson test -C build -v
 
     - name: Install
-      run: sudo make install
+      run: sudo meson install -C build
 
     - name: Create systemd-journal-netlog user
       run: sudo useradd -r -d / -s /usr/sbin/nologin -g systemd-journal systemd-journal-netlog || true
@@ -55,12 +55,12 @@ jobs:
       run: sudo systemctl status systemd-netlogd
 
   build-rpm:
-    name: Build RPM on ${{ matrix.os }}
+    name: Build RPM (${{ matrix.os }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        os: [fedora:latest, fedora:39, rockylinux:9, rockylinux:8]
+        os: [fedora:latest, fedora:41]
 
     container:
       image: ${{ matrix.os }}
@@ -68,8 +68,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install RPM build dependencies (Fedora)
-      if: startsWith(matrix.os, 'fedora')
+    - name: Install RPM build dependencies
       run: |
         dnf install -y \
           rpm-build \
@@ -77,33 +76,14 @@ jobs:
           meson \
           ninja-build \
           gcc \
-          glib2-devel \
           systemd-devel \
           libcap-devel \
           gperf \
           openssl-devel \
           libcmocka-devel \
           python3-sphinx \
-          git
-
-    - name: Install RPM build dependencies (Rocky/RHEL)
-      if: startsWith(matrix.os, 'rockylinux')
-      run: |
-        dnf install -y epel-release
-        dnf install -y \
-          rpm-build \
-          rpmdevtools \
-          meson \
-          ninja-build \
-          gcc \
-          glib2-devel \
-          systemd-devel \
-          libcap-devel \
-          gperf \
-          openssl-devel \
-          libcmocka-devel \
-          python3-sphinx \
-          git
+          python3-devel \
+          python3-lxml
 
     - name: Set up RPM build tree
       run: rpmdev-setuptree
@@ -112,23 +92,16 @@ jobs:
       run: |
         VERSION=$(grep "version:" meson.build | head -1 | sed "s/.*'\(.*\)'.*/\1/")
         echo "Building version $VERSION"
-        git archive --format=tar.gz --prefix=systemd-netlogd-$VERSION/ -o ~/rpmbuild/SOURCES/systemd-netlogd-$VERSION.tar.gz HEAD
+        tar czf ~/rpmbuild/SOURCES/systemd-netlogd-$VERSION.tar.gz \
+          --transform "s,^\.,systemd-netlogd-$VERSION," \
+          --exclude='.git' --exclude='builddir' \
+          .
 
     - name: Copy spec file
       run: cp systemd-netlogd.spec ~/rpmbuild/SPECS/
 
-    - name: Build source RPM
-      run: rpmbuild -bs ~/rpmbuild/SPECS/systemd-netlogd.spec
-
-    - name: Build binary RPM
-      run: rpmbuild -bb ~/rpmbuild/SPECS/systemd-netlogd.spec
-
-    - name: List built RPMs
-      run: |
-        echo "Source RPMs:"
-        ls -lh ~/rpmbuild/SRPMS/
-        echo "Binary RPMs:"
-        ls -lh ~/rpmbuild/RPMS/*/
+    - name: Build RPMs
+      run: rpmbuild -ba ~/rpmbuild/SPECS/systemd-netlogd.spec
 
     - name: Test install RPM
       run: |
@@ -145,13 +118,78 @@ jobs:
           ~/rpmbuild/SRPMS/*.rpm
         retention-days: 30
 
+  build-rpm-rocky:
+    name: Build RPM (rockylinux:9)
+    runs-on: ubuntu-latest
+
+    container:
+      image: rockylinux:9
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Enable CRB and install EPEL
+      run: |
+        dnf install -y epel-release
+        /usr/bin/crb enable
+
+    - name: Install RPM build dependencies
+      run: |
+        dnf install -y \
+          rpm-build \
+          rpmdevtools \
+          gcc \
+          systemd-devel \
+          libcap-devel \
+          gperf \
+          openssl-devel \
+          libcmocka-devel \
+          python3-pip \
+          python3-sphinx \
+          python3-devel \
+          python3-lxml
+        pip3 install meson ninja
+
+    - name: Set up RPM build tree
+      run: rpmdev-setuptree
+
+    - name: Create source tarball
+      run: |
+        VERSION=$(grep "version:" meson.build | head -1 | sed "s/.*'\(.*\)'.*/\1/")
+        echo "Building version $VERSION"
+        tar czf ~/rpmbuild/SOURCES/systemd-netlogd-$VERSION.tar.gz \
+          --transform "s,^\.,systemd-netlogd-$VERSION," \
+          --exclude='.git' --exclude='builddir' \
+          .
+
+    - name: Copy spec file
+      run: cp systemd-netlogd.spec ~/rpmbuild/SPECS/
+
+    - name: Build RPMs
+      run: rpmbuild -ba ~/rpmbuild/SPECS/systemd-netlogd.spec
+
+    - name: Test install RPM
+      run: |
+        dnf install -y ~/rpmbuild/RPMS/*/systemd-netlogd-*.rpm
+        rpm -qi systemd-netlogd
+        systemctl status systemd-netlogd || true
+
+    - name: Upload RPM artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: rpms-rockylinux-9
+        path: |
+          ~/rpmbuild/RPMS/*/*.rpm
+          ~/rpmbuild/SRPMS/*.rpm
+        retention-days: 30
+
   build-deb:
-    name: Build DEB on ${{ matrix.os }}
+    name: Build DEB (${{ matrix.os }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu:24.04, ubuntu:22.04, debian:12, debian:11]
+        os: [ubuntu:24.04, ubuntu:22.04, debian:12]
 
     container:
       image: ${{ matrix.os }}
@@ -160,6 +198,8 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Install build dependencies
+      env:
+        DEBIAN_FRONTEND: noninteractive
       run: |
         apt-get update
         apt-get install -y \
@@ -168,26 +208,64 @@ jobs:
           meson \
           ninja-build \
           pkg-config \
-          libglib2.0-dev \
           libsystemd-dev \
           libcap-dev \
           gperf \
           libssl-dev \
           libcmocka-dev \
           python3-sphinx \
-          git
+          fakeroot \
+          devscripts
 
     - name: Build DEB package
+      run: dpkg-buildpackage -us -uc -b
+
+    - name: Test install DEB
       run: |
-        # Create simple debian package structure
-        mkdir -p debian
+        dpkg -i ../systemd-netlogd_*.deb || apt-get install -f -y
+        dpkg -s systemd-netlogd
+        systemctl status systemd-netlogd || true
 
-        # Note: This is a basic build. For production, create proper debian/ directory
-        # with control, rules, changelog, etc.
-        make
-        meson test -C build -v
-        DESTDIR=$(pwd)/debian/tmp make install
+    - name: Upload DEB artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: debs-${{ matrix.os }}
+        path: ../*.deb
+        retention-days: 30
 
-        echo "DEB packaging would continue here with proper debian/ directory structure"
-        echo "For now, verifying build and install locations:"
-        find debian/tmp -type f
+  build-archlinux:
+    name: Build on Arch Linux
+    runs-on: ubuntu-latest
+
+    container:
+      image: archlinux:latest
+
+    steps:
+    - name: Install base-devel and dependencies
+      run: |
+        pacman -Syu --noconfirm
+        pacman -S --noconfirm \
+          base-devel \
+          meson \
+          gperf \
+          libcap \
+          openssl \
+          systemd-libs \
+          python-sphinx \
+          cmocka \
+          git
+
+    - uses: actions/checkout@v4
+
+    - name: Build
+      run: |
+        meson setup build \
+          --prefix=/usr/lib/systemd \
+          --sysconfdir=/etc/systemd
+        meson compile -C build
+
+    - name: Run tests
+      run: meson test -C build -v
+
+    - name: Install
+      run: meson install -C build --destdir "$PWD/pkg"

@@ -28,11 +28,11 @@ static void test_protocol_string_table(void **state) {
 /* Test log format string table conversions */
 static void test_log_format_string_table(void **state) {
         assert_string_equal(log_format_to_string(SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424), "rfc5424");
-        assert_string_equal(log_format_to_string(SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_3339), "rfc3339");
+        assert_string_equal(log_format_to_string(SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_3164), "rfc3164");
         assert_string_equal(log_format_to_string(SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5425), "rfc5425");
 
         assert_int_equal(log_format_from_string("rfc5424"), SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5424);
-        assert_int_equal(log_format_from_string("rfc3339"), SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_3339);
+        assert_int_equal(log_format_from_string("rfc3164"), SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_3164);
         assert_int_equal(log_format_from_string("rfc5425"), SYSLOG_TRANSMISSION_LOG_FORMAT_RFC_5425);
 
         /* Test invalid format - returns -1 when not found */

@@ -1,0 +1,32 @@
+Source: systemd-netlogd
+Section: admin
+Priority: optional
+Maintainer: Susant Sahani <ssahani@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               meson (>= 0.51),
+               ninja-build,
+               pkg-config,
+               libsystemd-dev (>= 230),
+               libcap-dev,
+               libssl-dev,
+               gperf,
+               python3-sphinx,
+               libcmocka-dev
+Standards-Version: 4.6.2
+Homepage: https://github.com/systemd/systemd-netlogd
+Rules-Requires-Root: no
+
+Package: systemd-netlogd
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, systemd (>= 230)
+Pre-Depends: ${misc:Pre-Depends}
+Description: Forward systemd journal entries to remote syslog servers
+ systemd-netlogd forwards messages from the systemd journal to remote
+ hosts over the network using the Syslog protocol (RFC 5424 and
+ RFC 3164). It supports unicast and multicast destinations with UDP,
+ TCP, TLS (RFC 5425), and DTLS (RFC 6012) transports.
+ .
+ It reads from the journal and forwards to the network sequentially
+ without local buffering or extra disk usage. It starts sending logs
+ when the network is up and stops when it goes down (uses sd-network),
+ and runs as the unprivileged systemd-journal-netlog user.
