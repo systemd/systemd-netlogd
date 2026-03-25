@@ -184,7 +184,7 @@ TLSServerCertificate=/path/to/self-signed-cert.pem
 
 ## Log Formats
 
-### What's the difference between RFC 5424 and RFC 3339?
+### What's the difference between RFC 5424 and RFC 3164?
 
 **RFC 5424** (recommended):
 ```
@@ -194,7 +194,7 @@ TLSServerCertificate=/path/to/self-signed-cert.pem
 - Structured data support
 - Modern syslog standard
 
-**RFC 3339** (legacy):
+**RFC 3164** (legacy):
 ```
 <34>2024-01-20T10:30:15.123456+00:00 hostname myapp[1234]: User logged in
 ```

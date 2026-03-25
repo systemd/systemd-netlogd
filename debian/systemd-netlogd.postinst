@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+
+#DEBHELPER#
+
+if [ "$1" = "configure" ]; then
+    adduser --quiet --system --group --no-create-home \
+        --home / --shell /usr/sbin/nologin \
+        --ingroup systemd-journal \
+        systemd-journal-netlog 2>/dev/null || true
+fi

@@ -267,7 +267,7 @@ int main(void) {
 Aim for:
 - All new functions should have tests
 - Edge cases and error conditions
-- Protocol compliance (RFC 5424, RFC 3339)
+- Protocol compliance (RFC 5424, RFC 3164)
 
 ## Submitting Changes
 
@@ -418,7 +418,7 @@ perf report
 
 - [systemd Coding Style](https://systemd.io/CODING_STYLE/)
 - [RFC 5424](https://tools.ietf.org/html/rfc5424) - Syslog Protocol
-- [RFC 3339](https://tools.ietf.org/html/rfc3339) - Date and Time on the Internet
+- [RFC 3164](https://tools.ietf.org/html/rfc3164) - The BSD Syslog Protocol
 - [systemd Journal API](https://www.freedesktop.org/software/systemd/man/sd-journal.html)
 
 ## Getting Help

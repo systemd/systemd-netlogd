@@ -1,0 +1,15 @@
+systemd-netlogd (1.4.5-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Add TLS and DTLS transport support.
+  * Add journal namespace and filtering support.
+  * Add structured data and message ID extraction.
+  * Add comprehensive test suite.
+
+ -- Susant Sahani <ssahani@gmail.com>  Mon, 20 Jan 2025 00:00:00 +0000
+
+systemd-netlogd (1.4-1) unstable; urgency=medium
+
+  * Initial release.
+
+ -- Susant Sahani <ssahani@gmail.com>  Tue, 14 May 2024 00:00:00 +0000
