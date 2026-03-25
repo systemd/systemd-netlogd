@@ -3,12 +3,22 @@
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 %:
-	dh $@
+	dh $@ --buildsystem=meson
 
 override_dh_auto_configure:
-	dh_auto_configure --buildsystem=meson -- \
-		-Dprefix=/usr/lib/systemd \
-		-Dsysconfdir=/etc/systemd
+	meson setup obj-$(DEB_HOST_MULTIARCH) \
+		--prefix=/usr/lib/systemd \
+		--sysconfdir=/etc/systemd
+
+override_dh_auto_build:
+	meson compile -C obj-$(DEB_HOST_MULTIARCH)
 
 override_dh_auto_test:
-	dh_auto_test -- -v
+	meson test -C obj-$(DEB_HOST_MULTIARCH) -v
+
+override_dh_auto_install:
+	DESTDIR=$(CURDIR)/debian/systemd-netlogd \
+		meson install -C obj-$(DEB_HOST_MULTIARCH)
+
+override_dh_auto_clean:
+	rm -rf obj-$(DEB_HOST_MULTIARCH)

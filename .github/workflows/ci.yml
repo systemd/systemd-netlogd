@@ -67,11 +67,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Mark directory as safe for git
-      run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
     - name: Install RPM build dependencies
       run: |
@@ -86,8 +81,7 @@ jobs:
           gperf \
           openssl-devel \
           libcmocka-devel \
-          python3-sphinx \
-          git
+          python3-sphinx
 
     - name: Set up RPM build tree
       run: rpmdev-setuptree
@@ -97,7 +91,7 @@ jobs:
         VERSION=$(grep "version:" meson.build | head -1 | sed "s/.*'\(.*\)'.*/\1/")
         echo "Building version $VERSION"
         tar czf ~/rpmbuild/SOURCES/systemd-netlogd-$VERSION.tar.gz \
-          --transform "s,^,systemd-netlogd-$VERSION/," \
+          --transform "s,^\.,systemd-netlogd-$VERSION," \
           --exclude='.git' --exclude='builddir' \
           .
 
@@ -131,11 +125,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Mark directory as safe for git
-      run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
     - name: Enable CRB and install EPEL
       run: |
@@ -154,8 +143,7 @@ jobs:
           openssl-devel \
           libcmocka-devel \
           python3-pip \
-          python3-sphinx \
-          git
+          python3-sphinx
         pip3 install meson ninja
 
     - name: Set up RPM build tree
@@ -166,7 +154,7 @@ jobs:
         VERSION=$(grep "version:" meson.build | head -1 | sed "s/.*'\(.*\)'.*/\1/")
         echo "Building version $VERSION"
         tar czf ~/rpmbuild/SOURCES/systemd-netlogd-$VERSION.tar.gz \
-          --transform "s,^,systemd-netlogd-$VERSION/," \
+          --transform "s,^\.,systemd-netlogd-$VERSION," \
           --exclude='.git' --exclude='builddir' \
           .
 
