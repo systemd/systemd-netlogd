@@ -8,7 +8,7 @@ URL:            https://github.com/systemd/systemd-netlogd
 Source0:        %{URL}/archive/v%{version}.tar.gz
 
 BuildRequires:  gcc
-BuildRequires:  meson >= 0.43
+BuildRequires:  meson >= 0.51
 BuildRequires:  ninja-build
 BuildRequires:  gperf
 BuildRequires:  libcap-devel
@@ -67,7 +67,7 @@ getent passwd systemd-journal-netlog >/dev/null || \
 
 %files
 %license LICENSE.LGPL2.1 LICENSE.GPL2
-%doc README.md CONTRIBUTING.md ARCHITECTURE.md TESTING.md FAQ.md
+%doc README.md CONTRIBUTING.md ARCHITECTURE.md TESTING.md FAQ.md CHANGELOG.md SECURITY.md
 %doc examples/
 %config(noreplace) %{_sysconfdir}/systemd/netlogd.conf
 %{_prefix}/lib/systemd/systemd-netlogd

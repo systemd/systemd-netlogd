@@ -1,0 +1,3 @@
+usr/lib/systemd/systemd-netlogd
+usr/lib/systemd/system/systemd-netlogd.service
+etc/systemd/netlogd.conf
