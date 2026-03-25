@@ -86,26 +86,26 @@ jobs:
           python3-lxml
 
     - name: Set up RPM build tree
-      run: rpmdev-setuptree
+      run: rpmdev-setuptree || mkdir -p $HOME/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
     - name: Create source tarball
       run: |
         VERSION=$(grep "version:" meson.build | head -1 | sed "s/.*'\(.*\)'.*/\1/")
         echo "Building version $VERSION"
-        tar czf ~/rpmbuild/SOURCES/systemd-netlogd-$VERSION.tar.gz \
-          --transform "s,^\.,systemd-netlogd-$VERSION," \
-          --exclude='.git' --exclude='builddir' \
-          .
+        mkdir -p /tmp/systemd-netlogd-$VERSION
+        cp -a $(ls -A | grep -v '^\.\(git\)$' | grep -v '^builddir$') /tmp/systemd-netlogd-$VERSION/
+        tar czf $HOME/rpmbuild/SOURCES/systemd-netlogd-$VERSION.tar.gz -C /tmp systemd-netlogd-$VERSION
+        ls -lh $HOME/rpmbuild/SOURCES/
 
     - name: Copy spec file
-      run: cp systemd-netlogd.spec ~/rpmbuild/SPECS/
+      run: cp systemd-netlogd.spec $HOME/rpmbuild/SPECS/
 
     - name: Build RPMs
-      run: rpmbuild -ba ~/rpmbuild/SPECS/systemd-netlogd.spec
+      run: rpmbuild -ba $HOME/rpmbuild/SPECS/systemd-netlogd.spec
 
     - name: Test install RPM
       run: |
-        dnf install -y ~/rpmbuild/RPMS/*/systemd-netlogd-*.rpm
+        dnf install -y $HOME/rpmbuild/RPMS/*/systemd-netlogd-*.rpm
         rpm -qi systemd-netlogd
         systemctl status systemd-netlogd || true
 
@@ -113,9 +113,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: rpms-${{ matrix.os }}
-        path: |
-          ~/rpmbuild/RPMS/*/*.rpm
-          ~/rpmbuild/SRPMS/*.rpm
+        path: /github/home/rpmbuild/RPMS/
         retention-days: 30
 
   build-rpm-rocky:
@@ -151,26 +149,26 @@ jobs:
         pip3 install meson ninja
 
     - name: Set up RPM build tree
-      run: rpmdev-setuptree
+      run: rpmdev-setuptree || mkdir -p $HOME/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
     - name: Create source tarball
       run: |
         VERSION=$(grep "version:" meson.build | head -1 | sed "s/.*'\(.*\)'.*/\1/")
         echo "Building version $VERSION"
-        tar czf ~/rpmbuild/SOURCES/systemd-netlogd-$VERSION.tar.gz \
-          --transform "s,^\.,systemd-netlogd-$VERSION," \
-          --exclude='.git' --exclude='builddir' \
-          .
+        mkdir -p /tmp/systemd-netlogd-$VERSION
+        cp -a $(ls -A | grep -v '^\.\(git\)$' | grep -v '^builddir$') /tmp/systemd-netlogd-$VERSION/
+        tar czf $HOME/rpmbuild/SOURCES/systemd-netlogd-$VERSION.tar.gz -C /tmp systemd-netlogd-$VERSION
+        ls -lh $HOME/rpmbuild/SOURCES/
 
     - name: Copy spec file
-      run: cp systemd-netlogd.spec ~/rpmbuild/SPECS/
+      run: cp systemd-netlogd.spec $HOME/rpmbuild/SPECS/
 
     - name: Build RPMs
-      run: rpmbuild -ba ~/rpmbuild/SPECS/systemd-netlogd.spec
+      run: rpmbuild -ba $HOME/rpmbuild/SPECS/systemd-netlogd.spec
 
     - name: Test install RPM
       run: |
-        dnf install -y ~/rpmbuild/RPMS/*/systemd-netlogd-*.rpm
+        dnf install -y $HOME/rpmbuild/RPMS/*/systemd-netlogd-*.rpm
         rpm -qi systemd-netlogd
         systemctl status systemd-netlogd || true
 
@@ -178,9 +176,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: rpms-rockylinux-9
-        path: |
-          ~/rpmbuild/RPMS/*/*.rpm
-          ~/rpmbuild/SRPMS/*.rpm
+        path: /github/home/rpmbuild/RPMS/
         retention-days: 30
 
   build-deb:
@@ -220,17 +216,24 @@ jobs:
     - name: Build DEB package
       run: dpkg-buildpackage -us -uc -b
 
+    - name: Collect DEB packages
+      run: |
+        mkdir -p debs
+        cp ../*.deb debs/ || true
+        ls -lh debs/
+
     - name: Test install DEB
       run: |
-        dpkg -i ../systemd-netlogd_*.deb || apt-get install -f -y
+        dpkg -i debs/systemd-netlogd_*.deb || apt-get install -f -y
         dpkg -s systemd-netlogd
         systemctl status systemd-netlogd || true
 
     - name: Upload DEB artifacts
       uses: actions/upload-artifact@v4
+      if: always()
       with:
         name: debs-${{ matrix.os }}
-        path: ../*.deb
+        path: debs/
         retention-days: 30
 
   build-archlinux:
