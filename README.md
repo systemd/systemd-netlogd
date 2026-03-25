@@ -22,8 +22,10 @@ sending logs when the network is up and stops when it goes down
 - **Standard formats** — RFC 5424 (recommended), RFC 3164 (legacy BSD syslog)
 - **Smart filtering** — exclude sensitive facilities (auth/authpriv) and log levels
 - **Namespace support** — forward from specific journal namespaces or aggregate all
-- **Hardened** — runs as unprivileged user with restricted capabilities
+- **Structured data** — attach metadata to messages or extract from journal fields
+- **Hardened** — runs as unprivileged user with systemd security sandboxing
 - **Fault tolerant** — automatic reconnection with cursor persistence ensures no message loss
+- **Lightweight** — minimal memory footprint, no runtime dependencies beyond systemd and OpenSSL
 
 ## Quick Start
 
@@ -54,12 +56,12 @@ journalctl -u systemd-netlogd -f
 | Distribution   | Command                             |
 |----------------|-------------------------------------|
 | Ubuntu/Debian  | `sudo apt install systemd-netlogd`  |
-| Fedora         | Available via COPR repositories     |
+| Fedora/RHEL    | Available via COPR repositories     |
 | Arch Linux     | AUR: `yay -S systemd-netlogd-git`  |
 
 ### Build from Source
 
-**Prerequisites:** systemd >= 230 (v255+ recommended), meson, gperf, libcap, OpenSSL
+**Prerequisites:** systemd >= 230 (v255+ recommended), meson (>= 0.51), gperf, libcap, OpenSSL
 
 ```bash
 # Install dependencies (Debian/Ubuntu)
@@ -67,6 +69,9 @@ sudo apt install build-essential meson gperf libcap-dev libsystemd-dev libssl-de
 
 # Install dependencies (Fedora/RHEL)
 sudo dnf install gcc meson gperf libcap-devel systemd-devel openssl-devel libcmocka-devel
+
+# Install dependencies (Arch Linux)
+sudo pacman -S base-devel meson gperf libcap openssl cmocka
 
 # Build
 git clone https://github.com/systemd/systemd-netlogd.git
@@ -85,6 +90,14 @@ sudo useradd -r -d / -s /usr/sbin/nologin -g systemd-journal systemd-journal-net
 sudo systemctl daemon-reload
 sudo systemctl enable --now systemd-netlogd
 ```
+
+### Packaging
+
+The repository includes packaging for multiple distributions:
+
+- **RPM** — `systemd-netlogd.spec` (Fedora, RHEL, Rocky Linux)
+- **DEB** — `debian/` directory (Ubuntu, Debian)
+- **Arch Linux** — `PKGBUILD`
 
 ## Configuration
 
@@ -118,7 +131,7 @@ Reload after changes: `sudo systemctl reload systemd-netlogd`
 | `ExcludeSyslogFacility=` | Space-separated facility list to exclude | None |
 | `ExcludeSyslogLevel=` | Space-separated level list to exclude | None |
 
-**Facilities:** `kern`, `user`, `mail`, `daemon`, `auth`, `syslog`, `lpr`, `news`, `uucp`, `cron`, `authpriv`, `ftp`, `ntp`, `security`, `console`, `solaris-cron`, `local0`–`local7`
+**Facilities:** `kern`, `user`, `mail`, `daemon`, `auth`, `syslog`, `lpr`, `news`, `uucp`, `cron`, `authpriv`, `ftp`, `ntp`, `security`, `console`, `solaris-cron`, `local0`-`local7`
 
 **Levels:** `emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`
 
@@ -143,14 +156,50 @@ NoDelay=yes
 ExcludeSyslogFacility=auth authpriv
 ```
 
+**DTLS (encrypted UDP):**
+```ini
+[Network]
+Address=192.168.1.100:4433
+Protocol=dtls
+TLSCertificateAuthMode=warn
+```
+
+**TCP with filtering:**
+```ini
+[Network]
+Address=192.168.1.100:514
+Protocol=tcp
+ExcludeSyslogFacility=auth authpriv
+ExcludeSyslogLevel=debug
+```
+
 **Cloud service (Papertrail):**
 ```ini
 [Network]
 Address=logs7.papertrailapp.com:12345
 Protocol=tls
+LogFormat=rfc5424
+TLSCertificateAuthMode=deny
+KeepAlive=yes
 ```
 
-**With structured data:**
+**Cloud service (Loggly):**
+```ini
+[Network]
+Address=logs-01.loggly.com:6514
+Protocol=tls
+LogFormat=rfc5424
+StructuredData=[YOUR-CUSTOMER-TOKEN@41058]
+TLSCertificateAuthMode=deny
+```
+
+**Multicast:**
+```ini
+[Network]
+Address=239.0.0.1:6000
+```
+
+**With structured data and message IDs:**
 ```ini
 [Network]
 Address=192.168.1.100:514
@@ -161,7 +210,51 @@ UseSysLogStructuredData=yes
 UseSysLogMsgId=yes
 ```
 
+**All journal namespaces:**
+```ini
+[Network]
+Address=192.168.1.100:514
+Protocol=tcp
+Namespace=*
+```
+
 See the [`examples/`](examples/) directory for more production-ready configurations.
+
+## Security
+
+systemd-netlogd runs with minimal privileges via systemd hardening:
+
+- Runs as dedicated `systemd-journal-netlog` user (not root)
+- `ProtectSystem=strict`, `ProtectHome=yes`, `PrivateTmp=yes`
+- `ProtectKernelTunables=yes`, `ProtectKernelModules=yes`, `ProtectKernelLogs=yes`
+- `MemoryDenyWriteExecute=yes`, `LockPersonality=yes`
+- `SystemCallArchitectures=native`, `PrivateDevices=yes`
+
+Audit the security posture:
+```bash
+sudo systemd-analyze security systemd-netlogd.service
+```
+
+Best practices:
+- Use `Protocol=tls` for forwarding over untrusted networks
+- Set `TLSCertificateAuthMode=deny` with a valid CA certificate in production
+- Exclude sensitive logs: `ExcludeSyslogFacility=auth authpriv`
+
+See [SECURITY.md](SECURITY.md) for the full security policy and vulnerability reporting.
+
+## Signals
+
+| Signal | Action |
+|--------|--------|
+| `SIGTERM`, `SIGINT` | Graceful shutdown, save cursor state |
+| `SIGUSR1` | Toggle debug log level |
+| `SIGUSR2` | Reserved |
+
+```bash
+# Enable debug logging temporarily
+sudo kill -SIGUSR1 $(pidof systemd-netlogd)
+journalctl -u systemd-netlogd -f
+```
 
 ## Troubleshooting
 
@@ -177,10 +270,7 @@ nc -u -vz remote-server 514 # UDP
 # Generate test log
 logger -p user.info "Test from systemd-netlogd"
 
-# Enable debug logging temporarily
-sudo kill -SIGUSR1 $(pidof systemd-netlogd)
-
-# Or persistently via systemd override
+# Enable persistent debug logging
 sudo systemctl edit systemd-netlogd
 # Add: Environment=SYSTEMD_LOG_LEVEL=debug
 
@@ -193,16 +283,24 @@ sudo rm /var/lib/systemd-netlogd/state
 sudo systemctl start systemd-netlogd
 ```
 
+## State Persistence
+
+The daemon saves its journal cursor to `/var/lib/systemd-netlogd/state` after each
+successful forward. This ensures no message loss across restarts or network outages.
+On startup, it resumes from the last saved position.
+
 ## Documentation
 
-- **[Man page](doc/index.rst)** — full reference (`man systemd-netlogd`)
-- **[FAQ](FAQ.md)** — common questions and answers
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** — internal design and data flow
-- **[TESTING.md](TESTING.md)** — test suite and validation guide
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** — development setup and contribution guide
-- **[SECURITY.md](SECURITY.md)** — security policy and vulnerability reporting
-- **[CHANGELOG.md](CHANGELOG.md)** — release history
-- **[examples/](examples/)** — production-ready configuration examples
+| Document | Description |
+|----------|-------------|
+| [Man page](doc/index.rst) | Full reference (`man systemd-netlogd`) |
+| [FAQ](FAQ.md) | Common questions and answers |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Internal design and data flow |
+| [TESTING.md](TESTING.md) | Test suite and validation guide |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Development setup and contribution guide |
+| [SECURITY.md](SECURITY.md) | Security policy and vulnerability reporting |
+| [CHANGELOG.md](CHANGELOG.md) | Release history |
+| [examples/](examples/) | Production-ready configuration examples |
 
 ## Contributing
 
@@ -218,7 +316,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 ## License
 
-LGPL-2.1-or-later — same license as systemd. See [LICENSE.LGPL2.1](LICENSE.LGPL2.1).
+LGPL-2.1-or-later -- same license as systemd. See [LICENSE.LGPL2.1](LICENSE.LGPL2.1).
 
 ## Author
 
