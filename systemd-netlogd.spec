@@ -7,6 +7,8 @@ License:        LGPL-2.1-or-later AND GPL-2.0-only
 URL:            https://github.com/systemd/systemd-netlogd
 Source0:        %{URL}/archive/v%{version}/systemd-netlogd-%{version}.tar.gz
 
+%global debug_package %{nil}
+
 BuildRequires:  gcc
 BuildRequires:  meson >= 0.51
 BuildRequires:  ninja-build
@@ -41,14 +43,18 @@ Supported transports: UDP, TCP, TLS (RFC 5425), DTLS (RFC 6012)
 %autosetup
 
 %build
-%meson
-%meson_build
+meson setup redhat-linux-build \
+  --prefix=/usr/lib/systemd \
+  --sysconfdir=/etc/systemd \
+  --buildtype=plain
+ninja -C redhat-linux-build %{?_smp_mflags}
 
 %check
-%meson_test
+ninja -C redhat-linux-build test
 
 %install
-%meson_install
+DESTDIR=%{buildroot} ninja -C redhat-linux-build install
+mkdir -p %{buildroot}/var/lib/systemd-netlogd
 
 %pre
 getent group systemd-journal >/dev/null 2>&1 || groupadd -r systemd-journal 2>/dev/null || :
