@@ -22,7 +22,7 @@ int config_parse_netlog_remote_address(const char *unit,
                                        void *data,
                                        void *userdata) {
         Manager *m = userdata;
-        char *e;
+        const char *e;
         int r;
 
         assert(filename);
