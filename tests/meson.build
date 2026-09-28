@@ -43,8 +43,19 @@ if cmocka.found()
                 dependencies : [cmocka, test_libsystemd, test_libcap, test_libopenssl],
         )
 
+        test_tls_socket = executable(
+                'test-tls-socket',
+                'test-tls-socket.c',
+                '../src/netlog/netlog-ssl-common.c',
+                '../src/netlog/netlog-ssl.c',
+                include_directories : includes,
+                link_with : libshared,
+                dependencies : [cmocka, test_libsystemd, test_libopenssl, test_libcap],
+        )
+
         test('protocol', test_protocol)
         test('string-tables', test_string_tables)
+        test('tls-socket', test_tls_socket)
 else
         warning('cmocka not found, tests will not be built')
 endif
