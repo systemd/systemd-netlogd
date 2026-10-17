@@ -41,6 +41,8 @@ int ssl_manager_init(SSLTransportType type, OpenSSLCertificateAuthMode auth, con
 int ssl_connect(SSLManager *m, SocketAddress *addr);
 void ssl_disconnect(SSLManager *m);
 
+int ssl_socket(SocketAddress *address, SSLTransportType type);
+
 int ssl_writev(SSLManager *m, const struct iovec *iov, size_t iovcnt);
 
 const char *certificate_auth_mode_to_string(OpenSSLCertificateAuthMode v) _const_;

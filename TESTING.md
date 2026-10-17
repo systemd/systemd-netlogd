@@ -30,6 +30,7 @@ meson test -C build -v
 # Run specific test
 meson test -C build test-protocol -v
 meson test -C build test-string-tables -v
+meson test -C build test-tls-socket -v
 ```
 
 ### Test Suite Overview
@@ -46,6 +47,14 @@ Tests string table conversions:
 - Log formats (rfc5424, rfc3164, rfc5425)
 - Syslog facilities (kern, user, mail, etc.)
 - Syslog levels (emerg, alert, crit, etc.)
+
+#### test-tls-socket
+Tests TLS/DTLS socket creation for IPv4 and IPv6:
+- TLS over IPv6
+- TLS over IPv4
+- DTLS over IPv6
+- DTLS over IPv4
+- Rejection of unsupported address families (AF_UNIX)
 
 ### Writing New Tests
 

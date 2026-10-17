@@ -169,8 +169,8 @@ static int ssl_connect_tls(SSLManager *m, SocketAddress *address, const char *pr
 
         r = SSL_connect(ssl);
         if (r <= 0)
-                return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
-                                       "%s: Failed to SSL_connect: %s",
+                return log_error_errno(SYNTHETIC_ERRNO(EIO),
+                                       "%s: Failed to invoke SSL_connect: %s",
                                        proto, ERR_error_string(ERR_get_error(), NULL));
 
         ssl_log_connection_info(m, ssl);
@@ -220,8 +220,8 @@ static int ssl_connect_dtls(SSLManager *m, SocketAddress *address, const char *p
 
         r = SSL_connect(ssl);
         if (r <= 0)
-                return log_error_errno(SYNTHETIC_ERRNO(ENOMEM),
-                                       "%s: Failed to SSL_connect: %s",
+                return log_error_errno(SYNTHETIC_ERRNO(EIO),
+                                       "%s: Failed to invoke SSL_connect: %s",
                                        proto, ERR_error_string(ERR_get_error(), NULL));
 
         ssl_log_connection_info(m, ssl);
@@ -230,12 +230,32 @@ static int ssl_connect_dtls(SSLManager *m, SocketAddress *address, const char *p
         return 0;
 }
 
+int ssl_socket(SocketAddress *address, SSLTransportType type) {
+        int sock_type, fd;
+
+        assert(address);
+        assert(IN_SET(type, SSL_TRANSPORT_TLS, SSL_TRANSPORT_DTLS));
+
+        if (!IN_SET(address->sockaddr.sa.sa_family, AF_INET, AF_INET6))
+                return -EAFNOSUPPORT;
+
+        sock_type = type == SSL_TRANSPORT_TLS ? SOCK_STREAM : SOCK_DGRAM;
+
+        fd = socket(address->sockaddr.sa.sa_family,
+                    sock_type | SOCK_CLOEXEC,
+                    type == SSL_TRANSPORT_TLS ? IPPROTO_TCP : 0);
+        if (fd < 0)
+                return -errno;
+
+        return fd;
+}
+
 int ssl_connect(SSLManager *m, SocketAddress *address) {
         _cleanup_free_ char *pretty = NULL;
         _cleanup_close_ int fd = -1;
         const char *proto;
         socklen_t salen;
-        int sock_type, r;
+        int r;
 
         assert(m);
         assert(m->ctx);
@@ -254,11 +274,9 @@ int ssl_connect(SSLManager *m, SocketAddress *address) {
                         return -EAFNOSUPPORT;
         }
 
-        sock_type = m->transport_type == SSL_TRANSPORT_TLS ? SOCK_STREAM : SOCK_DGRAM;
-
-        fd = socket(AF_INET, sock_type, m->transport_type == SSL_TRANSPORT_TLS ? IPPROTO_TCP : 0);
+        fd = ssl_socket(address, m->transport_type);
         if (fd < 0)
-                return log_error_errno(errno, "%s: Failed to allocate socket: %m", proto);
+                return log_error_errno(fd, "%s: Failed to allocate socket: %m", proto);
 
         r = sockaddr_pretty(&address->sockaddr.sa, salen, true, true, &pretty);
         if (r < 0)
