@@ -13,10 +13,14 @@
 #include "socket-util.h"
 #include "string-table.h"
 #include "string-util.h"
+#include "strv.h"
 #include "util.h"
 
 #define RATELIMIT_INTERVAL_USEC (10*USEC_PER_SEC)
 #define RATELIMIT_BURST 10
+
+#define DEFAULT_CHUNK_MAX_LINE_COUNT 100
+#define DEFAULT_CHUNK_DELAY_INTERVAL_USEC (1*USEC_PER_SEC)
 
 static const char *const protocol_table[_SYSLOG_TRANSMISSION_PROTOCOL_MAX] = {
         [SYSLOG_TRANSMISSION_PROTOCOL_UDP]  = "udp",
@@ -141,6 +145,7 @@ int manager_connect(Manager *m) {
         if (r < 0)
                 return log_error_errno(r, "Failed to monitor journal: %m");
 
+        sd_notify(false, "STATUS=Ready.");
         return 0;
 }
 
@@ -157,9 +162,11 @@ void manager_disconnect(Manager *m) {
         tls_disconnect(m->tls);
 
         m->event_journal_input = sd_event_source_disable_unref(m->event_journal_input);
+        m->event_journal_delay = sd_event_source_disable_unref(m->event_journal_delay);
+
         journal_close_input(m);
 
-        sd_notifyf(false, "STATUS=Idle.");
+        sd_notifyf(false, "STATUS=Idle (disconnected).");
 }
 
 int manager_resolve_handler(sd_resolve_query *q, int ret, const struct addrinfo *ai, void *userdata) {
@@ -289,6 +296,8 @@ void manager_free(Manager *m) {
         free(m->dir);
         free(m->namespace);
 
+        strv_free(m->excluded_systemd_units);
+
         sd_resolve_unref(m->resolve);
 
         sd_event_source_unref(m->network_event_source);
@@ -321,6 +330,8 @@ int manager_new(const char *state_file, const char *cursor, Manager **ret) {
                         RATELIMIT_INTERVAL_USEC,
                         RATELIMIT_BURST
                 },
+                .chunk_max_line_count = DEFAULT_CHUNK_MAX_LINE_COUNT,
+                .chunk_delay_interval = DEFAULT_CHUNK_DELAY_INTERVAL_USEC,
             };
 
         r = socket_address_parse(&m->address, "239.0.0.1:6000");

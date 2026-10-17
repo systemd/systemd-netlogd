@@ -3,11 +3,13 @@
 #include "netlog-journal.h"
 
 #include <systemd/sd-journal.h>
+#include <systemd/sd-daemon.h>
 
 #include "alloc-util.h"
 #include "netlog-manager.h"
 #include "netlog-state.h"
 #include "parse-util.h"
+#include "strv.h"
 
 /* Default severity LOG_NOTICE */
 #define JOURNAL_DEFAULT_SEVERITY LOG_PRI(LOG_NOTICE)
@@ -91,6 +93,7 @@ static int parse_fieldv(
 static int parse_journal_fields(Manager *m,
                                 char **message,
                                 char **identifier,
+                                char **unit,
                                 char **hostname,
                                 char **pid,
                                 char **facility,
@@ -101,7 +104,7 @@ static int parse_journal_fields(Manager *m,
         size_t length;
         int r;
         size_t hostname_len = 0, identifier_len = 0, message_len = 0, priority_len = 0, facility_len = 0,
-                structured_data_len = 0, msgid_len = 0, pid_len = 0;
+                structured_data_len = 0, msgid_len = 0, pid_len = 0, unit_len = 0;
         const ParseFieldVec fields[] = {
                 PARSE_FIELD_VEC_ENTRY("_PID=",                        pid,               &pid_len              ),
                 PARSE_FIELD_VEC_ENTRY("MESSAGE=",                     message,           &message_len          ),
@@ -109,6 +112,7 @@ static int parse_journal_fields(Manager *m,
                 PARSE_FIELD_VEC_ENTRY("_HOSTNAME=",                   hostname,          &hostname_len         ),
                 PARSE_FIELD_VEC_ENTRY("SYSLOG_FACILITY=",             facility,          &facility_len         ),
                 PARSE_FIELD_VEC_ENTRY("SYSLOG_IDENTIFIER=",           identifier,        &identifier_len       ),
+                PARSE_FIELD_VEC_ENTRY("_SYSTEMD_UNIT=",               unit,              &unit_len             ),
                 PARSE_FIELD_VEC_ENTRY("SYSLOG_STRUCTURED_DATA=",      structured_data,   &structured_data_len  ),
                 PARSE_FIELD_VEC_ENTRY("SYSLOG_MSGID",                 msgid,             &msgid_len            ),
         };
@@ -124,7 +128,7 @@ static int parse_journal_fields(Manager *m,
                 return 0;
         }
 
-        return r;
+        return r < 0 ? r : 1;
 }
 
 static int parse_syslog_severity(Manager *m, const char *priority, unsigned *sev) {
@@ -177,9 +181,26 @@ static int parse_syslog_facility(Manager *m, const char *facility, unsigned *fac
         return 0;
 }
 
+static int check_systemd_unit(Manager *m, const char* unit) {
+        int r;
+
+        if (!unit)
+                return 0;
+
+        if (m->excluded_systemd_units) {
+                r = strv_contains(m->excluded_systemd_units, unit);
+                if (r) {
+                        log_debug("Skipping message with excluded systemd unit %s.", unit);
+                        return 1; /* filtered */
+                }
+        }
+
+        return 0;
+}
+
 static int journal_read_input(Manager *m) {
         _cleanup_free_ char *facility = NULL, *identifier = NULL, *priority = NULL, *message = NULL, *pid = NULL,
-                *hostname = NULL, *structured_data = NULL, *msgid = NULL, *cursor = NULL;
+                *hostname = NULL, *structured_data = NULL, *msgid = NULL, *cursor = NULL, *unit = NULL;
         unsigned sev = JOURNAL_DEFAULT_SEVERITY;
         unsigned fac = JOURNAL_DEFAULT_FACILITY;
         struct timeval tv, *tvp = NULL;
@@ -195,7 +216,8 @@ static int journal_read_input(Manager *m) {
 
         log_debug("Reading from journal cursor=%s", cursor);
 
-        r = parse_journal_fields(m, &message, &identifier, &hostname, &pid, &facility, &priority, &structured_data, &msgid);
+        r = parse_journal_fields(m, &message, &identifier, &unit, &hostname, &pid, &facility, &priority,
+                                 &structured_data, &msgid);
         if (r < 0)
                 return log_error_errno(r, "Failed to get journal fields: %m");
         if (r == 0)
@@ -227,6 +249,10 @@ static int journal_read_input(Manager *m) {
         if (r > 0) /* filtered */
                 return 0;
 
+        r = check_systemd_unit(m, unit);
+        if (r > 0) /* filtered */
+                return 0;
+
         return manager_push_to_network(m,
                                        sev,
                                        fac,
@@ -241,6 +267,8 @@ static int journal_read_input(Manager *m) {
 static int journal_process_input(Manager *m) {
         _cleanup_free_ char *cursor = NULL;
         int r;
+        unsigned count = 0;
+        bool delay = false;
 
         assert(m);
         assert(m->journal);
@@ -262,6 +290,11 @@ static int journal_process_input(Manager *m) {
 
                         break;
                 }
+                if (++count >= m->chunk_max_line_count) {
+                        log_debug("Reached chunk max line count %u, delaying next read.", m->chunk_max_line_count);
+                        delay = true;
+                        break;
+                }
         }
 
         r = sd_journal_get_cursor(m->journal, &cursor);
@@ -274,7 +307,38 @@ static int journal_process_input(Manager *m) {
         m->last_cursor = cursor;
         cursor = NULL;
 
-        return state_update_cursor(m);
+        r = state_update_cursor(m);
+        if (r < 0)
+                return r; /* error */
+        else if (delay)
+                return 1; /* delay next read */
+        else
+                return r;
+}
+
+int journal_process_with_delay(Manager *m) {
+        int r, input_r;
+
+        input_r = journal_process_input(m);
+        if (input_r == 1) {
+                log_trace("Pausing journal for a delay.");
+                r = sd_event_source_set_time_relative(m->event_journal_delay, m->chunk_delay_interval);
+                if (r < 0)
+                        return log_error_errno(r, "Failed to set next chunk timer event: %m");
+                r = sd_event_source_set_enabled(m->event_journal_delay, SD_EVENT_ONESHOT);
+                if (r < 0)
+                        return log_error_errno(r, "Failed to enable next chunk timer event: %m");
+                r = sd_event_source_set_enabled(m->event_journal_input, SD_EVENT_OFF);
+                if (r < 0)
+                        return log_error_errno(r, "Failed to disable journal input event: %m");
+                sd_notify(false, "STATUS=Paused (inter-chunk delay).");
+        } else {
+                r = sd_event_source_set_enabled(m->event_journal_input, SD_EVENT_ON);
+                if (r < 0)
+                        return log_error_errno(r, "Failed to enable journal input event: %m");
+                sd_notify(false, "STATUS=Ready.");
+        }
+        return input_r;
 }
 
 int journal_event_handler(sd_event_source *event, int fd, uint32_t revents, void *userp) {
@@ -305,7 +369,17 @@ int journal_event_handler(sd_event_source *event, int fd, uint32_t revents, void
         if (r == SD_JOURNAL_NOP)
                 return 0;
 
-        return journal_process_input(m);
+        return journal_process_with_delay(m);
+}
+
+int journal_event_resume(sd_event_source *event, uint64_t usec, void *userp) {
+        Manager *m = userp;
+
+        assert(m);
+        assert(m->journal);
+        log_trace("Resuming journal input after delay.");
+
+        return journal_process_with_delay(m);
 }
 
 void journal_close_input(Manager *m) {
@@ -361,6 +435,10 @@ int journal_monitor_listen(Manager *m) {
                             events, journal_event_handler, m);
         if (r < 0)
                 return log_error_errno(r, "Failed to register input event: %m");
+
+        r = sd_event_add_time(m->event, &m->event_journal_delay, CLOCK_MONOTONIC, UINT64_MAX, 0, journal_event_resume, m);
+        if (r < 0)
+                return log_error_errno(r, "Failed to register timer-based resume send event: %m");
 
         /* ignore failure */
         if (!m->last_cursor)

@@ -34,3 +34,6 @@ Network.NoDelay,                  config_parse_bool,                      0, off
 Network.SendBuffer,               config_parse_iec_size,                  0, offsetof(Manager, send_buffer)
 Network.ExcludeSyslogFacility,    config_parse_syslog_facility,           0, offsetof(Manager, excluded_syslog_facilities)
 Network.ExcludeSyslogLevel,       config_parse_syslog_level,              0, offsetof(Manager, excluded_syslog_levels)
+Network.ExcludeUnits,             config_parse_string_list,               0, offsetof(Manager, excluded_systemd_units)
+Network.ChunkMaxLineCount,        config_parse_chunk_max_line_count,      0, offsetof(Manager, chunk_max_line_count)
+Network.ChunkDelaySec,            config_parse_sec,                       0, offsetof(Manager, chunk_delay_interval)

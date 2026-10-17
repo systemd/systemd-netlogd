@@ -18,3 +18,7 @@
 #SendBuffer=
 #ExcludeSyslogFacility=
 #ExcludeSyslogLevel=
+#ExcludeUnits=
+#ChunkMaxLineCount=100
+#ChunkDelaySec=1
+

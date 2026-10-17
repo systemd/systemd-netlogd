@@ -84,4 +84,26 @@ int config_parse_syslog_level(const char *unit,
                               void *data,
                               void *userdata);
 
+int config_parse_string_list(const char *unit,
+                             const char *filename,
+                             unsigned line,
+                             const char *section,
+                             unsigned section_line,
+                             const char *lvalue,
+                             int ltype,
+                             const char *rvalue,
+                             void *data,
+                             void *userdata);
+
+int config_parse_chunk_max_line_count(const char *unit,
+                                      const char *filename,
+                                      unsigned line,
+                                      const char *section,
+                                      unsigned section_line,
+                                      const char *lvalue,
+                                      int ltype,
+                                      const char *rvalue,
+                                      void *data,
+                                      void *userdata);
+
 int manager_parse_config_file(Manager *m);

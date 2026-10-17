@@ -130,6 +130,9 @@ Reload after changes: `sudo systemctl reload systemd-netlogd`
 | `UseSysLogMsgId=` | Extract `SYSLOG_MSGID` from journal | `false` |
 | `ExcludeSyslogFacility=` | Space-separated facility list to exclude | None |
 | `ExcludeSyslogLevel=` | Space-separated level list to exclude | None |
+| `ExcludeUnits=` | Space-separated list of systemd units to exclude | None |
+| `ChunkMaxLineCount=` | Maximum lines to read & forward from the journal at once | `100` |
+| `ChunkDelaySec=` | Delay after ChunkMaxLineCount hit | `1s` |
 
 **Facilities:** `kern`, `user`, `mail`, `daemon`, `auth`, `syslog`, `lpr`, `news`, `uucp`, `cron`, `authpriv`, `ftp`, `ntp`, `security`, `console`, `solaris-cron`, `local0`-`local7`
 

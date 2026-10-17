@@ -81,6 +81,8 @@ struct Manager {
         sd_event *event;
 
         sd_event_source *event_journal_input;
+        sd_event_source *event_journal_delay;
+
         usec_t connection_retry_usec;
 
         /* network */
@@ -105,6 +107,7 @@ struct Manager {
 
         uint32_t excluded_syslog_facilities;
         uint8_t excluded_syslog_levels;
+        char **excluded_systemd_units;
 
         /* journal  */
         int journal_watch_fd;
@@ -140,6 +143,9 @@ struct Manager {
 
         usec_t keep_alive_time;
         usec_t keep_alive_interval;
+
+        unsigned chunk_max_line_count;
+        usec_t chunk_delay_interval;
 };
 
 int manager_new(const char *state_file, const char *cursor, Manager **ret);

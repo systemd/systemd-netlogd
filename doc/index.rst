@@ -80,6 +80,9 @@ Option                        Type    Default       Description
 ``UseSysLogMsgId=``           bool    ``false``     Extract and use ``SYSLOG_MSGID`` field from journal entries.
 ``ExcludeSyslogFacility=``    list    –             Space-separated list of facilities to exclude (e.g., ``auth authpriv``).
 ``ExcludeSyslogLevel=``       list    –             Space-separated list of log levels to exclude (e.g., ``debug info``).
+``ExcludeUnits=``             list    –             Space-separated list of systemd units to exclude (e.g., ``logrotate.service avahi-daemon.service``).
+``ChunkMaxLineCount=``        int     100           Maximum number of lines to read from the journal in a single chunk (mainly during initial bulk send). Must be greater than zero. Between chunks, update the saved position on disk, notify the watchdog, and wait ``ChunkDelaySec`` before reading the next chunk.
+``ChunkDelaySec=``            sec     1             Delay between reading chunks from the journal. See also ``ChunkMaxLineCount``.
 ============================  ======  ============  ================================================================================================
 
 **Facilities**: ``kern``, ``user``, ``mail``, ``daemon``, ``auth``, ``syslog``, ``lpr``, ``news``, ``uucp``, ``cron``, ``authpriv``, ``ftp``, ``ntp``, ``security``, ``console``, ``solaris-cron``, ``local0``–``local7``.

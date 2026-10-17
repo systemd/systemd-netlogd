@@ -8,4 +8,6 @@ typedef struct Manager Manager;
 
 int journal_monitor_listen(Manager *m);
 int journal_event_handler(sd_event_source *event, int fd, uint32_t revents, void *userp);
+int journal_event_resume(sd_event_source *event, uint64_t usec, void *userp);
+int journal_process_with_delay(Manager *m);
 void journal_close_input(Manager *m);
