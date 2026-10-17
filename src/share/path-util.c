@@ -327,7 +327,8 @@ bool path_is_safe(const char *p) {
 }
 
 char *file_in_same_dir(const char *path, const char *filename) {
-        char *e, *ret;
+        const char *e;
+        char *ret;
         size_t k;
 
         assert(path);

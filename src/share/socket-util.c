@@ -33,7 +33,8 @@
 #include "util.h"
 
 int socket_address_parse(SocketAddress *a, const char *s) {
-        char *e, *n;
+        const char *e;
+        char *n;
         unsigned u;
         int r;
 
